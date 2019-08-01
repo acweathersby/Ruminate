@@ -1,0 +1,27 @@
+{
+  "name": "graze",
+  "version": "0.0.1",
+  "description": "Simple Notes",
+  "main": "source/graze.js",
+  "repository": "https://github.com/acweathersby/graze",
+  "author": "Anthony C Weathersby",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "test": "mocha -r esm test/test.js",
+    "test.watch": "mocha -r esm -w test/test.js"
+  },
+  "dependencies": {
+    "@candlefw/glow": "latest",
+    "@candlefw/hydrocarbon": "latest",
+    "@candlefw/lantern": "latest",
+    "@candlefw/radiate": "latest",
+    "@candlefw/whind": "latest",
+    "@candlefw/wick": "latest"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "esm": "^3.2.25",
+    "mango": "^0.0.4"
+  }
+}
