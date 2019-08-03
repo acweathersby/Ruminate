@@ -7,7 +7,11 @@
   "author": "Anthony C Weathersby",
   "license": "MIT",
   "private": false,
+  "bin": {
+  	"graze.note":"electron ./apps/electron/main.js"
+  },
   "scripts": {
+  	"start": "electron ./apps/electron/main.js",
     "test": "mocha -r esm test/test.js",
     "compile.reducer": "hydrocarbon compile -u --name query_parser -o ./source/compiler/ -t mjs.js ./source/grammar/reduce_tree.hcg",
     "compile.reducer.test": "hydrocarbon compile -u -m ./source/grammar/reduce_tree.hcg",
