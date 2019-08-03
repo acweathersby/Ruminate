@@ -1,0 +1,43 @@
+# Graze Note Query Language
+
+@SYMBOL && ||
+
+@IGNORE θws θnl 
+
+↦ andnode 	{ this.type ="AND"; 	this.left=$$sym1; 	this.right=$$sym3 }
+↦ ornode 	{ this.type ="OR"; 		this.left=$$sym1; 	this.right=$$sym3 }
+↦ matchnode { this.type ="MATCH"; 	this.value=$$sym1 || ""; this.value = this.value.trim()}
+
+<> GNQL → statement
+
+<> statement → and_expression
+
+<> and_expression → or_expression
+	│ or_expression && and_expression 		↦c=>andnode
+	│ or_expression τAND and_expression		↦c=>andnode
+	│ or_expression τAnd and_expression		↦c=>andnode
+	│ or_expression τand and_expression		↦c=>andnode
+
+<> or_expression → wrapped_expression
+	│ wrapped_expression || or_expression	↦c=>ornode
+	│ wrapped_expression τOR or_expression	↦c=>ornode
+	│ wrapped_expression τOr or_expression	↦c=>ornode
+	│ wrapped_expression τor or_expression	↦c=>ornode
+
+<> wrapped_expression → \( statement \)		↦r {$$sym2}
+	│ sentence								↦c=>matchnode
+
+<> sentence → \" string_data \" 			↦r {$$sym2}
+	│ \' string_data \' 					↦r {$$sym2}
+	│ string_data
+
+<> string_data → ( string_data_val )(+") 	
+
+<> string_data_val → string_symbols 
+	│ escaped_value
+	│ θws 
+	│ θnl 
+
+<> escaped_value → \\ string_symbols 		↦r {$$sym2}
+
+<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob

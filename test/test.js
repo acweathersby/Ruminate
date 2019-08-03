@@ -1,45 +1,54 @@
 import chai from "chai";
 import graze_constructor from "../source/graze.js";
-import graze_json_server from "../source/server/json/server.js";
+import graze_json_server_constructor from "../source/server/json/server.js";
 
 chai.should();
 
-graze_json_server.connect("./json_test_db.json");
-
-describe.skip("Graze Utilites", function() {
-	this.slow(50000)
-	this.timeout(50000)
+describe("Graze Utilites", function() {
+    this.slow(50000)
+    this.timeout(50000)
 
     const graze = new graze_constructor();
 
-    it("UID", function() {
-        const size = 1000000;
+    it.skip("UID", function() {
+        const size = 10000;
+        let iter = 0;
         //Stress test for UID.
-        var UID_LIST = new Array(1000000).fill(null).map(graze.createUID);
+        const createUIDS = (size) => new Array(size).fill(null).map(graze.createUID);
 
         var set_ = new Set();
 
-        for (const uid of UID_LIST)
-            if (!set_.has(uid.string)) {
-                set_.add(uid.string)
-            } else {
-                throw new Error("duplicate string found:" + uid + " " + uid.string)
+        for (const uid of createUIDS(size))
+            set_.add(uid.string);
+
+        for (var time = 1000; !!(time--);) {
+            for (const uid of createUIDS(size)) {
+                iter++;
+                if (set_.has(uid.string))
+                    throw new Error(`duplicate UID string found: ${uid} ${uid.string} at iteration ${iter}`)
             }
+        }
     })
-
-
-
 })
 
 
-describe("Graze Testing - JSON BACKED", graze_test_suite(graze_constructor, graze_json_server, {
+describe("Graze Testing - JSON BACKED", graze_test_suite(graze_constructor, graze_json_server_constructor, {
     type: "JSON BACKED",
-    server_id: "JSONDB"
+    server_id: "JSONDB",
+    server_test_store: "./test/test.json"
 }))
 
-function graze_test_suite(GrazeConstructor, server, params) {
+function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
     return function() {
         const graze = new GrazeConstructor();
+        const server = new ServerConstructor();
+
+
+        before(async function(){
+        	const s = new ServerConstructor()
+        	await s.connect(params.server_test_store);
+        	s.implode()()();
+        })
 
         beforeEach(function() {
             graze.connect(server);
@@ -102,9 +111,9 @@ function graze_test_suite(GrazeConstructor, server, params) {
 
             graze.store(noteB);
 
-            const noteAd = await graze.retrieve(noteA.uid);
-            const noteBd = await graze.retrieve(noteB.id);
-            
+            const noteAd = (await graze.retrieve(noteA.uid))[0];
+            const noteBd = (await graze.retrieve(noteB.id))[0];
+
             noteA.body.should.equal(noteAd.body);
             noteB.body.should.equal(noteBd.body);
             noteA.body.should.not.equal(noteBd.body);
@@ -116,25 +125,27 @@ function graze_test_suite(GrazeConstructor, server, params) {
 
             const noteA = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", "Message A");
 
-            noteA.save();
+            await noteA.save();
 
             const noteB = graze.createNote("temp.Temp Name B", "tagA, tagB, tagC", "Message B");
 
-            graze.store(noteB);
+            await graze.store(noteB);
 
             const noteC = graze.createNote("temp.temp.Temp Name B", "tagA, tagB, tagC", "Message B");
+
+            await noteC.save();
 
             const notes = await graze.retrieve("temp.");
 
             notes.length.should.equal(2);
-
-            notes.sort(graze.sort_indexes.create_time)[0].message_string.should.equal(noteA.message_string.name);
-            notes.sort(graze.sort_indexes.create_time)[1].message_string.should.equal(noteB.message_string.name);
+            notes.sort(graze.sort_indexes.create_time)[0].body.should.equal(noteA.body);
+            notes.sort(graze.sort_indexes.create_time)[1].body.should.equal(noteB.body);
 
             const notes2 = await graze.retrieve("temp.temp.");
 
-            notes2.length.should.equal(1)
-            notes2[0].message_string.should.equal(noteC.message_string);
+            notes2.length.should.equal(1);
+
+            notes2[0].body.should.equal(noteC.body);
         })
 
         it("store and retrieve - search", async function() {
@@ -151,27 +162,87 @@ function graze_test_suite(GrazeConstructor, server, params) {
 
             noteC.store();
 
-            const notes = await graze.retrieve("", "temp.temp. && Name B && Message B");
+            const notes = await graze.retrieve("temp.*", "Name B && Message B");
 
             notes.length.should.equal(1);
 
-            notes[0].message_string.should.equal(noteC.message_string);
+            notes[0].body.should.equal(noteC.body);
         })
 
-        it("Renders note refernced inside another note", async function() {
+        it("Renders note referenced inside another note", async function() {
 
-            const noteA = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", "inside");
+            const noteG = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", "inception");
 
-            noteA.save();
+            await noteG.save();
+
+            const noteA = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", `inside ((${noteG.uid}))`);
+
+            await noteA.save();
 
             const noteB = graze.createNote("temp.Temp Name B", "tagA, tagB, tagC", `referenced note text: ((${noteA.uid}))`);
 
             //note does not need to be saved in order to take advantage of reference rendering.
 
-            (await noteB.render()).should.equal("referenced note text: inside");
+            (await noteB.render()).should.equal("referenced note text: inside inception");
+        })
+//*
+        //it("warns if no server is connected to graze");
+
+        it("Loads permanently stored data", async function() {
+            const serverA = new ServerConstructor();
+            const serverB = new ServerConstructor();
+            const serverC = new ServerConstructor();
+            //Connect server to data store
+            await serverA.connect(params.server_test_store);
+            await serverC.connect(params.server_test_store);
+
+            graze.disconnect();
+
+            await graze.connect(serverA);
+
+            await (graze.createNote("temp.tempA.Temp Name A", "tagA, tagB, tagC", "Test 1").store());
+            await (graze.createNote("temp.tempB.Temp Name B", "tagA, tagB, tagC", "Test 2").store());
+            await (graze.createNote("temp.tempC.Temp Name C", "tagA, tagB, tagC", "Test 3").store());
+            await (graze.createNote("temp.tempD.Temp Name D", "tagA, tagB, tagC", "Test 4").store());
+            await (graze.createNote("temp.tempE.Temp Name E", "tagA, tagB, tagC", "Test 5").store());
+            
+            graze.disconnect();
+
+            await serverB.connect(params.server_test_store);
+
+            graze.connect(serverB);
+
+            (await graze.retrieve("temp.*")).length.should.equal(5);
+
+            graze.disconnect();
+
+            graze.connect(serverC);
+
+            (await graze.retrieve("temp.tempE.")).length.should.equal(1);
+            (await graze.retrieve("temp.*")).length.should.equal(5);
         })
 
-        //storage
-        //search
+        it("Server implode dumps all data from store - **dependent on previous test**", async function(){
+        	
+        	const serverA = new ServerConstructor();
+            const serverB = new ServerConstructor();
+
+            await serverA.connect(params.server_test_store);
+            await serverB.connect(params.server_test_store);
+
+            graze.connect(serverA);
+            
+            (await graze.retrieve("temp.*")).length.should.equal(5);
+
+            serverA.implode()()();
+
+            graze.disconnect();
+
+            await graze.connect(serverB);
+
+            (await graze.retrieve("temp.*")).length.should.equal(0);
+
+        })
+//*/
     }
 }

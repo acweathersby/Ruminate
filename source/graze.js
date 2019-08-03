@@ -1,25 +1,28 @@
 import UID from "./common/uid";
 import Note from "./common/note";
+import NoteContainer from "./common/container"
 
 export default class Graze {
     constructor() {
         //Private
         this.server = null;
-
         this.save = this.store;
     }
+
+    get sort_indexes() { return NoteContainer.sort_indexes; }
 
     createUID() { return new UID }
 
     async store(...vals) {
-    	var RESULT = 0, note;
+        var RESULT = 0,
+            note;
 
         for (const candidate of vals) {
 
             if (!(note = candidate.__graze_retrieve_note__))
                 note = candidate;
 
-             RESULT += (await this.server.storeNote(note))|0;
+            RESULT += (await this.server.storeNote(note)) | 0;
         }
 
         return RESULT;
@@ -29,24 +32,28 @@ export default class Graze {
         id,
         query
     ) {
-    	const results = await this.server.query(id, query);
-    	
-    	if(results){
+        const results = await this.server.query(id, query);
 
-    		const note = Note(
-    			this,
-    			new UID(results.uid),
-    			results.id,
-    			results.tags,
-    			results.body, 
-    			results.refs || [],
-    			results.created,
-    			results.modified
-    		)
+        if (results) {
 
-    		return note;
-    	}
+            return new NoteContainer(
+                ...results.map(
+                    note_data =>
+                    Note(
+                        this,
+                        new UID(note_data.uid),
+                        note_data.id,
+                        note_data.tags,
+                        note_data.body,
+                        note_data.refs || [],
+                        note_data.created,
+                        note_data.modified
+                    )
+                )
+            )
+        }
 
+        return null;
     }
 
     createNote(

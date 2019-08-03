@@ -1,0 +1,25 @@
+# Graze Note Query Language
+
+@SYMBOL (( ))
+
+@IGNORE θws θnl 
+
+↦ reducenode 	{ this.type ="REDUCE"; 	this.value=$$sym2; }
+
+<> ReduceTree → tree
+
+<> tree → item(*) 								
+
+<> item → string_data_val(+") 					
+	│ (( uid )) 							↦c=>reducenode
+
+<> uid → string_symbols(+")
+
+<> string_data_val → string_symbols 
+	│ escaped_value
+	│ θws 
+	│ θnl 
+
+<> escaped_value → \\ string_symbols 		↦r {$$sym2}
+
+<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob
