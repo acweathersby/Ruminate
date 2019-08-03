@@ -29,8 +29,8 @@ export default class Graze {
     }
 
     async retrieve(
-        id,
-        query
+        id, // Container location and name of note
+        query // Query string
     ) {
         const results = await this.server.query(id, query);
 

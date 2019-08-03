@@ -20,12 +20,13 @@
     "@candlefw/lantern": "latest",
     "@candlefw/radiate": "latest",
     "@candlefw/whind": "latest",
-    "@candlefw/wick": "latest"
+    "@candlefw/wick": "latest",
+    "electron": "^6.0.0"
   },
   "devDependencies": {
+    "@candlefw/hydrocarbon": "latest",
     "chai": "^4.2.0",
     "esm": "^3.2.25",
-    "mango": "^0.0.4",
-    "@candlefw/hydrocarbon": "latest"
+    "mango": "^0.0.4"
   }
 }
