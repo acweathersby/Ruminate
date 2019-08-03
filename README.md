@@ -49,10 +49,11 @@ createUID
 
 Graze Server API:
 
-	storenoteData
-	retrieveUID
-	removeUID
+	storeNote
+	retrieveNote
+	removeNote
 	query
+	implode
 
 
 Graze Runtime
@@ -128,7 +129,7 @@ Note
 		id: string - docs.test.me
 		tags: string - csv tag names. could be auto generated
 		body: string or line list or some appropriate data structure. 
-		refs: array of UIDS of referred notes
+		refs: array of UIDS of referred notes - virtaul 
 
 	methods:
 
