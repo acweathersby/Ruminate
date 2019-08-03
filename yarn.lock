@@ -91,7 +91,7 @@
   resolved "https://registry.yarnpkg.com/@candlefw/whind/-/whind-0.3.4.tgz#fb3fbec032b33acfe35f0874b2924bf79fbeae93"
   integrity sha512-U+MrvnZLDJv0qP09NuGV+ye20GEQ/u5SbHSNBD2++Ie+S+Vk8289MrwzQmRuVgRVHpE30bIUq4mVZ9IeljY/Gg==
 
-"@candlefw/wick@^latest", "@candlefw/wick@latest":
+"@candlefw/wick@latest":
   version "0.8.4-0"
   resolved "https://registry.yarnpkg.com/@candlefw/wick/-/wick-0.8.4-0.tgz#419a04f1f27ceb75e6cf7788c2e612a20d8be750"
   integrity sha512-6GvzF4GN9/5BJj4LwXqFVP/kRCA3kEaAmeZDtpGSP51e4Beo184E+jqnEgI7XXxyOyTMHTLa9o2hJn8gvt58JQ==
