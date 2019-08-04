@@ -4,48 +4,98 @@
 
 @IGNORE θws θnl 
 
+# Special Search / Filter Types
 
-↦ andnode 	{ this.type ="AND"; 	this.left=$$sym1; 	this.right=$$sym3 }
-↦ ornode 	{ this.type ="OR"; 		this.left=$$sym1; 	this.right=$$sym3 }
-↦ matchnode { this.type ="MATCH"; 	this.value=$$sym1 || ""; this.value = this.value.trim()}
+↦ tageqnode 	{ this.type ="TAGEQ"; 	this.tag=$$sym2;	this.val=$$sym4;}
+↦ tagnode 		{ this.type ="TAG"; 	this.tag=$$sym2;	this.val=$$sym3; 	this.order=$sym4 || 1 }
+↦ creatednode 	{ this.type ="CREATED"; 	this.val=$$sym2; 	this.order=$sym3 || 1 }
+↦ modifiednode 	{ this.type ="MODIFIED"; 	this.val=$$sym2; 	this.order=$sym3 || 1 }
+↦ sizenode 		{ this.type ="SIZE"; 		this.val=$$sym2; 	this.order=$sym3 || 1 }
+
+
+↦ andnode 		{ this.type ="AND"; 	this.left=$$sym1; 		this.right=$$sym3 }
+↦ ornode 		{ this.type ="OR"; 		this.left=$$sym1; 		this.right=$$sym3 }
+↦ notnode 		{ this.type ="NOT"; 	this.left=$$sym2; }
+↦ matchnode 	{ this.type ="MATCH"; 	this.value=$$sym1 }
 
 <> GNQL → start
 
 <> start → query_body
-	│ ɛ	
 
-<>query_body → container_object 		↦c { this.container = $sym1; this.query=null }
-	│ container_object? \: statement? 	↦c { this.container = $$sym1; this.query=$$sym3 }
+<> query_body → container_clause? filter_clause? sort_clause? 			↦c { this.container = $$sym1; this.filter=$$sym2; this.sort=$$sym3 }
 
-<> container_object →  string_data_val(+") 		↦c {this.data = $sym1}
+## Container Clause
+
+<> container_clause →  container_identifier(*) identifier 				↦c {this.containers = $$sym1; this.id = $$sym2 }
+
+<> container_identifier → identifier \.									↦r { $$sym1 }
+
+## Filter Clause
+
+<> filter_clause → ( \? :? │ τf :? │ τfilter :? │ τFILTER :? )  and_expression? 	↦r { $$sym2 }
 
 <> statement → and_expression 			
 
 <> and_expression → or_expression
-	│ or_expression && and_expression 		↦c=>andnode
-	│ or_expression τAND and_expression		↦c=>andnode
-	│ or_expression τAnd and_expression		↦c=>andnode
-	│ or_expression τand and_expression		↦c=>andnode
+	│ or_expression && and_expression 									↦c=>andnode
+	│ or_expression τAND and_expression									↦c=>andnode
+	│ or_expression τAnd and_expression									↦c=>andnode
+	│ or_expression τand and_expression									↦c=>andnode
 
-<> or_expression → wrapped_expression
-	│ wrapped_expression || or_expression	↦c=>ornode
-	│ wrapped_expression τOR or_expression	↦c=>ornode
-	│ wrapped_expression τOr or_expression	↦c=>ornode
-	│ wrapped_expression τor or_expression	↦c=>ornode
+<> or_expression → not_expression
+	│ not_expression || or_expression									↦c=>ornode
+	│ not_expression τOR or_expression									↦c=>ornode
+	│ not_expression τOr or_expression									↦c=>ornode
+	│ not_expression τor or_expression									↦c=>ornode
 
-<> wrapped_expression → \( statement \)		↦r {$$sym2}
-	│ sentence								↦c=>matchnode
+<> not_expression → wrapped_expression
+	│ τNOT wrapped_expression											↦c=>notnode
+	│ τNot wrapped_expression											↦c=>notnode
+	│ τnot wrapped_expression											↦c=>notnode
+	│ \!   wrapped_expression											↦c=>notnode
 
-<> sentence → \" string_data \" 			↦r {$$sym2}
-	│ \' string_data \' 					↦r {$$sym2}
+<> wrapped_expression → \( statement \)									↦r {$$sym2}
+	│ sentence															↦c=>matchnode
+	│ sort_parameter
+	│ \# identifier (τis │ = │ τequals │ τthat τis )  (identifier │ θnum) 	↦c=>tageqnode
+
+## Sort Clause
+
+<> sort_clause → ( \| │ τs :? │ τsort :? │ τSORT :? ) sort_parameter(*,)  ↦r { $$sym2 }
+
+<> sort_parameter → created_expression
+	│ modified_expression
+	│ size_expression
+	│ tag_expression
+
+<> created_expression → (τcreated │ τCREATED) length_expression? order?		↦c=>creatednode
+<> modified_expression → (τmodifier │ τMODIFIED) length_expression? order? 	↦c=>modifiednode
+<> size_expression → (τsize │ τSIZE) length_expression? order?				↦c=>sizenode
+<> tag_expression →  \# identifier length_expression? order?  				↦c=>tagnode
+
+<>length_expression → θnum ( (τto │ τTO │ \- )  θnum ↦r { $sym2 })? 		↦r { [$sym1, $sym2] }
+
+<>order → (τDEC │ τdec │ τdecending │ τDECENDING │ τdown ) 					↦r {-1}
+	│ (τASC │ τasc │ τascending │ τASCENDING │ τup )  						↦r {1}
+
+<> sentence → \" identifier \" 												↦r {$$sym2}
+	│ \' identifier \' 														↦r {$$sym2}
+	│ identifier
+
+<> identifier → identifier_part(+) 											↦c {this.ids = $$sym1 }
+
+<> identifier_part → wild_card 												
 	│ string_data
 
-<> string_data → string_data_val(+") 	
+<> string_data → string_data_val(+") 
+
+<> wild_card → \*
 
 <> string_data_val → string_symbols 
 	│ escaped_value
-	│ θws 
 
 <> escaped_value → \\ string_symbols 		↦r {$$sym2}
 
-<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob
+<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob │ θws 
+
+
