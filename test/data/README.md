@@ -6,7 +6,7 @@
 
 Translated by *Louise* and *Aylmer Maude* - Published 1922 - 1923
 
-Original source web edition published by eBooks@Adelaide. 2014
+HTML edition used in this project was published by eBooks@Adelaide. 2014
 
 Graze Formatted Edition modified from Adelaide source 2019
 
@@ -21,3 +21,10 @@ Graze Formatted Edition modified from Adelaide source 2019
 >
 > > To the best of our knowledge, the text of this work is in the “Public Domain” in the [United States Of America]
 HOWEVER, copyright law varies in other countries, and the work may still be under copyright in the country from which you are accessing this website. It is your responsibility to check the applicable copyright laws in your country before downloading this work.
+
+## Library of Congress Film Registry
+
+Data in library_of_congress_film_registry.txt from [Complete National Film Registry Listing | Film Registry | National Film Preservation Board | Programs at the Library of Congress | Library of Congress](https://www.loc.gov/programs/national-film-preservation-board/film-registry/complete-national-film-registry-listing/), **08/04/2019**
+
+Data in library_of_congress_film_registry_essays.txt retrieved from [Index of Film Essays | Film Registry | National Film Preservation Board | Programs at the Library of Congress | Library of Congress](https://www.loc.gov/programs/national-film-preservation-board/film-registry/index-of-essays), **08/04/2019**
+
