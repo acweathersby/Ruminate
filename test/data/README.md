@@ -10,12 +10,11 @@ Original source web edition published by eBooks@Adelaide. 2014
 
 Graze Formatted Edition modified from Adelaide source 2019
 
-### Text Sourced from:
-> eBooks@Adelaide <br/>
+### Text Sourced 08/04/2019 From:
+> **eBooks@Adelaide** <br/>
 > [Complete Version](https://ebooks.adelaide.edu.au/t/tolstoy/leo/t65w/complete.html)
 >
-> The University of Adelaide Library
->
+> **The University of Adelaide Library**<br/>
 > University of Adelaide <br/>
 > South Australia 5005 <br>
 >
