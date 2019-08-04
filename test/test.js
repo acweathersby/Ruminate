@@ -1,8 +1,34 @@
 import chai from "chai";
 import graze_constructor from "../source/graze.js";
 import graze_json_server_constructor from "../source/server/json/server.js";
+import path from "path";
+import fs from "fs";
+
+const fsp = fs.promises;
 
 chai.should();
+
+async function fillTestData(graze, file = "w&p") {
+    var data = "";
+
+    switch (file.toLowerCase()) {
+        case "war and peace":
+        case "w&p":
+        default:
+            data = await fsp.readFile(path.resolve(process.env.PWD, "./test/data/war_and_peace.data.json"), "utf8");
+    }
+
+    const entries = JSON.parse(data).data;
+
+    let count = 0;
+
+    for (const entry of entries) {
+        count++;
+        await graze.createNote(entry.id, entry.meta, entry.body).store();
+    }
+
+    console.log(count)
+}
 
 describe("Graze Utilites", function() {
     this.slow(50000)
@@ -44,10 +70,10 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
         const server = new ServerConstructor();
 
 
-        before(async function(){
-        	const s = new ServerConstructor()
-        	await s.connect(params.server_test_store);
-        	s.implode()()();
+        before(async function() {
+            const s = new ServerConstructor()
+            await s.connect(params.server_test_store);
+            s.implode()()();
         })
 
         beforeEach(function() {
@@ -185,7 +211,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             (await noteB.render()).should.equal("referenced note text: inside inception");
         })
-//*
+        //*
         //it("warns if no server is connected to graze");
 
         it("Loads permanently stored data", async function() {
@@ -205,7 +231,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
             await (graze.createNote("temp.tempC.Temp Name C", "tagA, tagB, tagC", "Test 3").store());
             await (graze.createNote("temp.tempD.Temp Name D", "tagA, tagB, tagC", "Test 4").store());
             await (graze.createNote("temp.tempE.Temp Name E", "tagA, tagB, tagC", "Test 5").store());
-            
+
             graze.disconnect();
 
             await serverB.connect(params.server_test_store);
@@ -222,16 +248,16 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
             (await graze.retrieve("temp.*")).length.should.equal(5);
         })
 
-        it("Server implode dumps all data from store - **dependent on previous test**", async function(){
-        	
-        	const serverA = new ServerConstructor();
+        it("Server implode dumps all data from store - **dependent on previous test**", async function() {
+
+            const serverA = new ServerConstructor();
             const serverB = new ServerConstructor();
 
             await serverA.connect(params.server_test_store);
             await serverB.connect(params.server_test_store);
 
             graze.connect(serverA);
-            
+
             (await graze.retrieve("temp.*")).length.should.equal(5);
 
             serverA.implode()()();
@@ -243,6 +269,26 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
             (await graze.retrieve("temp.*")).length.should.equal(0);
 
         })
-//*/
+
+        it("Advanced queries - Wild Card", async function() {
+            this.slow(2000);
+            this.timeout(5000);
+
+            await fillTestData(graze);
+
+            (await graze.retrieve("book 1.")).length.should.equal(1);
+
+            (await graze.retrieve("book 1.*")).length.should.equal(1141);
+
+            (await graze.retrieve("*.chapter *")).length.should.equal(11346);
+
+            (await graze.retrieve("*.chapter * : The dog or squirrel")).length.should.equal(4);
+
+            (await graze.retrieve("*.chapter * : The dog")).length.should.equal(1);
+        })
+
+        it("Auto update")
+        it("Auto update")
+        //*/
     }
 }

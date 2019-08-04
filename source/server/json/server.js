@@ -223,6 +223,10 @@ function Server(store, file_path = "") {
             if (id) {
                 const parts = id.split(".");
 
+                if(parts[parts.length-1].includes("*") && parts[parts.length-1] !=="*"){
+                    parts.push("*");
+                }
+
                 for (const note of store.values()) {
 
                     const note_parts = note.id.split(".");
@@ -240,7 +244,11 @@ function Server(store, file_path = "") {
                                 temps.push(note);
                                 break;
                             }
-                        } else if (note_parts[i] != parts[i]) {
+                        } else if (
+                            note_parts[i] != parts[i] &&
+                            !parts[i].includes("*") || 
+                            !note_parts[i].includes(parts[i].split("*")[0])
+                            ) {
                             break
                         }
                     }

@@ -15,7 +15,7 @@
 	│ ɛ	
 
 <>query_body → container_object 		↦c { this.container = $sym1; this.query=null }
-	│ container_object? \: statement? 	↦c { this.container = $sym1; this.query=$$sym3 }
+	│ container_object? \: statement? 	↦c { this.container = $$sym1; this.query=$$sym3 }
 
 <> container_object →  string_data_val(+") 		↦c {this.data = $sym1}
 

@@ -45,7 +45,7 @@ export default function Note(graze, uid, id, tags, body, refs, created, modified
                             continue;
 
                         if (note)
-                            strings.push("\n " + await note.render(handler, new Set(set)));
+                            strings.push(await note.render(handler, new Set(set)));
                     }
                 }
             }

@@ -20,9 +20,11 @@
     "compile.query.test": "hydrocarbon compile -u -m ./source/grammar/gnql.hcg",
     "test.watch": "mocha -r esm -w test/test.js",
     "build": "rollup --config ./build/config/config.js",
-    "build.watch": "rollup --config ./build/config/config.js --watch"
+    "build.watch": "rollup --config ./build/config/config.js --watch",
+    "build_test_data":"node ./test/data/data_builder.js"
   },
   "dependencies": {
+    "@candlefw/charcoal": "latest",
     "@candlefw/glow": "latest",
     "@candlefw/lantern": "latest",
     "@candlefw/radiate": "latest",
@@ -34,7 +36,7 @@
     "@candlefw/hydrocarbon": "latest",
     "chai": "^4.2.0",
     "esm": "^3.2.25",
-    "mango": "^0.0.4",
+    "mocha": "latest",
     "rollup": "^1.18.0",
     "rollup-plugin-node-resolve": "^5.2.0"
   }
