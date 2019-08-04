@@ -13,9 +13,9 @@ export default class UID extends ArrayBuffer {
                 .map((v,i)=> dv.setUint32(i<<2, parseInt(v, 16)))
 
         } else {
-            dv.setUint32(0, 8 * 0xFFFFFFFF)
+            dv.setUint32(0, Math.random() * 0xFFFFFFFF)
             dv.setUint32(4, Math.random() * 0xFFFFFFFF)
-            dv.setUint32(8, 10 * 0xFFFFFFFF)
+            dv.setUint32(8, Math.random() * 0xFFFFFFFF)
             dv.setUint32(12, Math.random() * 0xFFFFFFFF)
         }
     }

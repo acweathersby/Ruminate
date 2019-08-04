@@ -3,8 +3,8 @@ import whind from "@candlefw/whind";
 import UID from "./uid";
 
 export default function Note(graze, uid, id, tags, body, refs, created, modified) {
-
-    const note = {
+    
+    let note = {
         uid,
         id,
         tags,
@@ -17,12 +17,13 @@ export default function Note(graze, uid, id, tags, body, refs, created, modified
     const store = async () => (await graze.store(note)) > 0;
 
     return {
-        get created() { return created },
-        get modified() { return modified },
+        get created() { return note.created },
+        get modified() { return note.modified },
         get __graze_retrieve_note__() { return note },
-        get uid() { return uid.frozenClone() },
-        get body() { return body },
-        get id() { return id },
+        get uid() { return uid},
+        get id() { return note.id },
+        get body() { return note.body },
+        set body(str) {note.body = str},
         // saves the note's data to the backing server. returns true if the save was successfull, or returns false.
         save: store,
         store,
@@ -30,7 +31,7 @@ export default function Note(graze, uid, id, tags, body, refs, created, modified
         render: async function(handler) {
             var strings = [];
 
-            for (const value of reducer(whind(body))){
+            for (const value of reducer(whind(note.body))){
                 if(typeof value == "string")
                     strings.push(value);
                 else {

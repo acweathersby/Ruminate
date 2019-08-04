@@ -1,0 +1,24 @@
+<import url="./components/note.html"/>
+<import url="./components/notethumb.html"/>
+
+<scope>
+
+	<container element=div>((note)) <note/> </container>
+
+	<container element=div>((notes)) <notethumb/> </container>
+
+	<script on=((loading))>
+		
+		const n = graze.createNote("test", "", "test");
+		n.store();
+		
+		const n2 = graze.createNote("test2", "", "test");
+		n2.store();
+
+		note = [n2];
+
+		console.log(n2);
+
+		notes = [n, n2];
+	</script>
+</scope>

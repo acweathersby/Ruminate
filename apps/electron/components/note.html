@@ -1,0 +1,14 @@
+<scope component=note>
+    
+    <textarea value=((body)(bodyupdated))>
+
+	</textarea>
+    
+    <div> (( data )) </div>
+
+    <script on=((bodyupdated))>
+	    this.model.body = bodyupdated;
+	    this.model.store();
+	    this.model.render().then(d => data = d)
+    </script>
+</scope>
