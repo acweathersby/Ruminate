@@ -1,6 +1,7 @@
 const graze = new graze_objects.graze;
 const server = new graze_objects.server.json;
-//server.connect();
+
+server.connect("./notes.json");
 graze.connect(server)
 
 const EPOCH_Date = wick.scheme.date;

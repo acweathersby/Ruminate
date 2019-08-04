@@ -3,6 +3,7 @@ import Note from "./common/note";
 import NoteContainer from "./common/container"
 
 export default class Graze {
+    
     constructor() {
         //Private
         this.server = null;
@@ -29,10 +30,9 @@ export default class Graze {
     }
 
     async retrieve(
-        id, // Container location and name of note
         query // Query string
     ) {
-        const results = await this.server.query(id, query);
+        const results = await this.server.query(query);
 
         if (results) {
 

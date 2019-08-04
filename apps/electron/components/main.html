@@ -9,16 +9,18 @@
 
 	<script on=((loading))>
 		
-		const n = graze.createNote("test", "", "test");
-		n.store();
+		graze.createNote("groceries.", "", "This is a reminder to get milk!").store();
+		graze.createNote("groceries.", "", "This is a reminder to get butter!").store();
+		graze.createNote("groceries.", "", "This is a reminder to get cream!").store();
+		graze.createNote("signatures. main", "", "Anthony C Weathersby").store();
+		graze.createNote("places to visit.", "", "I'd like to go to rome someday").store();
 		
 		const n2 = graze.createNote("test2", "", "test");
+		
 		n2.store();
 
 		note = [n2];
 
-		console.log(n2);
-
-		notes = [n, n2];
+		graze.retrieve("*").then(n=>notes = n);
 	</script>
 </scope>

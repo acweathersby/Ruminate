@@ -15,8 +15,8 @@ var graze_objects = (function (exports, fs, path) {
             if (string_val && typeof string_val == "string") {
                 string_val
                     .split("-")
-                    .slice(0,4)
-                    .map((v,i)=> dv.setUint32(i<<2, parseInt(v, 16)));
+                    .slice(0, 4)
+                    .map((v, i) => dv.setUint32(i << 2, parseInt(v, 16)));
 
             } else {
                 dv.setUint32(0, Math.random() * 0xFFFFFFFF);
@@ -30,11 +30,10 @@ var graze_objects = (function (exports, fs, path) {
         get string() {
             const dv = new DataView(this);
             return (
-                "" +
-                dv.getUint32(0).toString(16) +
-                "-" + dv.getUint32(4).toString(16) +
-                "-" + dv.getUint32(8).toString(16) +
-                "-" + dv.getUint32(12).toString(16)
+                "" +  ("00000000"+dv.getUint32(0).toString(16)).slice(-8) +
+                "-" + ("00000000"+dv.getUint32(4).toString(16)).slice(-8) +
+                "-" + ("00000000"+dv.getUint32(8).toString(16)).slice(-8) +
+                "-" + ("00000000"+dv.getUint32(12).toString(16)).slice(-8)
             )
         }
 
@@ -64,6 +63,11 @@ var graze_objects = (function (exports, fs, path) {
 
             return uid;
         }
+
+        static stringIsUID(string) {
+            const match = string.match(/[a-f\d]{8}\-[a-f\d]{8}\-[a-f\d]{8}\-[a-f\d]{8}/);
+            return match && match[0] == string;
+        }
     }
 
     let fn = {}; const 
@@ -73,12 +77,12 @@ var graze_objects = (function (exports, fs, path) {
         symbols = ["((","))"],
 
         /* Goto lookup maps */
-        gt0 = [0,-1,2,1,4,3,-2,6,8,7],
-    gt1 = [0,-3,4,18,-2,6,8,7],
-    gt2 = [0,-7,19,8,7],
-    gt3 = [0,-5,21,20,-2,22],
-    gt4 = [0,-9,23],
-    gt5 = [0,-9,25],
+        gt0 = [0,-1,2,1,4,3,5,-3,6,7,9,8],
+    gt1 = [0,-3,4,20,5,-3,6,7,9,8],
+    gt2 = [0,-9,21,7,9,8],
+    gt3 = [0,-12,22],
+    gt4 = [0,-6,25,24,23,-1,26,9,8],
+    gt5 = [0,-10,28,9,8],
 
         // State action lookup maps
         sm0=[0,1,-1,2,-1,3,4,5,6,7,8,-3,9,-1,10,-3,11],
@@ -86,18 +90,22 @@ var graze_objects = (function (exports, fs, path) {
     sm2=[0,13,-1,2,-1,3,4,5,6,7,8,-3,9,-1,10,-3,11],
     sm3=[0,14,-1,14,-1,14,14,14,14,14,14,-3,14,-1,14,-3,14],
     sm4=[0,15,-1,2,-1,3,4,5,6,7,8,-3,9,-1,15,-3,11],
-    sm5=[0,-2,2,-1,0,4,5,6,7,0,-3,9],
+    sm5=[0,15,-1,15,-1,15,15,15,15,15,15,-3,15,-1,15,-3,15],
     sm6=[0,16,-1,16,-1,16,16,16,16,16,16,-3,16,-1,16,-3,16],
     sm7=[0,17,-1,17,-1,17,17,17,17,17,17,-3,17,-1,17,-3,17],
     sm8=[0,18,-1,18,-1,18,18,18,18,18,18,-3,18,-1,18,18,-2,18],
-    sm9=[0,19,-1,19,-1,19,19,19,19,19,19,-3,19,-1,19,-3,19],
-    sm10=[0,20,-1,20,-1,20,20,20,20,20,20,-3,20,-1,20,-3,20],
-    sm11=[0,-4,0,-4,0,-6,21],
-    sm12=[0,-2,2,-1,0,4,5,6,7,0,-3,9,-2,22],
-    sm13=[0,-2,23,-1,0,23,23,23,23,0,-3,23,-2,23],
-    sm14=[0,24,-1,24,-1,24,24,24,24,24,24,-3,24,-1,24,-3,24],
-    sm15=[0,25,-1,25,-1,25,25,25,25,25,25,-3,25,-1,25,-3,25],
-    sm16=[0,-2,26,-1,0,26,26,26,26,0,-3,26,-2,26],
+    sm9=[0,19,-1,19,-1,19,19,19,19,19,19,-3,19,-1,19,19,-2,19],
+    sm10=[0,-2,2,-1,0,4,5,6,7,0,-3,9],
+    sm11=[0,20,-1,2,-1,3,4,5,6,7,8,-3,9,-1,20,20,-2,11],
+    sm12=[0,21,-1,21,-1,21,21,21,21,21,21,-3,21,-1,21,-3,21],
+    sm13=[0,22,-1,22,-1,22,22,22,22,22,22,-3,22,-1,22,-3,22],
+    sm14=[0,23,-1,23,-1,23,23,23,23,23,23,-3,23,-1,23,23,-2,23],
+    sm15=[0,24,-1,24,-1,24,24,24,24,24,24,-3,24,-1,24,25,-2,24],
+    sm16=[0,26,-1,26,-1,26,26,26,26,26,26,-3,26,-1,26,26,-2,26],
+    sm17=[0,27,-1,2,-1,3,4,5,6,7,8,-3,9,-1,27,27,-2,11],
+    sm18=[0,28,-1,28,-1,28,28,28,28,28,28,-3,28,-1,28,28,-2,28],
+    sm19=[0,29,-1,29,-1,29,29,29,29,29,29,-3,29,-1,29,-3,29],
+    sm20=[0,30,-1,30,-1,30,30,30,30,30,30,-3,30,-1,30,30,-2,30],
 
         // Symbol Lookup map
         lu = new Map([[1,1],[2,2],[4,3],[8,4],[16,5],[32,6],[64,7],[128,8],[256,9],[512,10],[3,11],[264,11],[200,13],[201,14],["((",15],["))",16],[null,5],["\\",19]]),
@@ -114,16 +122,15 @@ var graze_objects = (function (exports, fs, path) {
     sm5,
     sm6,
     sm7,
-    sm7,
-    sm7,
-    sm7,
     sm8,
     sm8,
     sm8,
     sm8,
-    sm8,
-    sm8,
-    sm5,
+    sm9,
+    sm9,
+    sm9,
+    sm9,
+    sm9,
     sm9,
     sm10,
     sm11,
@@ -131,7 +138,11 @@ var graze_objects = (function (exports, fs, path) {
     sm13,
     sm14,
     sm15,
-    sm16],
+    sm16,
+    sm17,
+    sm18,
+    sm19,
+    sm20],
 
     /************ Functions *************/
 
@@ -140,6 +151,9 @@ var graze_objects = (function (exports, fs, path) {
         //Error Functions
         e = (tk,r,o,l,p)=>{if(l.END)l.throw("Unexpected end of input");else if(l.ty & (264)) l.throw(`Unexpected space character within input "${p.slice(l)}" `) ; else l.throw(`Unexpected token ${l.tx}" `);}, 
         eh = [e,
+    e,
+    e,
+    e,
     e,
     e,
     e,
@@ -177,41 +191,45 @@ var graze_objects = (function (exports, fs, path) {
     shftf = (ret, fn, t, e, o, l, s) => (fn(o, e, l, s), ret),
     R10_item_list=sym=>(((sym[1] !== null) ? sym[0].push(sym[1]) : null,sym[0])),
     R11_item_list=sym=>(sym[0] !== null) ? [sym[0]] : [],
-    R30_string_data_val_list=sym=>sym[0] + sym[1],
-    R31_string_data_val_list=sym=>sym[0] + "",
-    C40_item=function (sym){this.type = "REDUCE";this.value = sym[1];},
-    R80_escaped_value=sym=>sym[1],
+    R30_string_data_list=sym=>sym[0] + sym[1],
+    R31_string_data_list=sym=>sym[0] + "",
+    C50_data_insert_point=function (sym){this.type = "REDUCE";this.value = sym[1];},
+    R110_escaped_value=sym=>sym[1],
 
         //Sparse Map Lookup
         lsm = (index, map) => {    if (map[0] == 0xFFFFFFFF) return map[index + 1];    for (let i = 1, ind = 0, l = map.length, n = 0; i < l && ind <= index; i++) {        if (ind !== index) {            if ((n = map[i]) > -1) ind++;            else ind += -n;        } else return map[i];    }    return -1;},
 
         //State Action Functions
         state_funct = [(...v)=>(redn(2051,0,...v)),
-    e=>46,
-    e=>38,
+    e=>50,
+    e=>42,
+    e=>70,
     e=>66,
     e=>62,
     e=>58,
+    e=>46,
     e=>54,
-    e=>42,
-    e=>50,
-    e=>22,
-    e=>70,
+    e=>78,
+    e=>74,
     (...v)=>redn(5,1,...v),
     (...v)=>redn(2055,1,...v),
     (...v)=>redv(1031,R11_item_list,1,0,...v),
     (...v)=>redn(4103,1,...v),
-    (...v)=>redv(3079,R31_string_data_val_list,1,0,...v),
-    (...v)=>redn(7175,1,...v),
+    (...v)=>redv(3079,R31_string_data_list,1,0,...v),
     (...v)=>redn(9223,1,...v),
+    (...v)=>redn(10247,1,...v),
+    (...v)=>redn(12295,1,...v),
+    (...v)=>(redn(7171,0,...v)),
     (...v)=>redv(1035,R10_item_list,2,0,...v),
-    (...v)=>redv(3083,R30_string_data_val_list,2,0,...v),
-    e=>98,
-    (...v)=>redn(6151,1,...v),
-    (...v)=>redv(5127,R31_string_data_val_list,1,0,...v),
-    (...v)=>redv(8203,R80_escaped_value,2,0,...v),
-    (...v)=>rednv(4111,C40_item,3,0,...v),
-    (...v)=>redv(5131,R30_string_data_val_list,2,0,...v)],
+    (...v)=>redv(3083,R30_string_data_list,2,0,...v),
+    (...v)=>redv(11275,R110_escaped_value,2,0,...v),
+    (...v)=>redv(5131,R30_string_data_list,2,0,...v),
+    e=>110,
+    (...v)=>redn(8199,1,...v),
+    (...v)=>redn(7175,1,...v),
+    (...v)=>redv(6151,R31_string_data_list,1,0,...v),
+    (...v)=>rednv(5135,C50_data_insert_point,3,0,...v),
+    (...v)=>redv(6155,R30_string_data_list,2,0,...v)],
 
         //Goto Lookup Functions
         goto = [v=>lsm(v,gt0),
@@ -219,24 +237,27 @@ var graze_objects = (function (exports, fs, path) {
     v=>lsm(v,gt1),
     nf,
     v=>lsm(v,gt2),
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
+    nf,
     v=>lsm(v,gt3),
-    nf,
-    nf,
-    nf,
-    nf,
-    nf,
-    nf,
-    nf,
-    nf,
-    nf,
-    nf,
-    nf,
     v=>lsm(v,gt4),
     nf,
     nf,
     nf,
-    v=>lsm(v,gt5),
     nf,
+    nf,
+    v=>lsm(v,gt5),
     nf,
     nf,
     nf];
@@ -1640,7 +1661,7 @@ var graze_objects = (function (exports, fs, path) {
     whind.types = Types;
 
     function Note(graze, uid, id, tags, body, refs, created, modified) {
-        
+
         let note = {
             uid,
             id,
@@ -1657,27 +1678,33 @@ var graze_objects = (function (exports, fs, path) {
             get created() { return note.created },
             get modified() { return note.modified },
             get __graze_retrieve_note__() { return note },
-            get uid() { return uid},
+            get uid() { return uid },
             get id() { return note.id },
             get body() { return note.body },
-            set body(str) {note.body = str;},
+            set body(str) { note.body = str; },
             // saves the note's data to the backing server. returns true if the save was successfull, or returns false.
             save: store,
             store,
             // render the note's message data into a string output
-            render: async function(handler) {
+            render: async function(handler, set = new Set) {
+
+                if (!set.has(this.uid.string))
+                    set.add(this.uid.string);
+
                 var strings = [];
 
-                for (const value of parser(whind(note.body))){
-                    if(typeof value == "string")
+                for (const value of parser(whind(note.body))) {
+                    if (typeof value == "string")
                         strings.push(value);
                     else {
-                        const uid = new UID(value.value);
+                        for (const note of await graze.retrieve(value.value)) {
+                            
+                            if (set.has(note.uid.string))
+                                continue;
 
-                        const note = (await graze.retrieve(uid))[0];
-                        
-                        if(note)
-                            strings.push(await note.render());
+                            if (note)
+                                strings.push("\n " + await note.render(handler, new Set(set)));
+                        }
                     }
                 }
 
@@ -1709,6 +1736,7 @@ var graze_objects = (function (exports, fs, path) {
     });
 
     class Graze {
+        
         constructor() {
             //Private
             this.server = null;
@@ -1735,10 +1763,9 @@ var graze_objects = (function (exports, fs, path) {
         }
 
         async retrieve(
-            id, // Container location and name of note
             query // Query string
         ) {
-            const results = await this.server.query(id, query);
+            const results = await this.server.query(query);
 
             if (results) {
 
@@ -1834,54 +1861,63 @@ var graze_objects = (function (exports, fs, path) {
     /************** Maps **************/
 
         /* Symbols To Inject into the Lexer */
-        symbols$1 = ["&&","||"],
+        symbols$1 = ["&&","||",":"],
 
         /* Goto lookup maps */
-        gt0$1 = [0,-1,1,2,3,4,6,11,10,9,12,14,13],
-    gt1$1 = [0,-1,32,2,3,4,6,11,10,9,12,14,13],
-    gt2$1 = [0,-6,11,10,33,12,14,13],
-    gt3$1 = [0,-6,11,10,34,12,14,13],
-    gt4$1 = [0,-6,35,-2,12,14,13],
-    gt5$1 = [0,-11,36],
-    gt6 = [0,-2,37,3,4,6,11,10,9,12,14,13],
-    gt7 = [0,-2,38,3,4,6,11,10,9,12,14,13],
-    gt8 = [0,-2,39,3,4,6,11,10,9,12,14,13],
-    gt9 = [0,-2,40,3,4,6,11,10,9,12,14,13],
-    gt10 = [0,-3,41,4,6,11,10,9,12,14,13],
-    gt11 = [0,-3,42,4,6,11,10,9,12,14,13],
-    gt12 = [0,-3,43,4,6,11,10,9,12,14,13],
-    gt13 = [0,-3,44,4,6,11,10,9,12,14,13],
+        gt0$1 = [0,-1,1,2,-1,3,-5,5,-1,6,8,7],
+    gt1$1 = [0,-5,18,19,20,21,23,27,26,6,8,7],
+    gt2$1 = [0,-12,28,8,7],
+    gt3$1 = [0,-14,29],
+    gt4$1 = [0,-5,30,19,20,21,23,27,26,6,8,7],
+    gt5$1 = [0,-5,39,19,20,21,23,27,26,6,8,7],
+    gt6 = [0,-10,27,40,6,8,7],
+    gt7 = [0,-10,27,41,6,8,7],
+    gt8 = [0,-6,42,20,21,23,27,26,6,8,7],
+    gt9 = [0,-6,43,20,21,23,27,26,6,8,7],
+    gt10 = [0,-6,44,20,21,23,27,26,6,8,7],
+    gt11 = [0,-6,45,20,21,23,27,26,6,8,7],
+    gt12 = [0,-7,46,21,23,27,26,6,8,7],
+    gt13 = [0,-7,47,21,23,27,26,6,8,7],
+    gt14 = [0,-7,48,21,23,27,26,6,8,7],
+    gt15 = [0,-7,49,21,23,27,26,6,8,7],
 
         // State action lookup maps
-    sm0$1=[0,-2,1,-1,2,3,4,5,6,7,-3,8,-9,9,-1,10,11,-2,12],
-    sm1$1=[0,13,-3,0,-4,0],
-    sm2$1=[0,14,-3,0,-4,0,-14,14],
-    sm3$1=[0,15,-3,0,-4,0,-5,16,17,18,19,-5,15],
-    sm4$1=[0,20,-3,0,-4,0,-5,20,20,20,20,21,22,23,24,-1,20],
-    sm5$1=[0,25,-3,0,-4,0,-5,25,25,25,25,25,25,25,25,-1,25],
-    sm6$1=[0,-2,1,-1,2,3,4,5,6,7,-3,8,-15,12],
-    sm7$1=[0,26,-3,0,-4,0,-5,26,26,26,26,26,26,26,26,-1,26],
-    sm8$1=[0,27,-1,1,-1,2,3,4,5,6,7,-3,8,-1,27,27,27,27,27,27,27,27,-1,27,27,27,-2,12],
-    sm9$1=[0,28,-1,28,-1,28,28,28,28,28,28,-3,28,-1,28,28,28,28,28,28,28,28,-1,28,28,28,-2,28],
-    sm10$1=[0,29,-1,29,-1,29,29,29,29,29,29,-3,29,-1,29,29,29,29,29,29,29,29,-1,29,29,29,-2,29],
-    sm11$1=[0,30,-1,30,-1,30,30,30,30,30,30,-3,30,-1,30,30,30,30,30,30,30,30,-1,30,30,30,-2,30],
-    sm12$1=[0,31,-1,31,-1,31,31,31,31,31,31,-3,31,-1,31,31,31,31,31,31,31,31,-1,31,31,31,-2,31],
-    sm13$1=[0,-2,1,-1,0,3,4,5,6,0,-3,8],
-    sm14$1=[0,-4,0,-4,0,-14,32],
-    sm15$1=[0,-4,0,-4,0,-15,33],
-    sm16$1=[0,-4,0,-4,0,-16,34],
-    sm17=[0,35,-1,35,-1,35,35,35,35,35,35,-3,35,-1,35,35,35,35,35,35,35,35,-1,35,35,35,-2,35],
-    sm18=[0,36,-1,36,-1,36,36,36,36,36,36,-3,36,-1,36,36,36,36,36,36,36,36,-1,36,36,36,-2,36],
-    sm19=[0,37,-3,0,-4,0,-14,37],
-    sm20=[0,38,-3,0,-4,0,-5,38,38,38,38,-5,38],
-    sm21=[0,39,-3,0,-4,0,-5,39,39,39,39,39,39,39,39,-1,39],
-    sm22=[0,40,-3,0,-4,0,-5,40,40,40,40,40,40,40,40,-1,40],
+        sm0$1=[0,1,-1,2,-1,3,4,5,6,7,0,-3,8,-1,9,-13,10],
+    sm1$1=[0,11,-3,0,-4,0],
+    sm2$1=[0,12,-3,0,-4,0],
+    sm3$1=[0,13,-3,0,-4,0,-5,14],
+    sm4$1=[0,15,-1,2,-1,3,4,5,6,7,0,-3,8,-10,16,-1,17,18,-1,10],
+    sm5$1=[0,19,-1,2,-1,3,4,5,6,7,0,-3,8,-1,19,-13,10],
+    sm6$1=[0,20,-1,20,-1,20,20,20,20,20,0,-3,20,-1,20,20,20,20,20,20,20,20,20,-1,20,20,20,-1,20],
+    sm7$1=[0,21,-1,21,-1,21,21,21,21,21,0,-3,21,-1,21,21,21,21,21,21,21,21,21,-1,21,21,21,-1,21],
+    sm8$1=[0,22,-1,22,-1,22,22,22,22,22,0,-3,22,-1,22,22,22,22,22,22,22,22,22,-1,22,22,22,-1,22],
+    sm9$1=[0,-2,2,-1,0,4,5,6,7,0,-3,8],
+    sm10$1=[0,23,-1,2,-1,3,4,5,6,7,0,-3,8,-10,16,-1,17,18,-1,10],
+    sm11$1=[0,24,-3,0,-4,0],
+    sm12$1=[0,25,-3,0,-4,0,-15,25],
+    sm13$1=[0,26,-3,0,-4,0,-6,27,28,29,30,-5,26],
+    sm14$1=[0,31,-3,0,-4,0,-6,31,31,31,31,32,33,34,35,-1,31],
+    sm15$1=[0,-2,2,-1,3,4,5,6,7,0,-3,8,-10,16,-1,17,18,-1,10],
+    sm16$1=[0,36,-3,0,-4,0,-6,36,36,36,36,36,36,36,36,-1,36],
+    sm17$1=[0,-2,2,-1,3,4,5,6,7,0,-3,8,-15,10],
+    sm18$1=[0,37,-3,0,-4,0,-6,37,37,37,37,37,37,37,37,-1,37],
+    sm19$1=[0,38,-1,2,-1,3,4,5,6,7,0,-3,8,-2,38,38,38,38,38,38,38,38,-1,38,38,38,-1,10],
+    sm20$1=[0,39,-1,39,-1,39,39,39,39,39,0,-3,39,-1,39,39,39,39,39,39,39,39,39,-1,39,39,39,-1,39],
+    sm21=[0,40,-1,40,-1,40,40,40,40,40,0,-3,40,-1,40,40,40,40,40,40,40,40,40,-1,40,40,40,-1,40],
+    sm22=[0,41,-3,0,-4,0],
+    sm23=[0,-4,0,-4,0,-15,42],
+    sm24=[0,-4,0,-4,0,-16,43],
+    sm25=[0,-4,0,-4,0,-17,44],
+    sm26=[0,45,-3,0,-4,0,-15,45],
+    sm27=[0,46,-3,0,-4,0,-6,46,46,46,46,-5,46],
+    sm28=[0,47,-3,0,-4,0,-6,47,47,47,47,47,47,47,47,-1,47],
+    sm29=[0,48,-3,0,-4,0,-6,48,48,48,48,48,48,48,48,-1,48],
 
         // Symbol Lookup map
-        lu$1 = new Map([[1,1],[2,2],[4,3],[8,4],[16,5],[32,6],[64,7],[128,8],[256,9],[512,10],[3,11],[264,11],[200,13],[201,14],["&&",15],["AND",16],["And",17],["and",18],["||",19],["OR",20],["Or",21],["or",22],["(",23],[")",24],["\"",25],["'",26],[null,5],["\\",29]]),
+        lu$1 = new Map([[1,1],[2,2],[4,3],[8,4],[16,5],[32,6],[64,7],[128,8],[256,9],[512,10],[3,11],[264,11],[200,13],[201,14],[":",15],["&&",16],["AND",17],["And",18],["and",19],["||",20],["OR",21],["Or",22],["or",23],["(",24],[")",25],["\"",26],["'",27],[null,5],["\\",29]]),
 
         //Reverse Symbol Lookup map
-        rlu$1 = new Map([[1,1],[2,2],[3,4],[4,8],[5,16],[6,32],[7,64],[8,128],[9,256],[10,512],[11,3],[11,264],[13,200],[14,201],[15,"&&"],[16,"AND"],[17,"And"],[18,"and"],[19,"||"],[20,"OR"],[21,"Or"],[22,"or"],[23,"("],[24,")"],[25,"\""],[26,"'"],[5,null],[29,"\\"]]),
+        rlu$1 = new Map([[1,1],[2,2],[3,4],[4,8],[5,16],[6,32],[7,64],[8,128],[9,256],[10,512],[11,3],[11,264],[13,200],[14,201],[15,":"],[16,"&&"],[17,"AND"],[18,"And"],[19,"and"],[20,"||"],[21,"OR"],[22,"Or"],[23,"or"],[24,"("],[25,")"],[26,"\""],[27,"'"],[5,null],[29,"\\"]]),
 
         // States 
         state$1 = [sm0$1,
@@ -1889,49 +1925,54 @@ var graze_objects = (function (exports, fs, path) {
     sm2$1,
     sm3$1,
     sm4$1,
-    sm0$1,
     sm5$1,
     sm6$1,
-    sm6$1,
     sm7$1,
+    sm7$1,
+    sm7$1,
+    sm8$1,
+    sm8$1,
+    sm8$1,
+    sm8$1,
+    sm8$1,
     sm8$1,
     sm9$1,
     sm10$1,
     sm11$1,
-    sm11$1,
-    sm11$1,
-    sm11$1,
-    sm12$1,
-    sm12$1,
-    sm12$1,
-    sm12$1,
-    sm12$1,
     sm12$1,
     sm13$1,
-    sm0$1,
-    sm0$1,
-    sm0$1,
-    sm0$1,
-    sm0$1,
-    sm0$1,
-    sm0$1,
-    sm0$1,
     sm14$1,
     sm15$1,
     sm16$1,
-    sm17,
-    sm18,
-    sm19,
-    sm19,
-    sm19,
-    sm19,
-    sm20,
-    sm20,
-    sm20,
-    sm20,
+    sm17$1,
+    sm17$1,
+    sm18$1,
+    sm19$1,
+    sm20$1,
     sm21,
     sm22,
-    sm22],
+    sm15$1,
+    sm15$1,
+    sm15$1,
+    sm15$1,
+    sm15$1,
+    sm15$1,
+    sm15$1,
+    sm15$1,
+    sm23,
+    sm24,
+    sm25,
+    sm26,
+    sm26,
+    sm26,
+    sm26,
+    sm27,
+    sm27,
+    sm27,
+    sm27,
+    sm28,
+    sm29,
+    sm29],
 
     /************ Functions *************/
 
@@ -1940,6 +1981,11 @@ var graze_objects = (function (exports, fs, path) {
         //Error Functions
         e$2 = (tk,r,o,l,p)=>{if(l.END)l.throw("Unexpected end of input");else if(l.ty & (264)) l.throw(`Unexpected space character within input "${p.slice(l)}" `) ; else l.throw(`Unexpected token ${l.tx}" `);}, 
         eh$1 = [e$2,
+    e$2,
+    e$2,
+    e$2,
+    e$2,
+    e$2,
     e$2,
     e$2,
     e$2,
@@ -1997,93 +2043,111 @@ var graze_objects = (function (exports, fs, path) {
     rednv$1 = (ret, Fn, plen, ln, t, e, o, l, s) => {        ln = max$1(o.length - plen, 0);        const slice = o.slice(-plen);        o.length = ln + 1;        o[ln] = new Fn(slice, e, l, s, o, plen);        return ret;    },
     redn$1 = (ret, plen, t, e, o) => {        if (plen > 0) {            let ln = max$1(o.length - plen, 0);            o[ln] = o[o.length - 1];            o.length = ln + 1;        }        return ret;    },
     shftf$1 = (ret, fn, t, e, o, l, s) => (fn(o, e, l, s), ret),
-    C20_and_expression=function (sym){this.type = "AND";this.left = sym[0];this.right = sym[2];},
-    C30_or_expression=function (sym){this.type = "OR";this.left = sym[0];this.right = sym[2];},
-    R40_wrapped_expression=sym=>sym[1],
-    C41_wrapped_expression=function (sym){this.type = "MATCH";this.value = sym[0];},
-    R70_undefined1801_group_list=sym=>sym[0] + sym[1],
-    R71_undefined1801_group_list=sym=>sym[0] + "",
+    C20_query_body=function (sym){this.container = sym[0];this.query = null;},
+    C21_query_body=function (sym){this.container = sym[0];this.query = sym[2];},
+    C22_query_body=function (sym){this.query = sym[1];},
+    C23_query_body=function (){this.query = null;},
+    R30_string_data_val_list=sym=>sym[0] + sym[1],
+    R31_string_data_val_list=sym=>sym[0] + "",
+    C40_container_object=function (sym){this.data = sym[0];},
+    C60_and_expression=function (sym){this.type = "AND";this.left = sym[0];this.right = sym[2];},
+    C70_or_expression=function (sym){this.type = "OR";this.left = sym[0];this.right = sym[2];},
+    R80_wrapped_expression=sym=>sym[1],
+    C81_wrapped_expression=function (sym){this.type = "MATCH";this.value = sym[0] || "";this.value = this.value.trim();},
 
         //Sparse Map Lookup
         lsm$1 = (index, map) => {    if (map[0] == 0xFFFFFFFF) return map[index + 1];    for (let i = 1, ind = 0, l = map.length, n = 0; i < l && ind <= index; i++) {        if (ind !== index) {            if ((n = map[i]) > -1) ind++;            else ind += -n;        } else return map[i];    }    return -1;},
 
         //State Action Functions
-        state_funct$1 = [e=>70,
+        state_funct$1 = [(...v)=>(redn$1(1027,0,...v)),
+    e=>42,
+    e=>38,
     e=>62,
-    e=>90,
-    e=>86,
-    e=>82,
-    e=>78,
+    e=>58,
+    e=>54,
+    e=>50,
+    e=>46,
+    e=>18,
     e=>66,
-    e=>74,
-    e=>22,
-    e=>30,
-    e=>34,
-    e=>94,
     (...v)=>redn$1(5,1,...v),
     (...v)=>redn$1(1031,1,...v),
-    (...v)=>redn$1(2055,1,...v),
+    (...v)=>rednv$1(2055,C20_query_body,1,0,...v),
+    e=>70,
+    (...v)=>rednv$1(2055,C23_query_body,1,0,...v),
+    e=>90,
     e=>98,
     e=>102,
-    e=>106,
-    e=>110,
-    (...v)=>redn$1(3079,1,...v),
-    e=>114,
-    e=>118,
-    e=>122,
-    e=>126,
-    (...v)=>rednv$1(4103,C41_wrapped_expression,1,0,...v),
+    (...v)=>rednv$1(4103,C40_container_object,1,0,...v),
+    (...v)=>redv$1(10247,R31_string_data_val_list,1,0,...v),
+    (...v)=>redn$1(12295,1,...v),
+    (...v)=>redn$1(14343,1,...v),
+    (...v)=>rednv$1(2059,C20_query_body,2,0,...v),
+    (...v)=>rednv$1(2059,C22_query_body,2,0,...v),
     (...v)=>redn$1(5127,1,...v),
-    (...v)=>redn$1(8199,1,...v),
-    (...v)=>redv$1(7175,R71_undefined1801_group_list,1,0,...v),
     (...v)=>redn$1(6151,1,...v),
+    e=>126,
+    e=>130,
+    e=>134,
+    e=>138,
+    (...v)=>redn$1(7175,1,...v),
+    e=>142,
+    e=>146,
+    e=>150,
+    e=>154,
+    (...v)=>rednv$1(8199,C81_wrapped_expression,1,0,...v),
     (...v)=>redn$1(9223,1,...v),
     (...v)=>redn$1(11271,1,...v),
-    e=>182,
-    e=>186,
-    e=>190,
-    (...v)=>redv$1(7179,R70_undefined1801_group_list,2,0,...v),
-    (...v)=>redv$1(10251,R40_wrapped_expression,2,0,...v),
-    (...v)=>rednv$1(2063,C20_and_expression,3,0,...v),
-    (...v)=>rednv$1(3087,C30_or_expression,3,0,...v),
-    (...v)=>redv$1(4111,R40_wrapped_expression,3,0,...v),
-    (...v)=>redv$1(5135,R40_wrapped_expression,3,0,...v)],
+    (...v)=>redv$1(10251,R30_string_data_val_list,2,0,...v),
+    (...v)=>redv$1(13323,R80_wrapped_expression,2,0,...v),
+    (...v)=>rednv$1(2063,C21_query_body,3,0,...v),
+    e=>202,
+    e=>206,
+    e=>210,
+    (...v)=>rednv$1(6159,C60_and_expression,3,0,...v),
+    (...v)=>rednv$1(7183,C70_or_expression,3,0,...v),
+    (...v)=>redv$1(8207,R80_wrapped_expression,3,0,...v),
+    (...v)=>redv$1(9231,R80_wrapped_expression,3,0,...v)],
 
         //Goto Lookup Functions
         goto$1 = [v=>lsm$1(v,gt0$1),
     nf$1,
     nf$1,
     nf$1,
-    nf$1,
     v=>lsm$1(v,gt1$1),
-    nf$1,
     v=>lsm$1(v,gt2$1),
-    v=>lsm$1(v,gt3$1),
     nf$1,
+    nf$1,
+    nf$1,
+    nf$1,
+    nf$1,
+    nf$1,
+    nf$1,
+    nf$1,
+    nf$1,
+    nf$1,
+    v=>lsm$1(v,gt3$1),
     v=>lsm$1(v,gt4$1),
     nf$1,
     nf$1,
     nf$1,
     nf$1,
-    nf$1,
-    nf$1,
-    nf$1,
-    nf$1,
-    nf$1,
-    nf$1,
-    nf$1,
-    nf$1,
     v=>lsm$1(v,gt5$1),
+    nf$1,
     v=>lsm$1(v,gt6),
     v=>lsm$1(v,gt7),
+    nf$1,
+    v=>lsm$1(v,gt2$1),
+    nf$1,
+    nf$1,
+    nf$1,
     v=>lsm$1(v,gt8),
     v=>lsm$1(v,gt9),
     v=>lsm$1(v,gt10),
     v=>lsm$1(v,gt11),
     v=>lsm$1(v,gt12),
     v=>lsm$1(v,gt13),
-    nf$1,
-    nf$1,
+    v=>lsm$1(v,gt14),
+    v=>lsm$1(v,gt15),
     nf$1,
     nf$1,
     nf$1,
@@ -2281,281 +2345,281 @@ var graze_objects = (function (exports, fs, path) {
 
     const fsp = fs.promises;
     var log = "";
-    const writeError = e => log+=e;
+    const writeError = e => log += e;
 
-    const warn = e=>{};
+    const warn = e => {};
     //const warn = e=>console.trace(e);
 
     /* Returns a Boolean value indicating whether the note's data matches the query */
     function matchQuery(query_object, note) {
-    	switch (query_object.type) {
-    		case "AND":
-    			return matchQuery(query_object.left, note) && matchQuery(query_object.right, note)
-    		case "OR":
-    			return matchQuery(query_object.left, note) || matchQuery(query_object.right, note)
-    		case "MATCH":
-    			return note.query_data.includes(query_object.value);
-    	}
+        switch (query_object.type) {
+            case "AND":
+                return matchQuery(query_object.left, note) && matchQuery(query_object.right, note)
+            case "OR":
+                return matchQuery(query_object.left, note) || matchQuery(query_object.right, note)
+            case "MATCH":
+                return note.query_data.includes(query_object.value);
+        }
     }
 
     function Server(store, file_path = "") {
-    	let watcher = null,
-    		READ_BLOCK = false;
-    	/* Writes data to the stored file */
-    	async function write() {
-    		if (file_path) {
+        let watcher = null,
+            READ_BLOCK = false;
+        /* Writes data to the stored file */
+        async function write() {
+            if (file_path) {
 
-    			const out = { data: [] };
+                const out = { data: [] };
 
-    			for (const note of store.values())
-    				out.data.push(note);
-    			//console.log("ASASDAD - write", file_path, JSON.stringify(out));
+                for (const note of store.values())
+                    out.data.push(note);
+                //console.log("ASASDAD - write", file_path, JSON.stringify(out));
 
-    			READ_BLOCK = true;
-    			try {
-    				await fsp.writeFile(file_path, JSON.stringify(out), "utf8");
-    			} catch (e) {
-    				writeError(e);
-    			}
-    			READ_BLOCK = false;
-    		}
+                READ_BLOCK = true;
+                try {
+                    await fsp.writeFile(file_path, JSON.stringify(out), "utf8");
+                } catch (e) {
+                    writeError(e);
+                }
+                READ_BLOCK = false;
+            }
 
-    		return false;
-    	}
+            return false;
+        }
 
-    	/* Read data from file into store */
-    	async function read(fp = file_path) {
+        /* Read data from file into store */
+        async function read(fp = file_path) {
 
-    		if (
-    			/*Prevent reading file that has just been updated from this server.*/
-    			READ_BLOCK ||
-    			!fp
-    		)
-    			return;
+            if (
+                /*Prevent reading file that has just been updated from this server.*/
+                READ_BLOCK ||
+                !fp
+            )
+                return;
 
-    		let data = "",
-    			STATUS = false;
+            let data = "",
+                STATUS = false;
 
-    		await fsp.readFile(fp, "utf8")
-    			.then((d) => (STATUS = true, data = d))
-    			.catch(writeError);
+            await fsp.readFile(fp, "utf8")
+                .then((d) => (STATUS = true, data = d))
+                .catch(writeError);
 
-    		store = new Map();
-    		
-    		try {
-    			if (STATUS) {
+            store = new Map();
 
-
-    				if (data) {
-    					const json = JSON.parse(data);
-
-    					if (json.data) {
-    						for (const note of json.data)
-    							if (note.uid)
-    								store.set(note.uid, note);
-    					}
-    				}
-
-    			}
-
-    			if (data)
-    				STATUS = updateDB(data);
-
-    		} catch (e) {
-    			writeError(e);
-    			STATUS = false;
-    		}
-
-    		return STATUS;
-    	}
-
-    	/* Updates store with data from json_String */
-    	function updateDB(json_data_string) {
-    		try {
-    			//  console.log("ASDAD", json_data_string)
-
-    			const json = JSON.parse(json_data_string);
-
-    			if (json.data)
-    				for (const note of json.data)
-    					if (note.uid)
-    						store.set(note.uid, note);
-    			return true;
-    		} catch (e) {
-    			writeError(e);
-    		}
-    		return false
-    	}
-
-    	return new(class Server {
-    		get type() {
-    			return "JSONDB"
-    		}
-
-    		/* 
-    			Connects the server to the given json file. If file does not exist than an attempt is made to create it.
-    			This will return false if the connection cannot be made
-    			in cases were the file cannot be accessed, or the data
-    			within the file cannot be parsed as JSON data. 
-    			return true otherwise
-    		*/
-    		async connect(json_file_path) {
-
-    			let result = false;
-
-    			const temp = path.resolve(process.env.PWD, json_file_path);
-
-    			if (await read(temp)) {
-    				file_path = temp;
-    				result = true;
-    			} else {
-    				try {
-    					await fsp.writeFile(temp, "");
-    					file_path = temp;
-    					result = true;
-    				} catch (e) { writeError(e); }
-    			}
-    			if (result) {
-    				if (watcher)
-    					watcher.close();
-
-    				watcher = fs.watch(file_path, { encoding: "utf8" }, (event, data) => {
-    					if (event == "change")
-    						read();
-    				});
-    			}
-    			return result;
-    		}
-
-    		/* Stores new note or updates existing note with new values */
-    		async storeNote(note) {
-
-    			var stored_note = null;
-
-    			const
-    				uid = note.uid.string,
-    				modifed_time = (Date.now() / 1000) | 0;
-
-    			if (store.has(uid))
-    				stored_note = store.get(uid);
-    			else
-    				stored_note = {
-    					created: note.created
-    				};
-    			stored_note.modifed = modifed_time;
-    			stored_note.uid = uid;
-    			stored_note.body = note.body;
-    			stored_note.id = note.id;
-    			stored_note.tags = note.tags;
-    			stored_note.query_data = `${note.id.split(".").pop()} ${note.tags.join(";")} ${note.body}}`;
+            try {
+                if (STATUS) {
 
 
-    			store.set(uid, stored_note);
+                    if (data) {
+                        const json = JSON.parse(data);
 
-    			await write();
+                        if (json.data) {
+                            for (const note of json.data)
+                                if (note.uid)
+                                    store.set(note.uid, note);
+                        }
+                    }
 
-    			return true;
-    		}
+                }
 
-    		removeNote(uid) {}
+                if (data)
+                    STATUS = updateDB(data);
 
-    		retrieveNote() {}
+            } catch (e) {
+                writeError(e);
+                STATUS = false;
+            }
 
-    		async query(id, query) {
+            return STATUS;
+        }
 
-    			await read(); //Hack - mack sure store is up to date;
+        /* Updates store with data from json_String */
+        function updateDB(json_data_string) {
+            try {
+                //  console.log("ASDAD", json_data_string)
 
-    			var container = "",
-    				query_object = null;
+                const json = JSON.parse(json_data_string);
 
-    			try {
-    				if (typeof query == "string" && query.length > 0)
-    					query_object = parser$1(whind(query));
-    			} catch (e) {
-    				console.error(e);
-    			}
+                if (json.data)
+                    for (const note of json.data)
+                        if (note.uid)
+                            store.set(note.uid, note);
+                return true;
+            } catch (e) {
+                writeError(e);
+            }
+            return false
+        }
 
-    			const out = [];
+        return new(class Server {
+            get type() {
+                return "JSONDB"
+            }
 
-    			if (id instanceof UID)
-    				return [store.get(id.string)];
+            /* 
+            	Connects the server to the given json file. If file does not exist than an attempt is made to create it.
+            	This will return false if the connection cannot be made
+            	in cases were the file cannot be accessed, or the data
+            	within the file cannot be parsed as JSON data. 
+            	return true otherwise
+            */
+            async connect(json_file_path) {
 
-    			if (Array.isArray(id)) {
+                let result = false;
 
-    				for (let item of id)
-    					if (item = this.query(item))
-    						out.push(...item);
+                const temp = path.resolve(process.env.PWD, json_file_path);
 
-    				return out;
-    			}
+                if (await read(temp)) {
+                    file_path = temp;
+                    result = true;
+                } else {
+                    try {
+                        await fsp.writeFile(temp, "");
+                        file_path = temp;
+                        result = true;
+                    } catch (e) { writeError(e); }
+                }
+                if (result) {
+                    if (watcher)
+                        watcher.close();
 
-    			//Force string value for id;
-    			id = id + "";
+                    watcher = fs.watch(file_path, { encoding: "utf8" }, (event, data) => {
+                        if (event == "change")
+                            read();
+                    });
+                }
+                return result;
+            }
 
-    			//Generate query engine and run against the data set.
-    			const temps = [];
-    			//Brute force search of ids
-    			if (id) {
-    				const parts = id.split(".");
+            /* Stores new note or updates existing note with new values */
+            async storeNote(note) {
 
-    				for (const note of store.values()) {
+                var stored_note = null;
 
-    					const note_parts = note.id.split(".");
+                const
+                    uid = note.uid.string,
+                    modifed_time = (Date.now() / 1000) | 0;
 
-    					for (let i = 0; i < parts.length; i++) {
-    						if (
-    							i == parts.length - 1
-    						) {
-    							if (
-    								parts[i] == "*" || (
-    									i == note_parts.length - 1 &&
-    									(!parts[i] || parts[i] == note_parts[i])
-    								)
-    							) {
-    								temps.push(note);
-    								break;
-    							}
-    						} else if (note_parts[i] != parts[i]) {
-    							break
-    						}
-    					}
-    				}
-    			}
+                if (store.has(uid))
+                    stored_note = store.get(uid);
+                else
+                    stored_note = {
+                        created: note.created
+                    };
+                stored_note.modifed = modifed_time;
+                stored_note.uid = uid;
+                stored_note.body = note.body;
+                stored_note.id = note.id;
+                stored_note.tags = note.tags;
+                stored_note.query_data = `${note.id.split(".").pop()} ${note.tags.join(";")} ${note.body}}`;
 
-    			return query_object ?
-    				temps.filter(note => matchQuery(query_object, note)) :
-    				temps;
-    		}
 
-    		/* 
-    			Deletes all data in store. 
-    			Returns a function that returns a function that actually does the clearing.
-    			Example server.implode()()();
-    			This is deliberate to force dev to use this intentionally.
-    		 */
-    		implode() {
-    			file_path && warn("Warning: Calling the return value can lead to bad things!");
-    			return () => (file_path && warn(`Calling this return value WILL delete ${file_path}`),
-    				async () => {
-    					store = new Map();
+                store.set(uid, stored_note);
 
-    					try {
-    						if (file_path)
-    							await fsp.unlink(file_path).catch(e=>{});
-    					} catch (e) {
+                await write();
 
-    					}
+                return true;
+            }
 
-    					file_path = "";
-    				})
-    		}
-    	})
+            removeNote(uid) {}
+
+            retrieveNote() {}
+
+            async query(query) {
+
+                await read(); //Hack - mack sure store is up to date;
+
+                try {
+                    if (typeof query == "string" && query.length > 0)
+                        query = parser$1(whind(query));
+                } catch (e) {
+                    return [];
+                }
+
+                var container = "",
+                    id = "",
+                    query_object = query.query;
+
+                if (query.container) 
+                    id = query.container.data.trim();
+
+                const out = [];
+
+                if (UID.stringIsUID(id))
+                    return [store.get(id)];
+
+                if (Array.isArray(id)) {
+                    for (let item of id)
+                        if (item = this.query(item))
+                            out.push(...item);
+
+                    return out;
+                }
+
+                //Generate query engine and run against the data set.
+                const temps = [];
+                //Brute force search of ids
+                if (id) {
+                    const parts = id.split(".");
+
+                    for (const note of store.values()) {
+
+                        const note_parts = note.id.split(".");
+
+                        for (let i = 0; i < parts.length; i++) {
+                            if (
+                                i == parts.length - 1
+                            ) {
+                                if (
+                                    parts[i] == "*" || (
+                                        i == note_parts.length - 1 &&
+                                        (!parts[i] || parts[i] == note_parts[i])
+                                    )
+                                ) {
+                                    temps.push(note);
+                                    break;
+                                }
+                            } else if (note_parts[i] != parts[i]) {
+                                break
+                            }
+                        }
+                    }
+                }
+
+                return query_object ?
+                    temps.filter(note => matchQuery(query_object, note)) :
+                    temps;
+            }
+
+            /* 
+            	Deletes all data in store. 
+            	Returns a function that returns a function that actually does the clearing.
+            	Example server.implode()()();
+            	This is deliberate to force dev to use this intentionally.
+             */
+            implode() {
+                file_path && warn("Warning: Calling the return value can lead to bad things!");
+                return () => (file_path && warn(`Calling this return value WILL delete ${file_path}`),
+                    async () => {
+                        store = new Map();
+
+                        try {
+                            if (file_path)
+                                await fsp.unlink(file_path).catch(e => {});
+                        } catch (e) {
+
+                        }
+
+                        file_path = "";
+                    })
+            }
+        })
     }
 
     function graze_json_server_constructor() {
-    	if (new.target)
-    		return Server(new Map());
-    	return Server(new Map());
+        if (new.target)
+            return Server(new Map());
+        return Server(new Map());
     }
 
     const server = {

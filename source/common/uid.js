@@ -9,8 +9,8 @@ export default class UID extends ArrayBuffer {
         if (string_val && typeof string_val == "string") {
             string_val
                 .split("-")
-                .slice(0,4)
-                .map((v,i)=> dv.setUint32(i<<2, parseInt(v, 16)))
+                .slice(0, 4)
+                .map((v, i) => dv.setUint32(i << 2, parseInt(v, 16)))
 
         } else {
             dv.setUint32(0, Math.random() * 0xFFFFFFFF)
@@ -24,11 +24,10 @@ export default class UID extends ArrayBuffer {
     get string() {
         const dv = new DataView(this);
         return (
-            "" +
-            dv.getUint32(0).toString(16) +
-            "-" + dv.getUint32(4).toString(16) +
-            "-" + dv.getUint32(8).toString(16) +
-            "-" + dv.getUint32(12).toString(16)
+            "" +  ("00000000"+dv.getUint32(0).toString(16)).slice(-8) +
+            "-" + ("00000000"+dv.getUint32(4).toString(16)).slice(-8) +
+            "-" + ("00000000"+dv.getUint32(8).toString(16)).slice(-8) +
+            "-" + ("00000000"+dv.getUint32(12).toString(16)).slice(-8)
         )
     }
 
@@ -57,5 +56,10 @@ export default class UID extends ArrayBuffer {
         Object.freeze(uid);
 
         return uid;
+    }
+
+    static stringIsUID(string) {
+        const match = string.match(/[a-f\d]{8}\-[a-f\d]{8}\-[a-f\d]{8}\-[a-f\d]{8}/)
+        return match && match[0] == string;
     }
 }

@@ -1,16 +1,25 @@
 # Graze Note Query Language
 
-@SYMBOL && ||
+@SYMBOL && || :
 
 @IGNORE θws θnl 
+
 
 ↦ andnode 	{ this.type ="AND"; 	this.left=$$sym1; 	this.right=$$sym3 }
 ↦ ornode 	{ this.type ="OR"; 		this.left=$$sym1; 	this.right=$$sym3 }
 ↦ matchnode { this.type ="MATCH"; 	this.value=$$sym1 || ""; this.value = this.value.trim()}
 
-<> GNQL → statement
+<> GNQL → start
 
-<> statement → and_expression
+<> start → query_body
+	│ ɛ	
+
+<>query_body → container_object 		↦c { this.container = $sym1; this.query=null }
+	│ container_object? \: statement? 	↦c { this.container = $sym1; this.query=$$sym3 }
+
+<> container_object →  string_data_val(+") 		↦c {this.data = $sym1}
+
+<> statement → and_expression 			
 
 <> and_expression → or_expression
 	│ or_expression && and_expression 		↦c=>andnode
@@ -31,12 +40,11 @@
 	│ \' string_data \' 					↦r {$$sym2}
 	│ string_data
 
-<> string_data → ( string_data_val )(+") 	
+<> string_data → string_data_val(+") 	
 
 <> string_data_val → string_symbols 
 	│ escaped_value
 	│ θws 
-	│ θnl 
 
 <> escaped_value → \\ string_symbols 		↦r {$$sym2}
 

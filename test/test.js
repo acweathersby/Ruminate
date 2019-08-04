@@ -111,7 +111,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             graze.store(noteB);
 
-            const noteAd = (await graze.retrieve(noteA.uid))[0];
+            const noteAd = (await graze.retrieve(noteA.uid.string))[0];
             const noteBd = (await graze.retrieve(noteB.id))[0];
 
             noteA.body.should.equal(noteAd.body);
@@ -162,7 +162,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             noteC.store();
 
-            const notes = await graze.retrieve("temp.*", "Name B && Message B");
+            const notes = await graze.retrieve("temp.* : Name B && Message B");
 
             notes.length.should.equal(1);
 

@@ -136,3 +136,34 @@ Note
 	 	store/save 	: async - saves the note's data to the backing server. returns true if the save was successfull, or returns false. 
 	 	render 		: async - render the note's message data into string output, transforming reducing any note references. 
  					Accepts a transformer function argument that's used to customize the transformation process. 
+
+Things to keep in mind:
+- Auto updating linked notes.
+- Pinning rendered note data.
+- Refing notes to ensure deletion does not create dead links.
+- Query langauge support sorting. 
+- Determining Default Store 
+	- Couch DB
+	- Mongo DB
+	- Something else?
+- Deduplication
+- Hard Refs vs Soft refs. 
+- Perfomance measuring. What and where to start measuring. 
+	- failure modes
+		- too many notes to handle queries?
+		- max note size?
+- Clipboard note system. 
+- Plugin for note insertion, how, what apps
+ 	- Sublime
+ 	- Firefox
+ 	- Chrome
+ 	- VSCode
+ 	- EDGE Chromium
+- Better UI for notes
+	- Auto-complete query
+	- Seamless MD based 
+	- Cross Note Editing
+	- 
+- User Land Caching for speed ups.
+- Eventing to handle document updates.
+- Export / Import Systems

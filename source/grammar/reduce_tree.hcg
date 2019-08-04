@@ -1,8 +1,8 @@
 # Graze Note Query Language
 
-@SYMBOL (( ))
-
 @IGNORE θws θnl 
+
+@SYMBOL (( ))
 
 ↦ reducenode 	{ this.type ="REDUCE"; 	this.value=$$sym2; }
 
@@ -10,10 +10,15 @@
 
 <> tree → item(*) 								
 
-<> item → string_data_val(+") 					
-	│ (( uid )) 							↦c=>reducenode
+<> item → string_data(+") 					
+	│ data_insert_point 						
 
-<> uid → string_symbols(+")
+<> data_insert_point → \(( data_string \)) 		↦c=>reducenode
+	│ \(( data_string 							↦r { $sym1 + $sym2 }
+
+<> data_string → ( string_data_val(*") )
+
+<> string_data → string_data_val
 
 <> string_data_val → string_symbols 
 	│ escaped_value
@@ -22,4 +27,4 @@
 
 <> escaped_value → \\ string_symbols 		↦r {$$sym2}
 
-<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob
+<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob 
