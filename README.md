@@ -153,7 +153,8 @@ Things to keep in mind:
 		- too many notes to handle queries?
 		- max note size?
 - Clipboard note system. 
-- Plugin for note insertion, how, what apps
+	- stuff goes in, gets rendered, comes back out.
+- Plugin for note insertion, how, what apps?
  	- Sublime
  	- Firefox
  	- Chrome
@@ -161,9 +162,11 @@ Things to keep in mind:
  	- EDGE Chromium
 - Better UI for notes
 	- Auto-complete query
-	- Seamless MD based 
+	- Seamless MD based rendering
 	- Cross Note Editing
-	- 
 - User Land Caching for speed ups.
 - Eventing to handle document updates.
 - Export / Import Systems
+- Web page. Created with Graze, of course
+- Different rendering systesm. 
+- CRDTs ;)
