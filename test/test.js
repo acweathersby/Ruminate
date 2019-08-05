@@ -151,26 +151,26 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
         it("store and retrieve - collection", async function() {
 
-            const noteA = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", "Message A");
+            const noteA = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
 
             await noteA.save();
 
-            const noteB = graze.createNote("temp.Temp Name B", "tagA, tagB, tagC", "Message B");
+            const noteB = graze.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
             await graze.store(noteB);
 
-            const noteC = graze.createNote("temp.temp.Temp Name B", "tagA, tagB, tagC", "Message B");
+            const noteC = graze.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
             await noteC.save();
 
-            const notes = await graze.retrieve("temp.");
+            const notes = await graze.retrieve("temp/");
 
             notes.length.should.equal(2);
 
             notes.sort(graze.sort_indexes.create_time)[0].body.should.equal(noteA.body);
             notes.sort(graze.sort_indexes.create_time)[1].body.should.equal(noteB.body);
 
-            const notes2 = await graze.retrieve("temp.temp.");
+            const notes2 = await graze.retrieve("temp/temp/");
 
             notes2.length.should.equal(1);
 
@@ -179,19 +179,19 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
         it("store and retrieve - search", async function() {
 
-            const noteA = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", "Message A");
+            const noteA = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
 
             noteA.save();
 
-            const noteB = graze.createNote("temp.Temp Name B", "tagA, tagB, tagC", "Message B");
+            const noteB = graze.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
             graze.retrieve(noteB);
 
-            const noteC = graze.createNote("temp.temp.Temp Name B", "tagA, tagB, tagC", "Message B");
+            const noteC = graze.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
             noteC.store();
 
-            const notes = await graze.retrieve("temp.*.  ? Name B && Message B");
+            const notes = await graze.retrieve("temp/*  ? Name B && Message B");
 
             notes.length.should.equal(1);
 
@@ -200,15 +200,15 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
         it("Renders note referenced inside another note", async function() {
 
-            const noteG = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", "inception");
+            const noteG = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", "inception");
 
             await noteG.save();
 
-            const noteA = graze.createNote("temp.Temp Name A", "tagA, tagB, tagC", `inside ((${noteG.uid}))`);
+            const noteA = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", `inside ((${noteG.uid}))`);
 
             await noteA.save();
 
-            const noteB = graze.createNote("temp.Temp Name B", "tagA, tagB, tagC", `referenced note text: ((${noteA.uid}))`);
+            const noteB = graze.createNote("temp/Temp Name B", "tagA, tagB, tagC", `referenced note text: ((${noteA.uid}))`);
 
             //note does not need to be saved in order to take advantage of reference rendering.
 
@@ -232,11 +232,11 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             await graze.connect(serverA);
 
-            await (graze.createNote("temp.tempA.Temp Name A", "tagA, tagB, tagC", "Test 1").store());
-            await (graze.createNote("temp.tempB.Temp Name B", "tagA, tagB, tagC", "Test 2").store());
-            await (graze.createNote("temp.tempC.Temp Name C", "tagA, tagB, tagC", "Test 3").store());
-            await (graze.createNote("temp.tempD.Temp Name D", "tagA, tagB, tagC", "Test 4").store());
-            await (graze.createNote("temp.tempE.Temp Name E", "tagA, tagB, tagC", "Test 5").store());
+            await (graze.createNote("temp/tempA/Temp Name A", "tagA, tagB, tagC", "Test 1").store());
+            await (graze.createNote("temp/tempB/Temp Name B", "tagA, tagB, tagC", "Test 2").store());
+            await (graze.createNote("temp/tempC/Temp Name C", "tagA, tagB, tagC", "Test 3").store());
+            await (graze.createNote("temp/tempD/Temp Name D", "tagA, tagB, tagC", "Test 4").store());
+            await (graze.createNote("temp/tempE/Temp Name E", "tagA, tagB, tagC", "Test 5").store());
 
             graze.disconnect();
 
@@ -244,14 +244,14 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             graze.connect(serverB);
 
-            (await graze.retrieve("temp.*.")).length.should.equal(5);
+            (await graze.retrieve("temp/*")).length.should.equal(5);
 
             graze.disconnect();
 
             graze.connect(serverC);
 
-            (await graze.retrieve("temp.tempE.")).length.should.equal(1);
-            (await graze.retrieve("temp.*.")).length.should.equal(5);
+            (await graze.retrieve("temp/tempE/")).length.should.equal(1);
+            (await graze.retrieve("temp/*")).length.should.equal(5);
         })
 
         it("Server.implode dumps all data from store - **dependent on previous test**", async function() {
@@ -264,7 +264,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             graze.connect(serverA);
 
-            (await graze.retrieve("temp.*.")).length.should.equal(5);
+            (await graze.retrieve("temp/*")).length.should.equal(5);
 
             serverA.implode()()();
 
@@ -272,11 +272,11 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             await graze.connect(serverB);
 
-            (await graze.retrieve("temp.*.")).length.should.equal(0);
+            (await graze.retrieve("temp/*")).length.should.equal(0);
 
         })
 
-        it.skip("Advanced queries - Wild Card * ", async function() {
+        it("Advanced queries - Wild Card * ", async function() {
             this.slow(2000);
             this.timeout(5000);
 
@@ -284,25 +284,25 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             await fillTestData(graze, "locfr");
 
-            (await graze.retrieve("*")).length.should.equal(12429);
+           (await graze.retrieve("*")).length.should.equal(12429);
 
-            (await graze.retrieve("book 1.")).length.should.equal(1);
+           (await graze.retrieve("book 1/")).length.should.equal(1);
 
-            (await graze.retrieve("book 1.*.")).length.should.equal(1141);
+           (await graze.retrieve("book 1/*")).length.should.equal(1141);
 
-            (await graze.retrieve("*.chapter *.")).length.should.equal(11346);
+           (await graze.retrieve("*/chapter */")).length.should.equal(11346);
 
-            (await graze.retrieve("*.chapter *.: The dog")).length.should.equal(1);
+            (await graze.retrieve("*/chapter */ ? The dog")).length.should.equal(1);
             
-            (await graze.retrieve("*.chapter *.: squirrel")).length.should.equal(3);
+            (await graze.retrieve("*/chapter */ ? squirrel")).length.should.equal(3);
 
-            (await graze.retrieve("*.chapter *.: The dog or squirrel")).length.should.equal(4);
+            (await graze.retrieve("*/chapter */ ? The dog or squirrel")).length.should.equal(4);
 
-            (await graze.retrieve("*.chapter 1*.: The dog or squirrel")).length.should.equal(2);
+            (await graze.retrieve("*/chapter 1*/ ? The dog or squirrel")).length.should.equal(2);
 
-            (await graze.retrieve("*.chapter 2*.: The dog or squirrel")).length.should.equal(0);
+            (await graze.retrieve("*/chapter 2*/ ? The dog or squirrel")).length.should.equal(0);
 
-            (await graze.retrieve("*.films.")).length.should.equal(730);
+            (await graze.retrieve("*/films/")).length.should.equal(751);
         })
 
         it.skip("Avanced queries - Sorting", async function(){
@@ -311,7 +311,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             await fillTestData(graze, "locfr");
 
-            (await graze.retrieve("*.films.:Selected Ascending")).length.should.equal(730);
+            (await graze.retrieve("*/films/:Selected Ascending")).length.should.equal(730);
         })
 
         it("Auto update")

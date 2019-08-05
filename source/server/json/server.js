@@ -105,14 +105,14 @@ function Server(store, file_path = "") {
 
     const queryRunner = QueryEngine({
         getNotesFromContainers: function(container_query) {
-            
+
             if (!container_query || !container_query.containers && !container_query.id)
                 return null;
 
             return [...store.values()]
-                .filter(note => parseContainer(container_query.containers, note.id.split(".").slice(0, -1)))
+                .filter(note => parseContainer(container_query.containers, note.id.split("/").slice(0, -1)))
                 //.map(e => (console.log(e), e))
-                .filter(note => parseId(container_query.id, note.id.split(".").pop()));
+                .filter(note => parseId(container_query.id, note.id.split("/").pop()));
         }
     });
 

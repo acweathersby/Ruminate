@@ -26,7 +26,7 @@ async function war_and_peace() {
         }))
         .forEach((book, b_index) => {
             data.push({
-                id: `book ${b_index+1}.title`,
+                id: `book ${b_index+1}/title`,
                 meta: [b_index + 1, "book", "title"],
                 body: book.title
             })
@@ -34,7 +34,7 @@ async function war_and_peace() {
             book.chapters.forEach((chapter, c_index) => {
                 chapter.paragraphs.forEach((paragraph, p_index) => {
                     data.push({
-                        id: `book ${b_index+1}.chapter ${c_index+1}.paragraph ${p_index+1}`,
+                        id: `book ${b_index+1}/chapter ${c_index+1}/paragraph ${p_index+1}`,
                         meta: [p_index + 1, book.title, "chapter"],
                         body: paragraph
                     })
@@ -42,7 +42,7 @@ async function war_and_peace() {
 
                 chapter.footnotes.forEach((footnote, f_index) => {
                     data.push({
-                        id: `book ${b_index+1}.chapter ${c_index+1}.footnote ${f_index+1}`,
+                        id: `book ${b_index+1}/chapter ${c_index+1}/footnote ${f_index+1}`,
                         meta: [f_index, book.title, "footnote"],
                         body: footnote
                     })
@@ -63,7 +63,7 @@ async function loc_film_registry() {
         .map(e => e.trim().split("|").map(e => e.trim()))
         .map(array =>
             data.push({
-                id: `library of congress.film registry.essays.${array[0]}`,
+                id: `library of congress/film registry/essays/${array[0]}`,
                 meta: [`Size:${array[3]}`, `URL:${array[2]}`, "essay"],
                 body: `Name: ${array[0]} \n Author: ${array[1]} \n PDF: ${array[2]}`
             })
@@ -74,7 +74,7 @@ async function loc_film_registry() {
         .map(e => e.trim().split("|").map(e => e.trim()))
         .map(array =>
             data.push({
-                id: `library of congress.film registry.films.${array[0]}`,
+                id: `library of congress/film registry/films/${array[0]}`,
                 meta: [`Released:${array[1]}`, `Selected:${array[2]}`, "film"],
                 body: `Name: ${array[0]} \n Released: ${array[1]} \n Selected by the Library of Congress: ${array[2]}`
             })

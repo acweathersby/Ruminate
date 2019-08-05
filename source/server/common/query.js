@@ -5,7 +5,7 @@ import whind from "@candlefw/whind";
 export function matchString(strings, to_match_string, offset = 0, index = 0, FOLLOWING_WILD_CARD = (offset == 0)) {
 
     if (index == strings.length)
-        return true;
+        return FOLLOWING_WILD_CARD ? to_match_string.length : offset;
 
     const string = strings[index];
 
@@ -21,7 +21,7 @@ export function matchString(strings, to_match_string, offset = 0, index = 0, FOL
             return matchString(strings, to_match_string, i + string.length, index + 1)
     }
 
-    return false;
+    return -1;
 }
 
 export function parseContainer(identifiers, parts, idI = 0, pI = 0) {
@@ -29,10 +29,9 @@ export function parseContainer(identifiers, parts, idI = 0, pI = 0) {
     if (!identifiers || idI == identifiers.length)
         return parts.length <= pI;
 
-    if (parts.length == 0 || parts.length <= pI)
-        return false;
-
     const identifier = identifiers[idI].ids;
+
+    var offset = 0;
 
     if (identifier[0] == "*" && identifier.length == 1) {
 
@@ -48,21 +47,29 @@ export function parseContainer(identifiers, parts, idI = 0, pI = 0) {
                 ))
                 return true;
         }
-    } else if (matchString(identifier, parts[pI]))
+    } else if (parts.length == 0 || parts.length <= pI) {
+        return false;
+    } else if ((offset = matchString(identifier, parts[pI])) >= 0) {
+
+        if (offset != parts[pI].length)
+            return false;
+
+        
+
         return parseContainer(identifiers, parts, idI + 1, pI + 1);
+    }
 
     return false
 }
 
 export function parseId(identifier, string) {
+    if (!identifier)
+        return true;
 
     if (!string)
         return false;
 
-    if (!identifier)
-        return true;
-
-    return matchString(identifier.ids, string)
+    return matchString(identifier.ids, string) >= 0;
 }
 
 export function QueryEngine(
@@ -77,7 +84,7 @@ export function QueryEngine(
             case "OR":
                 return filterQuery(filter.left, note) || filterQuery(filter.right, note)
             case "MATCH":
-                return matchString(filter.value.ids, note.query_data);
+                return matchString(filter.value.ids, note.query_data) >= 0;
         }
     }
 

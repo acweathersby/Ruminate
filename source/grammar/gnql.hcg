@@ -26,9 +26,16 @@
 
 ## Container Clause
 
-<> container_clause →  container_identifier(*) identifier? 				↦c {this.containers = $$sym1; this.id = $$sym2 }
+<> container_clause →  container_identifier(*) identifier? 				↦c {this.containers = $$sym1;  this.id = $$sym2; if(this.id){
+																				if(this.id.ids.length == 1 && this.id.ids[0] == "*"){
+																					if(!this.containers)
+																						this.containers = [];
+																					this.containers.push(this.id);
+																					this.id = null;
+																				}
+																			} }
 
-<> container_identifier → identifier \.									↦r { $$sym1 }
+<> container_identifier → identifier \/									↦r { $$sym1 }
 
 ## Filter Clause
 
@@ -57,7 +64,7 @@
 <> wrapped_expression → \( statement \)									↦r {$$sym2}
 	│ sentence															↦c=>matchnode
 	│ sort_parameter
-	│ \# identifier (τis │ = │ τequals │ τthat τis )  (identifier │ θnum) 	↦c=>tageqnode
+	│ \# identifier (τis │ = │ τequals │ τthat τis )  identifier 	↦c=>tageqnode
 
 ## Sort Clause
 
@@ -97,6 +104,6 @@
 
 <> escaped_value → \\ string_symbols 		↦r {$$sym2}
 
-<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob 
+<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob │ θnum ↦r {parseFloat($sym1)}
 
 
