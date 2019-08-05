@@ -1,4 +1,8 @@
 import chai from "chai";
+
+import Container from "../source/server/common/container.js";
+import UID from "../source/common/uid.js";
+
 import graze_constructor from "../source/graze.js";
 import graze_json_server_constructor from "../source/server/json/server.js";
 import path from "path";
@@ -32,11 +36,30 @@ async function fillTestData(graze, file = "w&p") {
     }
 }
 
-describe("Graze Utilites", function() {
+describe.only("Graze Utilites", function() {
     this.slow(50000)
     this.timeout(50000)
 
     const graze = new graze_constructor();
+
+
+    it("Container - Retrieve Unique Store", function() {
+
+        let container = new Container;
+
+        container.change("", "/book 1/chapter 1/ Blah")
+            .uid.should.be.instanceOf(UID)
+
+        container.change("/book 1/chapter1/ Blah", "/book 1/chapter 1/ Blah")
+            .uid.string.should.equal(container.get("/book 1/chapter 1/ Blah").uid.string);
+
+        container.get("/book 1/chapter 1/ Blah")
+            .uid.string.should.equal(container.get("/book 1/chapter 1/ Blah").uid.string);
+
+        container.get("/book 1/chapter2/ Blah")
+            .uid.string.should.not.equal(container.get("/book 1/chapter 1/ Blah").uid.string);
+    })
+
 
     it.skip("UID", function() {
         const size = 10000;
@@ -60,7 +83,7 @@ describe("Graze Utilites", function() {
 })
 
 
-describe("Graze Testing - JSON BACKED", graze_test_suite(graze_constructor, graze_json_server_constructor, {
+describe.skip("Graze Testing - JSON BACKED", graze_test_suite(graze_constructor, graze_json_server_constructor, {
     type: "JSON BACKED",
     server_id: "JSONDB",
     server_test_store: "./test/test.json"
@@ -311,11 +334,10 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
             await fillTestData(graze);
             await fillTestData(graze, "locfr");
 
-            (await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note=>note.body);
+            (await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note => note.body);
 
-            console.log((await graze.retrieve("book*/* filter: #footnote and #3 sort: #3")).map(note=>note.body));
+            console.log((await graze.retrieve("book*/* filter: #footnote and #3 sort: #3")).map(note => note.body));
         })
-
         it("Auto update")
         it("Auto update")
         //*/

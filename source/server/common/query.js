@@ -73,7 +73,8 @@ export function parseId(identifier, string) {
 }
 
 export function QueryEngine(
-    server
+    server, 	// 
+    container 	// Container Store For Container ID Lookup
     //serverLookupScript // Generated function script used to lookup info on backing store. 
 ) {
     
@@ -138,7 +139,7 @@ export function QueryEngine(
 
     /** Get Containers Functions should return a list of notes that match the query.container property. **/
     if (!server.getNotesFromContainers)
-        throw new Error("Server not implemented with getContainers method. Cannot create Query Engine");
+        throw new Error("Server not implemented with getNotesFromContainers method. Cannot create Query Engine");
 
     const getNotesFromContainers = server.getNotesFromContainers.bind(server);
 
