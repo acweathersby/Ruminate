@@ -54,7 +54,7 @@ export function parseContainer(identifiers, parts, idI = 0, pI = 0) {
         if (offset != parts[pI].length)
             return false;
 
-        
+
 
         return parseContainer(identifiers, parts, idI + 1, pI + 1);
     }
@@ -76,6 +76,33 @@ export function QueryEngine(
     server
     //serverLookupScript // Generated function script used to lookup info on backing store. 
 ) {
+    
+    function getTagPresence(note, ids) {
+
+        for (let i = 0; i < note.tags.length; i++) {
+        	
+            if (matchString(ids, note.tags[i] + "") >= 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function getTagNumericalValue(note, ids) {
+        for (let i = 0; i < note.tags.length; i++) {
+            if (matchString(ids, note.tags[i] + "") >= 0) {
+                const val = note.tags[i].toString().split(":")[1]
+                if (val) {
+                    return parseFloat(val);
+                } else {
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
     /* Returns a Boolean value indicating whether the note's data matches the query */
     function filterQuery(filter, note) {
         switch (filter.type) {
@@ -85,10 +112,27 @@ export function QueryEngine(
                 return filterQuery(filter.left, note) || filterQuery(filter.right, note)
             case "MATCH":
                 return matchString(filter.value.ids, note.query_data) >= 0;
+            case "TAG":
+                return getTagPresence(note, filter.tag.ids);
+            case "TAGEQ": break;
         }
     }
 
-    function sortQuery(results, sort) {
+    function sortQuery(results, sorting_parameters) {
+        for (const sort of sorting_parameters) {
+            switch (sort.type) {
+                case "TAG":
+
+                    const order = sort.order || -1;
+
+                    results = results.sort((n1, n2) =>
+                        getTagNumericalValue(n1, sort.tag.ids) < getTagNumericalValue(n2, sort.tag.ids) ? -1 * order : 1 * order
+                    )
+
+                    console.log(sort)
+                    break;
+            }
+        }
         return results;
     }
 
@@ -126,6 +170,8 @@ export function QueryEngine(
     return async function(query_string) {
 
         const query = query_parser(whind(query_string + ""));
+
+        console.log(query)
 
         var results = await getNotesFromContainers(query.container);
 

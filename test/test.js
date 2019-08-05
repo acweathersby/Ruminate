@@ -284,16 +284,16 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             await fillTestData(graze, "locfr");
 
-           (await graze.retrieve("*")).length.should.equal(12429);
+            (await graze.retrieve("*")).length.should.equal(12429);
 
-           (await graze.retrieve("book 1/")).length.should.equal(1);
+            (await graze.retrieve("book 1/")).length.should.equal(1);
 
-           (await graze.retrieve("book 1/*")).length.should.equal(1141);
+            (await graze.retrieve("book 1/*")).length.should.equal(1141);
 
-           (await graze.retrieve("*/chapter */")).length.should.equal(11346);
+            (await graze.retrieve("*/chapter */")).length.should.equal(11346);
 
             (await graze.retrieve("*/chapter */ ? The dog")).length.should.equal(1);
-            
+
             (await graze.retrieve("*/chapter */ ? squirrel")).length.should.equal(3);
 
             (await graze.retrieve("*/chapter */ ? The dog or squirrel")).length.should.equal(4);
@@ -305,13 +305,15 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
             (await graze.retrieve("*/films/")).length.should.equal(751);
         })
 
-        it.skip("Avanced queries - Sorting", async function(){
+        it.only("Avanced queries - Sorting", async function() {
             this.slow(2000);
             this.timeout(5000);
-
+            await fillTestData(graze);
             await fillTestData(graze, "locfr");
 
-            (await graze.retrieve("*/films/:Selected Ascending")).length.should.equal(730);
+            (await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note=>note.body);
+
+            console.log((await graze.retrieve("book*/* filter: #footnote and #3 sort: #3")).map(note=>note.body));
         })
 
         it("Auto update")
