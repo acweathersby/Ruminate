@@ -1,5 +1,5 @@
 import UID from "../../common/uid"
-
+import { matchString, parseContainer } from "./query_functions";
 /*
 	This Module is responsible for creating lookup and comparison tables for 
 	the container syntax of the note system. Container syntax follows a classical
@@ -55,7 +55,13 @@ class ContainerEntry {
     }
 }
 
-/** THIS IS THE KLUDGE VERSION! **/
+function getAll(container, out = []){
+    for(const c of container.values()){
+        out.push(c.uid.string);
+        getAll(c, out);
+    }
+    return out;
+}
 
 export default class Container {
 
@@ -70,7 +76,7 @@ export default class Container {
 
         //No change on notes with same id
         if (old_id === new_id || !new_id)
-            return { id: this.get(old_id), val: old_id };
+            return this.get(old_id);
 
         if (!new_id)
             return { id: null, val: new_id };
@@ -81,13 +87,21 @@ export default class Container {
         return { uid, val, old_val, old_uid };
     }
 
+    getAll(){
+        return getAll(this.root);
+    }
+
     get(id, delimeter = "/") {
         const array = getContainerArray(getContainerPortion(id + "", delimeter + ""), delimeter + "");
-        var {val, uid} = getOrCreateContainerEntry(this.root, array)
+        var {full_name:val, uid} = getOrCreateContainerEntry(this.root, array);
         return {uid, val};
     }
 
-    query(container_query) {
+    query(containers_query) {
+        const out = [];
+        
+        parseContainer(container_query, this.root)
 
+        return []
     }
 }

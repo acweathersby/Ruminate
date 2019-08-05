@@ -1,20 +1,21 @@
 import UID from "../../common/uid";
-import { QueryEngine, matchString, parseContainer, parseId } from "../common/query";
+import { QueryEngine } from "../common/query";
+import { matchString, parseContainer, parseId } from "../common/query_functions";
 import fs from "fs";
 import path from "path";
+import Container from "../common/container";
 
 const fsp = fs.promises;
 var log = "";
+
 const writeError = e => log += e;
 const warn = e => {};
-//const warn = e=>console.trace(e);
-
-
 
 function Server(store, file_path = "") {
 
     let watcher = null,
-        READ_BLOCK = false;
+        READ_BLOCK = false,
+        container = new Container;
 
     /* Writes data to the stored file */
     async function write() {
@@ -53,13 +54,12 @@ function Server(store, file_path = "") {
 
         await fsp.readFile(fp, "utf8")
             .then((d) => (STATUS = true, data = d))
-            .catch(writeError)
+            .catch(writeError);
 
         store = new Map();
 
         try {
             if (STATUS) {
-
 
                 if (data) {
                     const json = JSON.parse(data);
@@ -70,7 +70,6 @@ function Server(store, file_path = "") {
                                 store.set(note.uid, note);
                     }
                 }
-
             }
 
             if (data)
@@ -103,18 +102,20 @@ function Server(store, file_path = "") {
         return false
     }
 
+    function getContainer(uid) {
+        const id = uid + "";
+
+        if (!store.has(id))
+            store.set(id, new Map);
+
+        return store.get(id);
+    }
+
     const queryRunner = QueryEngine({
-        getNotesFromContainers: function(container_query) {
-
-            if (!container_query || !container_query.containers && !container_query.id)
-                return null;
-
-            return [...store.values()]
-                .filter(note => parseContainer(container_query.containers, note.id.split("/").slice(0, -1)))
-                //.map(e => (console.log(e), e))
-                .filter(note => parseId(container_query.id, note.id.split("/").pop()));
-        }
-    });
+            getNotesFromContainers: (uid) => [...getContainer(uid).values()]
+        },
+        container
+    );
 
     return new(class Server {
 
@@ -167,20 +168,22 @@ function Server(store, file_path = "") {
                 modifed_time = (Date.now() / 1000) | 0;
 
             if (store.has(uid))
-                stored_note = store.get(uid);
+                stored_note = getContainer(container.get(note.old_id, "/").uid).get(uid);
             else
                 stored_note = {
+                    id : note.id,
                     created: note.created
                 }
+            
+            const old_id = stored_note.id;
+
             stored_note.modifed = modifed_time;
             stored_note.uid = uid;
             stored_note.body = note.body;
             stored_note.id = note.id;
             stored_note.tags = note.tags;
             stored_note.query_data = `${note.id.split(".").pop()} ${note.tags.join(";")} ${note.body}}`;
-
-
-            store.set(uid, stored_note);
+            getContainer(container.change(old_id, note.id, "/").uid).set(uid, stored_note);
 
             await write();
 

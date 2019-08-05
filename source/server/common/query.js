@@ -1,76 +1,9 @@
 import query_parser from "../../compiler/gnql";
 import UID from "../../common/uid";
 import whind from "@candlefw/whind";
-
-export function matchString(strings, to_match_string, offset = 0, index = 0, FOLLOWING_WILD_CARD = (offset == 0)) {
-
-    if (index == strings.length)
-        return FOLLOWING_WILD_CARD ? to_match_string.length : offset;
-
-    const string = strings[index];
-
-    if (string == "*")
-        return matchString(strings, to_match_string, offset, index + 1, true);
-    else if (!string)
-        return matchString(strings, to_match_string, offset, index + 1, FOLLOWING_WILD_CARD);
-    else {
-
-        const i = to_match_string.indexOf(string, offset);
-
-        if (i >= 0 && (FOLLOWING_WILD_CARD || i == offset))
-            return matchString(strings, to_match_string, i + string.length, index + 1)
-    }
-
-    return -1;
-}
-
-export function parseContainer(identifiers, parts, idI = 0, pI = 0) {
-
-    if (!identifiers || idI == identifiers.length)
-        return parts.length <= pI;
-
-    const identifier = identifiers[idI].ids;
-
-    var offset = 0;
-
-    if (identifier[0] == "*" && identifier.length == 1) {
-
-        if (identifiers.length == idI + 1)
-            return true;
-
-        for (var i = pI; i < parts.length; i++) {
-            if (parseContainer(
-                    identifiers,
-                    parts,
-                    idI + 1,
-                    i
-                ))
-                return true;
-        }
-    } else if (parts.length == 0 || parts.length <= pI) {
-        return false;
-    } else if ((offset = matchString(identifier, parts[pI])) >= 0) {
-
-        if (offset != parts[pI].length)
-            return false;
+import { matchString, parseId } from "./query_functions";
 
 
-
-        return parseContainer(identifiers, parts, idI + 1, pI + 1);
-    }
-
-    return false
-}
-
-export function parseId(identifier, string) {
-    if (!identifier)
-        return true;
-
-    if (!string)
-        return false;
-
-    return matchString(identifier.ids, string) >= 0;
-}
 
 export function QueryEngine(
     server, 	// 
@@ -169,10 +102,10 @@ export function QueryEngine(
 		A list of UIDs are passed back to the client. The client can decide to query the server for the actual note contents, or do something else with the UID information.
 	*/
     return async function(query_string) {
+        console.log(query, query_string)
 
         const query = query_parser(whind(query_string + ""));
 
-        console.log(query)
 
         var results = await getNotesFromContainers(query.container);
 
