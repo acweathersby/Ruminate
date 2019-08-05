@@ -12,6 +12,10 @@ async function fillTestData(graze, file = "w&p") {
     var data = "";
 
     switch (file.toLowerCase()) {
+        case "locfr":
+        case "library of congress film registry":
+            data = await fsp.readFile(path.resolve(process.env.PWD, "./test/data/loc_film_registry.data.json"), "utf8");
+            break;
         case "war and peace":
         case "w&p":
         default:
@@ -26,8 +30,6 @@ async function fillTestData(graze, file = "w&p") {
         count++;
         await graze.createNote(entry.id, entry.meta, entry.body).store();
     }
-
-    console.log(count)
 }
 
 describe("Graze Utilites", function() {
@@ -164,6 +166,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
             const notes = await graze.retrieve("temp.");
 
             notes.length.should.equal(2);
+
             notes.sort(graze.sort_indexes.create_time)[0].body.should.equal(noteA.body);
             notes.sort(graze.sort_indexes.create_time)[1].body.should.equal(noteB.body);
 
@@ -188,7 +191,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             noteC.store();
 
-            const notes = await graze.retrieve("temp.* : Name B && Message B");
+            const notes = await graze.retrieve("temp.*.  ? Name B && Message B");
 
             notes.length.should.equal(1);
 
@@ -215,6 +218,9 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
         //it("warns if no server is connected to graze");
 
         it("Loads permanently stored data", async function() {
+            this.slow(500);
+            this.timeout(750);
+
             const serverA = new ServerConstructor();
             const serverB = new ServerConstructor();
             const serverC = new ServerConstructor();
@@ -238,17 +244,17 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             graze.connect(serverB);
 
-            (await graze.retrieve("temp.*")).length.should.equal(5);
+            (await graze.retrieve("temp.*.")).length.should.equal(5);
 
             graze.disconnect();
 
             graze.connect(serverC);
 
             (await graze.retrieve("temp.tempE.")).length.should.equal(1);
-            (await graze.retrieve("temp.*")).length.should.equal(5);
+            (await graze.retrieve("temp.*.")).length.should.equal(5);
         })
 
-        it("Server implode dumps all data from store - **dependent on previous test**", async function() {
+        it("Server.implode dumps all data from store - **dependent on previous test**", async function() {
 
             const serverA = new ServerConstructor();
             const serverB = new ServerConstructor();
@@ -258,7 +264,7 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             graze.connect(serverA);
 
-            (await graze.retrieve("temp.*")).length.should.equal(5);
+            (await graze.retrieve("temp.*.")).length.should.equal(5);
 
             serverA.implode()()();
 
@@ -266,25 +272,46 @@ function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
 
             await graze.connect(serverB);
 
-            (await graze.retrieve("temp.*")).length.should.equal(0);
+            (await graze.retrieve("temp.*.")).length.should.equal(0);
 
         })
 
-        it("Advanced queries - Wild Card", async function() {
+        it.skip("Advanced queries - Wild Card * ", async function() {
             this.slow(2000);
             this.timeout(5000);
 
             await fillTestData(graze);
 
+            await fillTestData(graze, "locfr");
+
+            (await graze.retrieve("*")).length.should.equal(12429);
+
             (await graze.retrieve("book 1.")).length.should.equal(1);
 
-            (await graze.retrieve("book 1.*")).length.should.equal(1141);
+            (await graze.retrieve("book 1.*.")).length.should.equal(1141);
 
-            (await graze.retrieve("*.chapter *")).length.should.equal(11346);
+            (await graze.retrieve("*.chapter *.")).length.should.equal(11346);
 
-            (await graze.retrieve("*.chapter * : The dog or squirrel")).length.should.equal(4);
+            (await graze.retrieve("*.chapter *.: The dog")).length.should.equal(1);
+            
+            (await graze.retrieve("*.chapter *.: squirrel")).length.should.equal(3);
 
-            (await graze.retrieve("*.chapter * : The dog")).length.should.equal(1);
+            (await graze.retrieve("*.chapter *.: The dog or squirrel")).length.should.equal(4);
+
+            (await graze.retrieve("*.chapter 1*.: The dog or squirrel")).length.should.equal(2);
+
+            (await graze.retrieve("*.chapter 2*.: The dog or squirrel")).length.should.equal(0);
+
+            (await graze.retrieve("*.films.")).length.should.equal(730);
+        })
+
+        it.skip("Avanced queries - Sorting", async function(){
+            this.slow(2000);
+            this.timeout(5000);
+
+            await fillTestData(graze, "locfr");
+
+            (await graze.retrieve("*.films.:Selected Ascending")).length.should.equal(730);
         })
 
         it("Auto update")

@@ -1,6 +1,6 @@
 # Graze Note Query Language
 
-@SYMBOL && || :
+@SYMBOL && ||
 
 @IGNORE θws θnl 
 
@@ -26,7 +26,7 @@
 
 ## Container Clause
 
-<> container_clause →  container_identifier(*) identifier 				↦c {this.containers = $$sym1; this.id = $$sym2 }
+<> container_clause →  container_identifier(*) identifier? 				↦c {this.containers = $$sym1; this.id = $$sym2 }
 
 <> container_identifier → identifier \.									↦r { $$sym1 }
 
@@ -87,15 +87,16 @@
 <> identifier_part → wild_card 												
 	│ string_data
 
-<> string_data → string_data_val(+") 
+<> string_data → string_symbols string_data_val(*")							↦r { [$sym1, ...$sym2].join("").trim() }
 
 <> wild_card → \*
 
 <> string_data_val → string_symbols 
 	│ escaped_value
+	│ θws
 
 <> escaped_value → \\ string_symbols 		↦r {$$sym2}
 
-<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob │ θws 
+<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob 
 
 

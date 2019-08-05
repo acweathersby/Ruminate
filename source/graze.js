@@ -22,7 +22,7 @@ export default class Graze {
 
             if (!(note = candidate.__graze_retrieve_note__))
                 note = candidate;
-            
+
             RESULT += (await this.server.storeNote(note)) | 0;
         }
 
@@ -72,8 +72,9 @@ export default class Graze {
                 note_tags = note_tags.split(",");
             else
                 note_tags = [];
-        } else if (!Array.isArray(note_tags) || !note_tags.reduce((r, v) => (typeof v !== "string") || r, false))
-            throw new Error("graze.createNote: [note_tags] argument must be a string of comma separated values or an array of strings.");
+        } else if (!Array.isArray(note_tags) || note_tags.reduce((r, v) => (typeof v !== "string" && typeof v !== "number") || r, false)){
+            throw new Error(`graze.createNote: [note_tags] argument must be a string of comma separated values or an array of [strings | numbers]. Got ${note_tags.map(e=>typeof e)}`);
+        }
 
         if (typeof body !== "string")
             throw new Error("body argument must be a string value");

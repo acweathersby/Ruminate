@@ -1,31 +1,21 @@
 import UID from "../../common/uid";
-import query_parser from "../../compiler/gnql";
-import whind from "@candlefw/whind";
+import { QueryEngine, matchString, parseContainer, parseId } from "../common/query";
 import fs from "fs";
 import path from "path";
 
 const fsp = fs.promises;
 var log = "";
 const writeError = e => log += e;
-
 const warn = e => {};
 //const warn = e=>console.trace(e);
 
-/* Returns a Boolean value indicating whether the note's data matches the query */
-function matchQuery(query_object, note) {
-    switch (query_object.type) {
-        case "AND":
-            return matchQuery(query_object.left, note) && matchQuery(query_object.right, note)
-        case "OR":
-            return matchQuery(query_object.left, note) || matchQuery(query_object.right, note)
-        case "MATCH":
-            return note.query_data.includes(query_object.value);
-    }
-}
+
 
 function Server(store, file_path = "") {
+
     let watcher = null,
         READ_BLOCK = false;
+
     /* Writes data to the stored file */
     async function write() {
         if (file_path) {
@@ -94,6 +84,7 @@ function Server(store, file_path = "") {
         return STATUS;
     }
 
+
     /* Updates store with data from json_String */
     function updateDB(json_data_string) {
         try {
@@ -112,17 +103,31 @@ function Server(store, file_path = "") {
         return false
     }
 
+    const queryRunner = QueryEngine({
+        getNotesFromContainers: function(container_query) {
+            
+            if (!container_query || !container_query.containers && !container_query.id)
+                return null;
+
+            return [...store.values()]
+                .filter(note => parseContainer(container_query.containers, note.id.split(".").slice(0, -1)))
+                //.map(e => (console.log(e), e))
+                .filter(note => parseId(container_query.id, note.id.split(".").pop()));
+        }
+    });
+
     return new(class Server {
+
         get type() {
             return "JSONDB"
         }
 
         /* 
-        	Connects the server to the given json file. If file does not exist than an attempt is made to create it.
-        	This will return false if the connection cannot be made
-        	in cases were the file cannot be accessed, or the data
-        	within the file cannot be parsed as JSON data. 
-        	return true otherwise
+            Connects the server to the given json file. If file does not exist than an attempt is made to create it.
+            This will return false if the connection cannot be made
+            in cases were the file cannot be accessed, or the data
+            within the file cannot be parsed as JSON data. 
+            return true otherwise
         */
         async connect(json_file_path) {
 
@@ -186,85 +191,30 @@ function Server(store, file_path = "") {
 
         retrieveNote() {}
 
-        async query(query) {
+        async query(query_string) {
+            if (!query_string)
+                return [];
 
             await read(); //Hack - mack sure store is up to date;
 
-            try {
-                if (typeof query == "string" && query.length > 0)
-                    query = query_parser(whind(query));
-            } catch (e) {
-                return [];
-            }
+            if (UID.stringIsUID(query_string + ""))
+                return [store.get(query_string)];
 
-            var container = "",
-                id = "",
-                query_object = query.query;
-
-            if (query.container) 
-                id = query.container.data.trim();
-
-            const out = [];
-
-            if (UID.stringIsUID(id))
-                return [store.get(id)];
-
-            if (Array.isArray(id)) {
-                for (let item of id)
+            if (Array.isArray(query_string)) {
+                for (let item of query_string)
                     if (item = this.query(item))
                         out.push(...item);
-
                 return out;
             }
 
-            //Generate query engine and run against the data set.
-            const temps = [];
-            //Brute force search of ids
-            if (id) {
-                const parts = id.split(".");
-
-                if(parts[parts.length-1].includes("*") && parts[parts.length-1] !=="*"){
-                    parts.push("*");
-                }
-
-                for (const note of store.values()) {
-
-                    const note_parts = note.id.split(".");
-
-                    for (let i = 0; i < parts.length; i++) {
-                        if (
-                            i == parts.length - 1
-                        ) {
-                            if (
-                                parts[i] == "*" || (
-                                    i == note_parts.length - 1 &&
-                                    (!parts[i] || parts[i] == note_parts[i])
-                                )
-                            ) {
-                                temps.push(note);
-                                break;
-                            }
-                        } else if (
-                            note_parts[i] != parts[i] &&
-                            !parts[i].includes("*") || 
-                            !note_parts[i].includes(parts[i].split("*")[0])
-                            ) {
-                            break
-                        }
-                    }
-                }
-            }
-
-            return query_object ?
-                temps.filter(note => matchQuery(query_object, note)) :
-                temps;
+            return await queryRunner(query_string)
         }
 
         /* 
-        	Deletes all data in store. 
-        	Returns a function that returns a function that actually does the clearing.
-        	Example server.implode()()();
-        	This is deliberate to force dev to use this intentionally.
+            Deletes all data in store. 
+            Returns a function that returns a function that actually does the clearing.
+            Example server.implode()()();
+            This is deliberate to force dev to use this intentionally.
          */
         implode() {
             file_path && warn("Warning: Calling the return value can lead to bad things!");
