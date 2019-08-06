@@ -85,5 +85,37 @@ async function loc_film_registry() {
     fsp.writeFile(path.resolve(process.env.PWD, "./test/data/loc_film_registry.data.json"), JSON.stringify(output));
 }
 
+async function US_population_2018_estimate(){
+    const rows = (await fsp.readFile(path.resolve(process.env.PWD, "./test/data/2018USPopEstimates/PEP_2018_PEPANNRES_with_ann.csv"), "utf8"))
+        .split(/\n/g)
+        .map(r=>r.split("|").map(a=>a.trim()))
+        .slice(0,-1); // Last Line is empty
+    
+    const headers = rows.shift();
+    
+
+    const data = rows.map( row => {
+        const data = {};
+
+        data.id = `/us census/population estimate 2018/${row[2]}`;
+        data.meta = row.map((v,i)=>`${headers[i]}:${v}`);
+        
+        if(row[2] == "United States") data.meta.push("type:country", "country");
+        else if(row[2] == "District of Columbia") data.meta.push("type:district");
+        else if(row[2] == "Puerto Rico") data.meta.push("type:territory", "territory");
+        else data.meta.push("type:state", "state");
+
+        data.body = 
+`In 2018 the United States Census Bureau estimated ${row[2]} had a population of ${row[9]} people in 2014.
+The population was estimated to have ${row[13]-row[9] > 0 ? "grown" : "shrunk"} by ${Math.abs(row[13]-row[9])} persons by 2018, with a total population of ${row[13]} individuals.
+In the 2010 US Census, the population of ${row[2]} was numbered at ${row[4]} Homo Sapiens.`;
+
+        return data;
+    })
+
+    fsp.writeFile(path.resolve(process.env.PWD, "./test/data/us_2018_pop_estimate.data.json"), JSON.stringify({data}));
+}
+
+US_population_2018_estimate();
 loc_film_registry();
 war_and_peace();

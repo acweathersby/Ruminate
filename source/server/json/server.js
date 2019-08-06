@@ -1,6 +1,6 @@
 import UID from "../../common/uid";
-import { QueryEngine } from "../common/query";
-import { matchString, parseContainer, parseId } from "../common/query_functions";
+import { QueryEngine } from "../common/query/query";
+import { matchString, parseContainer, parseId } from "../common/query/query_functions";
 import fs from "fs";
 import path from "path";
 import Container from "../common/container";
