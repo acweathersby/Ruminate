@@ -245,18 +245,20 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
                 it("[   */films/*                            ]", async () => (await graze.retrieve("*/films/*")).length.should.equal(750));
                 it("[   */essays/*                           ]", async () => (await graze.retrieve("*/essays/*")).length.should.equal(314));
                 it("[   */*pop*/* ? shrunk                   ]", async () => (await graze.retrieve("*/*pop*/* ? shrunk ")).length.should.equal(7));
-                it("[   */*pop*/*                            ]", async () => (await graze.retrieve("*/*pop*/*  ")).length.should.equal(51));
+                it("[   */*pop*/*                            ]", async () => (await graze.retrieve("*/*pop*/*  ")).length.should.equal(53));
+                it("[   */*pop*/* ? #type=state              ]", async () => (await graze.retrieve("*/*pop*/* ? #type = state")).length.should.equal(50));
+                it("[   */*pop*/* ? #type=territory          ]", async () => (await graze.retrieve("*/*pop*/* ? #type = territory")).length.should.equal(1));
+                it("[   */*pop*/* ? #type=district           ]", async () => (await graze.retrieve("*/*pop*/* ? #type = district ")).length.should.equal(1));
+                it("[   */*pop*/* ? #type=country            ]", async () => (await graze.retrieve("*/*pop*/* ? #type = country")).length.should.equal(1));
+                it("[   * ? #*2010*sus                       ]", async () => (await graze.retrieve("   * ? #*2010*sus")).length.should.equal(53));
             })
 
             describe("Sorting", function() {
-                it("Avanced queries - Sorting", async function() {
                     //(await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note => note.body);
                     // console.log((await graze.retrieve("*/films/ sort #Selected dec, #Released asc")).map(note => note.body));
                     // console.log((await graze.retrieve("book */chapter */* filter: #chapter and #book from 5 to 8 and bird sort: #book des")).map(note => ({a:note.body, b:note.tags})));
-                    console.log((await graze.retrieve("*/*pop*/* ? shrunk")).map(note => ({a:note.body, b:note.tags})));
+                    //console.log((await graze.retrieve("*/*pop*/* ? shrunk")).map(note => ({a:note.body, b:note.tags})));
                     //console.log((await graze.retrieve("book */chapter */* filter Andrew and #book is from 1 to 5 sort: #book ASC")).length);
-                    
-                })
             })
         })
 
