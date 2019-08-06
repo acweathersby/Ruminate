@@ -248,10 +248,10 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
             describe("Sorting", function() {
                 it.only("Avanced queries - Sorting", async function() {
 
-                    (await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note => note.body);
+                    //(await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note => note.body);
 
                     //console.log((await graze.retrieve("*/films/ sort #Selected dec, #Released asc")).map(note => note.body));
-                    console.log((await graze.retrieve("book 4/chapter 11/* ? else ")).map(note => ({a:note.body, b:note.tags})));
+                    console.log((await graze.retrieve("book 4/chapter */* ? #index and 'is' ")).map(note => ({a:note.body, b:note.tags})));
                 })
             })
         })

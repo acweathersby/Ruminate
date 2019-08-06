@@ -63,7 +63,7 @@
 <> wrapped_expression → \( statement \)									↦r {$$sym2}
 	│ sentence															↦c=>matchnode
 	│ sort_parameter
-	│ \# identifier (τis │ = │ τequals │ τthat τis )  identifier 	↦c=>tageqnode
+	│ \# identifier (τis │ = │ τequals │ τthat τis )  identifier 		↦c=>tageqnode
 
 ## Sort Clause
 
@@ -79,7 +79,7 @@
 <> size_expression → (τsize │ τSIZE) length_expression? order?				↦c=>sizenode
 <> tag_expression →  \# identifier length_expression? order?  				↦c=>tagnode
 
-<>length_expression → θnum ( (τto │ τTO │ \- )  θnum ↦r { $sym2 })? 		↦r { [$sym1, $sym2] }
+<>length_expression → (τis │ = │ τequals │ τthat τis │ > │ <  ) θnum ( (τto │ τTO │ \- )  θnum ↦r { $sym2 })? 		↦r { [parseFloat($sym2), parseFloat($sym3)] }
 
 <>order → (τDEC │ τdec │ τdecending │ τDECENDING │ τdown ) 					↦r {-1}
 	│ (τASC │ τasc │ τascending │ τASCENDING │ τup )  						↦r {1}
@@ -103,6 +103,6 @@
 
 <> escaped_value → \\ string_symbols 		↦r {$$sym2}
 
-<> string_symbols → θid │ θany │ θsym │ θop │ θcb │ θob │ θnum ↦r {parseFloat($sym1)}
+<> string_symbols → θany
 
 

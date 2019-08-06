@@ -11,13 +11,17 @@ export function QueryEngine(
     server, // Server functions that the query engine will use 
     CAN_USE_WORKER = false
 ) {
-        const wkr = new Worker();
 
-        function getTagPresence(note, ids) {
+        function getTagPresence(note, tag_op) {
+            const ids = tag_op.tag.ids;
 
             for (let i = 0; i < note.tags.length; i++) {
-
-                if (matchString(ids, note.tags[i] + "") >= 0) {
+                const tag = (note.tags[i] + "").split(":");
+                if (matchString(ids, tag[0]) >= 0) {
+                    if(tag_op.val){
+                        const val = getTagNumericalValue(note, ids)
+                        return (val == tag_op.val[0])
+                    }
                     return true;
                 }
             }
@@ -49,7 +53,7 @@ export function QueryEngine(
                 case "MATCH":
                     return matchString(filter.value.ids, note.query_data) >= 0;
                 case "TAG":
-                    return getTagPresence(note, filter.tag.ids);
+                    return getTagPresence(note, filter);
                 case "TAGEQ":
                     break;
             }
@@ -152,8 +156,15 @@ export function QueryEngine(
         }
 
         /************************************* UTILIZING QUERY SYNTAX *********************************************/
+        var query;
+        try{
 
-        const query = query_parser(whind(query_string + ""));
+        query = query_parser(whind(query_string + ""));
+        console.log(query)
+        }catch(e){
+            console.log(e)
+            return [];
+        }
 
         const uids = container.query(query.container.containers || default_container);
 
