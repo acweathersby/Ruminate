@@ -6,103 +6,130 @@
 
 # Special Search / Filter Types
 
-↦ tageqnode 	{ this.type ="TAGEQ"; 	this.tag=$$sym2;	this.val=$$sym4;}
-↦ tagnode 		{ this.type ="TAG"; 	this.tag=$$sym2;	this.val=$$sym3; 	this.order=$sym4 || 1 }
-↦ creatednode 	{ this.type ="CREATED"; 	this.val=$$sym2; 	this.order=$sym3 || 1 }
-↦ modifiednode 	{ this.type ="MODIFIED"; 	this.val=$$sym2; 	this.order=$sym3 || 1 }
-↦ sizenode 		{ this.type ="SIZE"; 		this.val=$$sym2; 	this.order=$sym3 || 1 }
+↦ tagnode       { this.type ="TAG";         this.id=$$sym2;     this.val=$$sym3;        this.order=$sym4 || 1 }
+↦ creatednode   { this.type ="CREATED";     this.val=$$sym2;    this.order=$sym3 || 1   }
+↦ modifiednode  { this.type ="MODIFIED";    this.val=$$sym2;    this.order=$sym3 || 1   }
+↦ sizenode      { this.type ="SIZE";        this.val=$$sym2;    this.order=$sym3 || 1   }
 
-↦ andnode 		{ this.type ="AND"; 	this.left=$$sym1; 		this.right=$$sym3 }
-↦ ornode 		{ this.type ="OR"; 		this.left=$$sym1; 		this.right=$$sym3 }
-↦ notnode 		{ this.type ="NOT"; 	this.left=$$sym2; }
-↦ matchnode 	{ this.type ="MATCH"; 	this.value=$$sym1 }
+↦ andnode       { this.type ="AND";         this.left=$$sym1;   this.right=$$sym3       }
+↦ ornode        { this.type ="OR";          this.left=$$sym1;   this.right=$$sym3       }
+↦ notnode       { this.type ="NOT";         this.left=$$sym2;   }
+↦ matchnode     { this.type ="MATCH";       this.value=$$sym1   }
 
 <> GNQL → start
 
 <> start → query_body
 
-<> query_body → container_clause? filter_clause? sort_clause? 			↦c { this.container = $$sym1 ; this.filter=$$sym2; this.sort=$$sym3 }
+<> query_body → container_clause? filter_clause? sort_clause?           ↦c { this.container = $$sym1 ; this.filter=$$sym2; this.sort=$$sym3 }
 
 ## Container Clause
 
-<> container_clause →  \/? container_identifier(*) identifier? 				↦c {this.containers = [{ids:[""]},...$sym2];  this.id = $$sym3; if(this.id){
-																				if(this.id.ids.length == 1 && this.id.ids[0] == "*"){
-																					if(!this.containers)
-																						this.containers = [];
-																					this.containers.push(this.id);
-																					this.id = null;
-																				}
-																			} }
+<> container_clause →  \/? container_identifier(*) identifier?          ↦c {
+                                                                            this.containers = [{ids:[""]},...$sym2];  this.id = $$sym3; if(this.id){
+                                                                                if(this.id.ids.length == 1 && this.id.ids[0] == "*"){
+                                                                                    if(!this.containers)
+                                                                                        this.containers = [];
+                                                                                    this.containers.push(this.id);
+                                                                                    this.id = null;
+                                                                                }
+                                                                            }
+                                                                        }
 
-<> container_identifier → identifier \/									↦r { $$sym1 }
+<> container_identifier → identifier \/                                 ↦r { $$sym1 }
 
-## Filter Clause
+## Filter Clause ############################################################################################
 
-<> filter_clause → ( \? :? │ τf :? │ τfilter :? │ τFilter │ τFILTER :? )  and_expression? 	↦r { $$sym2 }
+<> filter_clause → 
+    ( \? :? │ τf :? │ τfilter :? │ τFilter │ τFILTER :? )  
+        and_expression?                                                 ↦r { $$sym2 }
 
-<> statement → and_expression 			
+<> statement → and_expression           
 
 <> and_expression → or_expression
-	│ or_expression && and_expression 									↦c=>andnode
-	│ or_expression τAND and_expression									↦c=>andnode
-	│ or_expression τAnd and_expression									↦c=>andnode
-	│ or_expression τand and_expression									↦c=>andnode
+    │ or_expression && and_expression                                   ↦c=>andnode
+    │ or_expression τAND and_expression                                 ↦c=>andnode
+    │ or_expression τAnd and_expression                                 ↦c=>andnode
+    │ or_expression τand and_expression                                 ↦c=>andnode
 
 <> or_expression → not_expression
-	│ not_expression || or_expression									↦c=>ornode
-	│ not_expression τOR or_expression									↦c=>ornode
-	│ not_expression τOr or_expression									↦c=>ornode
-	│ not_expression τor or_expression									↦c=>ornode
+    │ not_expression || or_expression                                   ↦c=>ornode
+    │ not_expression τOR or_expression                                  ↦c=>ornode
+    │ not_expression τOr or_expression                                  ↦c=>ornode
+    │ not_expression τor or_expression                                  ↦c=>ornode
 
 <> not_expression → wrapped_expression
-	│ τNOT wrapped_expression											↦c=>notnode
-	│ τNot wrapped_expression											↦c=>notnode
-	│ τnot wrapped_expression											↦c=>notnode
-	│ \!   wrapped_expression											↦c=>notnode
+    │ τNOT wrapped_expression                                           ↦c=>notnode
+    │ τNot wrapped_expression                                           ↦c=>notnode
+    │ τnot wrapped_expression                                           ↦c=>notnode
+    │ \!   wrapped_expression                                           ↦c=>notnode
 
-<> wrapped_expression → \( statement \)									↦r {$$sym2}
-	│ sentence															↦c=>matchnode
-	│ sort_parameter
-	│ \# identifier (τis │ = │ τequals │ τthat τis )  identifier 		↦c=>tageqnode
+<> wrapped_expression → \( statement \)                                 ↦r {$$sym2}
+    │ sentence                                                          ↦c=>matchnode
+    │ identifier                                                        ↦c=>matchnode
+    │ stetement 
 
-## Sort Clause
+## Sort Clause ############################################################################################
 
-<> sort_clause → ( \| │ τs :? │ τsort :? │ τSORT :? │ τSort :? ) sort_parameter(*,)  ↦r { $$sym2 }
+<> sort_clause → 
+    ( \| │ τs :? │ τsort :? │ τSORT :? │ τSort :? ) stetement(*,)  ↦r { $$sym2 }
 
-<> sort_parameter → created_expression
-	│ modified_expression
-	│ size_expression
-	│ tag_expression
+<> stetement → created_statement
+    │ modified_statement
+    │ size_statement
+    │ tag_statement
 
-<> created_expression → (τcreated │ τCREATED) length_expression? order?		↦c=>creatednode
-<> modified_expression → (τmodifier │ τMODIFIED) length_expression? order? 	↦c=>modifiednode
-<> size_expression → (τsize │ τSIZE) length_expression? order?				↦c=>sizenode
-<> tag_expression →  \# identifier length_expression? order?  				↦c=>tagnode
+<> created_statement → 
 
-<>length_expression → (τis │ = │ τequals │ τthat τis │ > │ <  ) θnum ( (τto │ τTO │ \- )  θnum ↦r { $sym2 })? 		↦r { [parseFloat($sym2), parseFloat($sym3)] }
+    (τcreated │ τCREATED) comparison_expression order?              ↦c=>creatednode
 
-<>order → (τDEC │ τdec │ τdecending │ τDECENDING │ τdown ) 					↦r {-1}
-	│ (τASC │ τasc │ τascending │ τASCENDING │ τup )  						↦r {1}
+<> modified_statement → 
 
-<> sentence → \" identifier \" 												↦r {$$sym2}
-	│ \' identifier \' 														↦r {$$sym2}
-	│ identifier
+    (τmodifier │ τMODIFIED) comparison_expression order?            ↦c=>modifiednode
 
-<> identifier → identifier_part(+) 											↦c {this.ids = $$sym1 }
+<> size_statement → 
 
-<> identifier_part → wild_card 												
-	│ string_data
+    (τsize │ τSIZE) comparison_expression order?                    ↦c=>sizenode
 
-<> string_data → string_symbols string_data_val(*")							↦r { [$sym1, ...$sym2].join("").trim() }
+<> tag_statement →  
+
+    \# identifier comparison_expression? order?                     ↦c=>tagnode
+    
+<> comparison_expression → 
+
+      (τis │ τequals │ = │ τthat τis)  θnum                         ↦r { { type: "EQUALS_QUANTITATIVE", val : parseFloat($sym2)} }
+    │ (τis │ τequals │ = │ τthat τis)  identifier                   ↦r { { type: "EQUALS_QUALITATIVE", val : $sym2 } }
+    │ (τis τgreater τthan? │ > │ τgreater) θnum                     ↦r { { type: "GREATERTHAN", val : parseFloat($sym2) } }
+    │ (τis τless τthan? │ < │ τlesser) θnum                         ↦r { { type: "LESSTHAN", val : parseFloat($sym2) } }
+    │ τis? range_expression                                         ↦r { $sym2 }
+    │ τis? date_expression                                          ↦r { $sym2 }
+
+<> range_expression → (τfrom) θnum 
+    ( (τto │ - │ τTO │ τTo │ τthrough ) θnum ↦r { $sym2 })?         ↦r { { type: "RANGE", val : [$sym2, $sym3].map(parseFloat).sort((a,b)=>a<b ? -1:1) } }
+
+<> date_expression → (τon │ τdate) (string_data │ θnum) 
+    ( (τto │ -│ τTO │ τTo ) (string_data │ θnum) ↦r { $sym2 })?     ↦r { { type: "DATE",  val : [$sym2,$sym3].map(d=>new Date(d).valueOf()).sort((a,b)=>a<b ? -1:1) } }
+
+<>order → (τDES │ τdes │ τdescending │ τDESCENDING │ τdown │ >)         ↦r {-1}
+    │ (τASC │ τasc │ τascending │ τASCENDING │ τup │ <)             ↦r {1}
+
+<> identifier → identifier_part(+)                                  ↦c {this.ids = $$sym1 }
+
+<> identifier_part → wild_card                                              
+    │ string_data
+
+<> sentence → \" string_data \"                                     ↦r {$$sym2}
+    │ \' string_data \'                                             ↦r {$$sym2}
+
+<> string_data → string_symbols string_data_val(*")                 ↦r { [$sym1, ...$sym2].join("").trim() }
 
 <> wild_card → \*
 
 <> string_data_val → string_symbols 
-	│ escaped_value
-	│ θws
+    │ escaped_value
+    │ θws
 
-<> escaped_value → \\ string_symbols 		↦r {$$sym2}
+<> escaped_value → \\ string_symbols                                ↦r {$$sym2}
 
-<> string_symbols → θany
+<> string_symbols → θany │ θsym │ θop │ θid
 
 

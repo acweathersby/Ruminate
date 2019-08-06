@@ -2,8 +2,8 @@ import query_parser from "../../compiler/gnql";
 import UID from "../../common/uid";
 import worker from "./query_worker";
 import whind from "@candlefw/whind";
-import { matchString, parseId } from "./query_functions";
 
+import { matchString, parseId } from "./query_functions";
 import { Worker } from "worker_threads";
 
 
@@ -12,92 +12,171 @@ export function QueryEngine(
     CAN_USE_WORKER = false
 ) {
 
-        function getTagPresence(note, tag_op) {
-            const ids = tag_op.tag.ids;
 
-            for (let i = 0; i < note.tags.length; i++) {
-                const tag = (note.tags[i] + "").split(":");
-                if (matchString(ids, tag[0]) >= 0) {
-                    if(tag_op.val){
-                        const val = getTagNumericalValue(note, ids)
-                        return (val == tag_op.val[0])
-                    }
-                    return true;
-                }
-            }
-
+    function filterValue(value_op, value) {
+        if (!value)
             return false;
+        const val = value_op.val;
+        switch (value_op.type) {
+            case "EQUALS_QUALITATIVE":
+                return matchString(val.ids, value) >= 0;
+                break;
+            case "EQUALS_QUANTITATIVE":
+                return !isNaN(value) && (value == val);
+                break;
+            case "GREATERTHAN":
+                value = parseFloat(value);
+                return !isNaN(value) && (value < val);
+                break;
+            case "LESSTHAN":
+                value = parseFloat(value);
+                return !isNaN(value) && (value > val);
+                break;
+            case "RANGE":
+                value = parseFloat(value);
+                return !isNaN(value) && (value >= val[0] && value <= val[1]);
+                break;
+            case "DATE":
+
+                value = new Date(value).valueOf();
+
+                return !isNaN(value) && (
+                    val.length > 1 ?
+                    (value >= val && value <= val[1]) :
+                    (value & val == value)
+                );
+
+                break;
+        }
+        return false;
+    }
+
+    function filterTag(note, tag_op) {
+
+        const ids = tag_op.id.ids;
+
+        for (let i = 0; i < note.tags.length; i++) {
+
+            const tag = (note.tags[i] + "").split(":");
+
+            if (matchString(ids, tag[0]) >= 0) {
+
+                if (tag_op.val)
+                    return filterValue(tag_op.val, tag[1]);
+
+                return true;
+            }
         }
 
-        function getTagNumericalValue(note, ids) {
-            for (let i = 0; i < note.tags.length; i++) {
-                if (matchString(ids, note.tags[i] + "") >= 0) {
-                    const val = note.tags[i].toString().split(":")[1]
-                    if (val) {
-                        return parseFloat(val);
-                    } else {
-                        return 1;
+        return false;
+    }
+
+    /* Returns a Boolean value indicating whether the note's data matches the query */
+    function filterQuery(filter, note) {
+        switch (filter.type) {
+            case "AND":
+                return filterQuery(filter.left, note) && filterQuery(filter.right, note)
+            case "OR":
+                return filterQuery(filter.left, note) || filterQuery(filter.right, note)
+            case "MATCH":
+                return matchString(filter.value.ids, note.query_data) >= 0;
+            case "TAG":
+                return filterTag(note, filter);
+                break;
+        }
+    }
+
+
+    function getTagValue(note, ids) {
+        for (let i = 0; i < note.tags.length; i++) {
+            if (matchString(ids, note.tags[i] + "") >= 0) {
+                const val = note.tags[i].toString().split(":")[1]
+                if (val)
+                    return val;
+
+                return "";
+
+            }
+        }
+        return 0;
+    }
+
+    function getTagNumericalValue(note, ids) {
+        for (let i = 0; i < note.tags.length; i++) {
+            if (matchString(ids, note.tags[i] + "") >= 0) {
+                const val = note.tags[i].toString().split(":")[1]
+                if (val)
+                    return parseFloat(val);
+                return NaN;
+            }
+        }
+        return 0;
+    }
+
+    function filterTag(note, tag_op) {
+
+        const ids = tag_op.id.ids;
+
+        for (let i = 0; i < note.tags.length; i++) {
+
+            const tag = (note.tags[i] + "").split(":");
+
+            if (matchString(ids, tag[0]) >= 0) {
+
+                if (tag_op.val)
+                    return filterValue(tag_op.val, tag[1]);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function sortQuery(results, sorting_parameters, index = 0) {
+
+        const sort = sorting_parameters[index];
+        const length = sorting_parameters.length;
+
+        switch (sort.type) {
+            case "TAG":
+
+
+                const
+                    order = sort.order || -1,
+                    id = sort.id.ids;
+                console.log(sort, order)
+
+                results = results
+                    .map((note) => (note.temp_val = getTagNumericalValue(note, id), note))
+                    .sort((n1, n2) => n1.temp_val < n2.temp_val ? -1 * order : 1 * order)
+
+                if (index + 1 < length) {
+                    //split up results and continue
+                    //could use this to divy up sort jobs to workers.
+                    let old_value = null,
+                        last_index = 0;
+
+                    for (let i = 0; i < results.length; i++) {
+
+                        let val = results[i].temp_val;
+
+                        if (old_value !== null && old_value != val) {
+                            if (i - last_index > 1)
+                                results.splice(last_index, i - last_index, ...sortQuery(results.slice(last_index, i), sorting_parameters, index + 1));
+                            last_index = i;
+                        }
+
+                        old_value = val;
                     }
                 }
-            }
-            return 0;
+
+                break;
         }
 
-        /* Returns a Boolean value indicating whether the note's data matches the query */
-        function filterQuery(filter, note) {
-            switch (filter.type) {
-                case "AND":
-                    return filterQuery(filter.left, note) && filterQuery(filter.right, note)
-                case "OR":
-                    return filterQuery(filter.left, note) || filterQuery(filter.right, note)
-                case "MATCH":
-                    return matchString(filter.value.ids, note.query_data) >= 0;
-                case "TAG":
-                    return getTagPresence(note, filter);
-                case "TAGEQ":
-                    break;
-            }
-        }
+        return results;
+    }
 
-        function sortQuery(results, sorting_parameters, index = 0) {
-
-            const sort = sorting_parameters[index];
-            const length = sorting_parameters.length;
-
-            switch (sort.type) {
-                case "TAG":
-
-                    const order = sort.order || -1;
-                    const id = sort.tag.ids;
-                    results = results.sort((n1, n2) =>
-                        getTagNumericalValue(n1, id) < getTagNumericalValue(n2, id) ? -1 * order : 1 * order
-                    )
-
-                    if (index + 1 < length) {
-                        //split up results and continue
-                        let old_value = null;
-                        let last_index = 0;
-
-                        for (let i = 0; i < results.length; i++) {
-
-                            let val = getTagNumericalValue(results[i], id);
-
-                            if (old_value !== null && old_value != val) {
-                                if (i - last_index > 1)
-                                    results.splice(last_index, i - last_index, ...sortQuery(results.slice(last_index, i), sorting_parameters, index + 1));
-                                last_index = i;
-                            }
-
-                            old_value = val;
-                        }
-                    }
-
-                    break;
-            }
-
-            return results;
-        }
-    
 
     /** Get Containers Functions should return a list of notes that match the query.container property. **/
     if (!server.getNotesFromContainer)
@@ -157,11 +236,11 @@ export function QueryEngine(
 
         /************************************* UTILIZING QUERY SYNTAX *********************************************/
         var query;
-        try{
+        try {
 
-        query = query_parser(whind(query_string + ""));
-        console.log(query)
-        }catch(e){
+            query = query_parser(whind(query_string + ""));
+            console.log(query)
+        } catch (e) {
             console.log(e)
             return [];
         }
