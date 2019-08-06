@@ -145,7 +145,7 @@ export function QueryEngine(
                 const
                     order = sort.order || -1,
                     id = sort.id.ids;
-                console.log(sort, order)
+
 
                 results = results
                     .map((note) => (note.temp_val = getTagNumericalValue(note, id), note))
@@ -237,11 +237,9 @@ export function QueryEngine(
         /************************************* UTILIZING QUERY SYNTAX *********************************************/
         var query;
         try {
-
             query = query_parser(whind(query_string + ""));
-            console.log(query)
         } catch (e) {
-            console.log(e)
+            console.error(e)
             return [];
         }
 

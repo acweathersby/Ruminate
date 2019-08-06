@@ -246,12 +246,12 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
             })
 
             describe("Sorting", function() {
-                it.only("Avanced queries - Sorting", async function() {
+                it("Avanced queries - Sorting", async function() {
 
                     //(await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note => note.body);
 
                     //console.log((await graze.retrieve("*/films/ sort #Selected dec, #Released asc")).map(note => note.body));
-                    console.log((await graze.retrieve("book */chapter */* filter: #chapter and #book from 5 to 8 and dog sort: #book des")).map(note => ({a:note.body, b:note.tags})));
+                   // console.log((await graze.retrieve("book */chapter */* filter: #chapter and #book from 5 to 8 and dog sort: #book des")).map(note => ({a:note.body, b:note.tags})));
                   //  console.log((await graze.retrieve("book */chapter */* filter: #chapter and #book from 5 to 8 and dog sort: #book asc")).length);
                 })
             })
