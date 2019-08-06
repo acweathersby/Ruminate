@@ -233,32 +233,35 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
             describe("Wild Card *", function() {
 
-                it("[   *                                    ]", async () => (await graze.retrieve("*")).length.should.equal(12480));
-                it("[   book 1/                              ]", async () => (await graze.retrieve("book 1/")).length.should.equal(1));
-                it("[   book 1/*                             ]", async () => (await graze.retrieve("book 1/*")).length.should.equal(1141));
-                it("[   */chapter */                         ]", async () => (await graze.retrieve("*/chapter */")).length.should.equal(11346));
-                it("[   */chapter */ ? The dog               ]", async () => (await graze.retrieve("*/chapter */ ? The dog")).length.should.equal(1));
-                it("[   */chapter */ ? squirrel              ]", async () => (await graze.retrieve("*/chapter */ ? squirrel")).length.should.equal(3));
-                it("[   */chapter */ ? The dog or squirrel   ]", async () => (await graze.retrieve("*/chapter */ ? The dog or squirrel")).length.should.equal(4));
-                it("[   */chapter 1*/ ? The dog or squirrel  ]", async () => (await graze.retrieve("*/chapter 1*/ ? The dog or squirrel")).length.should.equal(2));
-                it("[   */chapter 2*/ ? The dog or squirrel  ]", async () => (await graze.retrieve("*/chapter 2*/ ? The dog or squirrel")).length.should.equal(0));
-                it("[   */films/*                            ]", async () => (await graze.retrieve("*/films/*")).length.should.equal(750));
-                it("[   */essays/*                           ]", async () => (await graze.retrieve("*/essays/*")).length.should.equal(314));
-                it("[   */*pop*/* ? shrunk                   ]", async () => (await graze.retrieve("*/*pop*/* ? shrunk ")).length.should.equal(7));
-                it("[   */*pop*/*                            ]", async () => (await graze.retrieve("*/*pop*/*  ")).length.should.equal(53));
-                it("[   */*pop*/* ? #type=state              ]", async () => (await graze.retrieve("*/*pop*/* ? #type = state")).length.should.equal(50));
-                it("[   */*pop*/* ? #type=territory          ]", async () => (await graze.retrieve("*/*pop*/* ? #type = territory")).length.should.equal(1));
-                it("[   */*pop*/* ? #type=district           ]", async () => (await graze.retrieve("*/*pop*/* ? #type = district ")).length.should.equal(1));
-                it("[   */*pop*/* ? #type=country            ]", async () => (await graze.retrieve("*/*pop*/* ? #type = country")).length.should.equal(1));
-                it("[   * ? #*2010*sus                       ]", async () => (await graze.retrieve("   * ? #*2010*sus")).length.should.equal(53));
+                it("[ *                                    ]", async () => (await graze.retrieve("*")).length.should.equal(12480));
+                it("[ book 1/                              ]", async () => (await graze.retrieve("book 1/")).length.should.equal(1));
+                it("[ book 1/*                             ]", async () => (await graze.retrieve("book 1/*")).length.should.equal(1141));
+                it("[ */chapter */                         ]", async () => (await graze.retrieve("*/chapter */")).length.should.equal(11346));
+                it("[ */chapter */ ? The dog               ]", async () => (await graze.retrieve("*/chapter */ ? The dog")).length.should.equal(1));
+                it("[ */chapter */ ? squirrel              ]", async () => (await graze.retrieve("*/chapter */ ? squirrel")).length.should.equal(3));
+                it("[ */chapter */ ? The dog or squirrel   ]", async () => (await graze.retrieve("*/chapter */ ? The dog or squirrel")).length.should.equal(4));
+                it("[ */chapter 1*/ ? The dog or squirrel  ]", async () => (await graze.retrieve("*/chapter 1*/ ? The dog or squirrel")).length.should.equal(2));
+                it("[ */chapter 2*/ ? The dog or squirrel  ]", async () => (await graze.retrieve("*/chapter 2*/ ? The dog or squirrel")).length.should.equal(0));
+                it("[ */films/*                            ]", async () => (await graze.retrieve("*/films/*")).length.should.equal(750));
+                it("[ */essays/*                           ]", async () => (await graze.retrieve("*/essays/*")).length.should.equal(314));
+                it("[ */*pop*/* ? shrunk                   ]", async () => (await graze.retrieve("*/*pop*/* ? shrunk ")).length.should.equal(7));
+                it("[ */*pop*/*                            ]", async () => (await graze.retrieve("*/*pop*/*  ")).length.should.equal(53));
+                it("[ */*pop*/* ? #type=state              ]", async () => (await graze.retrieve("*/*pop*/* ? #type = state")).length.should.equal(50));
+                it("[ */*pop*/* ? #type=territory          ]", async () => (await graze.retrieve("*/*pop*/* ? #type = territory")).length.should.equal(1));
+                it("[ */*pop*/* ? #type=district           ]", async () => (await graze.retrieve("*/*pop*/* ? #type = district ")).length.should.equal(1));
+                it("[ */*pop*/* ? #type=country            ]", async () => (await graze.retrieve("*/*pop*/* ? #type = country")).length.should.equal(1));
+                it("[ * ? #*2010*sus                       ]", async () => (await graze.retrieve("* ? #*2010*sus")).length.should.equal(53));
             })
 
             describe("Sorting", function() {
+                it("",async function(){
+
                     //(await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note => note.body);
                     // console.log((await graze.retrieve("*/films/ sort #Selected dec, #Released asc")).map(note => note.body));
-                    // console.log((await graze.retrieve("book */chapter */* filter: #chapter and #book from 5 to 8 and bird sort: #book des")).map(note => ({a:note.body, b:note.tags})));
+                    console.log((await graze.retrieve(" */*pop*/* | #type, #Geo*, #*2018 dec ")).map(note => ({a:note.body, b:note.tags})));
                     //console.log((await graze.retrieve("*/*pop*/* ? shrunk")).map(note => ({a:note.body, b:note.tags})));
                     //console.log((await graze.retrieve("book */chapter */* filter Andrew and #book is from 1 to 5 sort: #book ASC")).length);
+                })
             })
         })
 
