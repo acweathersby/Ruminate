@@ -24,6 +24,10 @@ export default function Note(graze, uid, id, tags, body, refs, created, modified
         get id() { return note.id },
         get body() { return note.body },
         set body(str) { note.body = str },
+        get tags() { return note.tags },
+        //set tags(str) { note.tags = str },
+        get meta() { return note.tags },
+        //set meta(str) { note.tags = str },
         // saves the note's data to the backing server. returns true if the save was successfull, or returns false.
         save: store,
         store,

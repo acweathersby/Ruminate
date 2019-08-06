@@ -11,23 +11,40 @@ var log = "";
 const writeError = e => log += e;
 const warn = e => {};
 
-function Server(store, file_path = "") {
+function Server(delimeter = "/") {
 
     let watcher = null,
-        READ_BLOCK = false,
+        file_path = "",
+        READ_BLOCK = false;
+
+    var
+        uid_store = new Map,
+        container_store = new Map,
         container = new Container;
+
+    function getContainer(uid) {
+
+        const id = uid + "";
+
+        if (!container_store.has(id))
+            container_store.set(id, new Map);
+
+        return container_store.get(id);
+    }
 
     /* Writes data to the stored file */
     async function write() {
+
         if (file_path) {
 
             const out = { data: [] };
 
-            for (const note of store.values())
-                out.data.push(note);
-            //console.log("ASASDAD - write", file_path, JSON.stringify(out));
+            for (const note_store of container_store.values())
+                for (const note of note_store.values())
+                    out.data.push(note);
 
             READ_BLOCK = true
+
             try {
                 await fsp.writeFile(file_path, JSON.stringify(out), "utf8")
             } catch (e) {
@@ -55,25 +72,31 @@ function Server(store, file_path = "") {
         await fsp.readFile(fp, "utf8")
             .then((d) => (STATUS = true, data = d))
             .catch(writeError);
-
-        store = new Map();
+        // Create new storage systems.
+        container_store = new Map;
+        uid_store = new Map;
+        container = new Container;
 
         try {
             if (STATUS) {
 
                 if (data) {
+
                     const json = JSON.parse(data);
 
-                    if (json.data) {
-                        for (const note of json.data)
-                            if (note.uid)
-                                store.set(note.uid, note);
-                    }
+                    if (json.data)
+                        for (const note of json.data) {
+                            if (note.uid) {
+                                getContainer(container.get(note.id).uid).set(note.uid, note);
+
+                                uid_store.set(note.uid, note.id);
+                            }
+                        }
                 }
             }
 
             if (data)
-                STATUS = updateDB(data)
+                STATUS = updateDB(data);
 
         } catch (e) {
             writeError(e);
@@ -87,14 +110,13 @@ function Server(store, file_path = "") {
     /* Updates store with data from json_String */
     function updateDB(json_data_string) {
         try {
-            //  console.log("ASDAD", json_data_string)
 
             const json = JSON.parse(json_data_string);
 
             if (json.data)
                 for (const note of json.data)
                     if (note.uid)
-                        store.set(note.uid, note);
+                        container_store.set(note.uid, note);
             return true;
         } catch (e) {
             writeError(e);
@@ -102,19 +124,20 @@ function Server(store, file_path = "") {
         return false
     }
 
-    function getContainer(uid) {
-        const id = uid + "";
+    function noteFromID(uid) {
 
-        if (!store.has(id))
-            store.set(id, new Map);
+        const id = uid_store.get(uid + "");
 
-        return store.get(id);
+        if (!id) return null;
+
+        return getContainer(container.get(id, delimeter).uid).get(uid) || null;
     }
 
     const queryRunner = QueryEngine({
-            getNotesFromContainers: (uid) => [...getContainer(uid).values()]
+            getNotesFromContainer: container_uid => [...getContainer(container_uid).values()],
+            getNoteFromUID: note_uid => noteFromID(note_uid)
         },
-        container
+        false
     );
 
     return new(class Server {
@@ -167,14 +190,14 @@ function Server(store, file_path = "") {
                 uid = note.uid.string,
                 modifed_time = (Date.now() / 1000) | 0;
 
-            if (store.has(uid))
-                stored_note = getContainer(container.get(note.old_id, "/").uid).get(uid);
+            if (uid_store.has(uid))
+                stored_note = noteFromID(uid_store.get(uid));
             else
                 stored_note = {
-                    id : note.id,
+                    id: note.id,
                     created: note.created
                 }
-            
+
             const old_id = stored_note.id;
 
             stored_note.modifed = modifed_time;
@@ -182,8 +205,11 @@ function Server(store, file_path = "") {
             stored_note.body = note.body;
             stored_note.id = note.id;
             stored_note.tags = note.tags;
-            stored_note.query_data = `${note.id.split(".").pop()} ${note.tags.join(";")} ${note.body}}`;
-            getContainer(container.change(old_id, note.id, "/").uid).set(uid, stored_note);
+            stored_note.query_data = `${note.id.split(".").pop()} ${note.tags.join(";")} ${note.body}`;
+
+            uid_store.set(uid, note.id);
+
+            getContainer(container.change(old_id, note.id, delimeter).uid).set(uid, stored_note);
 
             await write();
 
@@ -192,29 +218,13 @@ function Server(store, file_path = "") {
 
         removeNote(uid) {}
 
-        retrieveNote() {}
-
         async query(query_string) {
-            if (!query_string)
-                return [];
-
             await read(); //Hack - mack sure store is up to date;
-
-            if (UID.stringIsUID(query_string + ""))
-                return [store.get(query_string)];
-
-            if (Array.isArray(query_string)) {
-                for (let item of query_string)
-                    if (item = this.query(item))
-                        out.push(...item);
-                return out;
-            }
-
-            return await queryRunner(query_string)
+            return await queryRunner(query_string, container)
         }
 
         /* 
-            Deletes all data in store. 
+            Deletes all data in container_store. 
             Returns a function that returns a function that actually does the clearing.
             Example server.implode()()();
             This is deliberate to force dev to use this intentionally.
@@ -223,7 +233,10 @@ function Server(store, file_path = "") {
             file_path && warn("Warning: Calling the return value can lead to bad things!");
             return () => (file_path && warn(`Calling this return value WILL delete ${file_path}`),
                 async () => {
-                    store = new Map();
+
+                    container_store = new Map;
+                    uid_store = new Map;
+                    container = new Container;
 
                     try {
                         if (file_path)
@@ -239,7 +252,6 @@ function Server(store, file_path = "") {
 }
 
 export default function() {
-    if (new.target)
-        return Server(new Map());
-    return Server(new Map());
+    if (new.target);
+    return Server();
 }

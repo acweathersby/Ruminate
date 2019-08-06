@@ -3,7 +3,7 @@ import Note from "./common/note";
 import NoteContainer from "./common/container"
 
 export default class Graze {
-    
+
     constructor() {
         //Private
         this.server = null;
@@ -34,10 +34,9 @@ export default class Graze {
     ) {
         const results = await this.server.query(query);
 
-        if (results) {
-
-            return new NoteContainer(
-                ...results.map(
+        return (results) ?
+            new NoteContainer(...results
+                .map(
                     note_data =>
                     Note(
                         this,
@@ -50,10 +49,7 @@ export default class Graze {
                         note_data.modified
                     )
                 )
-            )
-        }
-
-        return null;
+            ) : null;
     }
 
     createNote(
@@ -72,7 +68,7 @@ export default class Graze {
                 note_tags = note_tags.split(",");
             else
                 note_tags = [];
-        } else if (!Array.isArray(note_tags) || note_tags.reduce((r, v) => (typeof v !== "string" && typeof v !== "number") || r, false)){
+        } else if (!Array.isArray(note_tags) || note_tags.reduce((r, v) => (typeof v !== "string" && typeof v !== "number") || r, false)) {
             throw new Error(`graze.createNote: [note_tags] argument must be a string of comma separated values or an array of [strings | numbers]. Got ${note_tags.map(e=>typeof e)}`);
         }
 
@@ -104,7 +100,7 @@ export default class Graze {
         const ACCEPTABLE =
             typeof server.storeNote == "function" &&
             typeof server.removeNote == "function" &&
-            typeof server.retrieveNote == "function" &&
+            typeof server.implode == "function" &&
             typeof server.query == "function";
 
         if (!ACCEPTABLE)

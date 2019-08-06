@@ -1,3 +1,7 @@
+import path from "path";
+import fs from "fs";
+const fsp = fs.promises;
+
 export async function fillTestData(graze, file = "w&p") {
     var data = "";
 

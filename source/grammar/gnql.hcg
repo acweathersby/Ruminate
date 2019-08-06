@@ -21,11 +21,11 @@
 
 <> start → query_body
 
-<> query_body → container_clause? filter_clause? sort_clause? 			↦c { this.container = $$sym1; this.filter=$$sym2; this.sort=$$sym3 }
+<> query_body → container_clause? filter_clause? sort_clause? 			↦c { this.container = $$sym1 ; this.filter=$$sym2; this.sort=$$sym3 }
 
 ## Container Clause
 
-<> container_clause →  container_identifier(*) identifier? 				↦c {this.containers = $$sym1;  this.id = $$sym2; if(this.id){
+<> container_clause →  \/? container_identifier(*) identifier? 				↦c {this.containers = [{ids:[""]},...$sym2];  this.id = $$sym3; if(this.id){
 																				if(this.id.ids.length == 1 && this.id.ids[0] == "*"){
 																					if(!this.containers)
 																						this.containers = [];

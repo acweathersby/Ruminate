@@ -1,9 +1,6 @@
-import chai from "chai";
 import graze_constructor from "../source/graze.js";
-import path from "path";
-import fs from "fs";
 
-const fsp = fs.promises;
+import chai from "chai";
 
 chai.should();
 

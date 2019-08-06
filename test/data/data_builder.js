@@ -35,7 +35,7 @@ async function war_and_peace() {
                 chapter.paragraphs.forEach((paragraph, p_index) => {
                     data.push({
                         id: `book ${b_index+1}/chapter ${c_index+1}/paragraph ${p_index+1}`,
-                        meta: [p_index + 1, book.title, "chapter"],
+                        meta: [p_index + 1, book.title, "chapter", `book:${b_index+1}`],
                         body: paragraph
                     })
                 })
@@ -43,7 +43,7 @@ async function war_and_peace() {
                 chapter.footnotes.forEach((footnote, f_index) => {
                     data.push({
                         id: `book ${b_index+1}/chapter ${c_index+1}/footnote ${f_index+1}`,
-                        meta: [f_index, book.title, "footnote"],
+                        meta: [ f_index+1,`index:${f_index}`, book.title, "footnote", `chapter:${c_index+1}`, `book:${b_index+1}`],
                         body: footnote
                     })
                 })
@@ -60,6 +60,7 @@ async function loc_film_registry() {
 
     (await fsp.readFile(path.resolve(process.env.PWD, "./test/data/library_of_congress_film_registry_essay.txt"), "utf8"))
         .split(/\n/g)
+        .slice(0,-1) // Last Line is empty
         .map(e => e.trim().split("|").map(e => e.trim()))
         .map(array =>
             data.push({
@@ -71,12 +72,13 @@ async function loc_film_registry() {
 
     (await fsp.readFile(path.resolve(process.env.PWD, "./test/data/library_of_congress_film_registry.txt"), "utf8"))
         .split(/\n/g)
+        .slice(0,-1) // Last Line is empty
         .map(e => e.trim().split("|").map(e => e.trim()))
-        .map(array =>
+        .map((array, i) =>
             data.push({
                 id: `library of congress/film registry/films/${array[0]}`,
-                meta: [`Released:${array[1]}`, `Selected:${array[2]}`, "film"],
-                body: `Name: ${array[0]} \n Released: ${array[1]} \n Selected by the Library of Congress: ${array[2]}`
+                meta: [`Released:${array[1]}`, `Selected:${array[2]}`, "film", "Identifier:"+i],
+                body: `Name: ${array[0]}; Released: ${array[1]}; Selected by the Library of Congress: ${array[2]}; id:${i}`
             })
         );
 
