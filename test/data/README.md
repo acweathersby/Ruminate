@@ -28,3 +28,8 @@ Data in library_of_congress_film_registry.txt from [Complete National Film Regis
 
 Data in library_of_congress_film_registry_essays.txt retrieved from [Index of Film Essays | Film Registry | National Film Preservation Board | Programs at the Library of Congress | Library of Congress](https://www.loc.gov/programs/national-film-preservation-board/film-registry/index-of-essays), **08/04/2019**
 
+## US Census Annual Estimates of the Resident Population: April 1, 2010 to July 1, 2018 
+
+U.S. Census Bureau, Population Division [Data Link](https://factfinder.census.gov/rest/downloadRequest/deliver?reservationId=171919515&_ts=583172362244)
+
+December 2018. 
