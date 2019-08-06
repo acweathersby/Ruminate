@@ -30,6 +30,6 @@ Data in library_of_congress_film_registry_essays.txt retrieved from [Index of Fi
 
 ## US Census Annual Estimates of the Resident Population: April 1, 2010 to July 1, 2018 
 
-U.S. Census Bureau, Population Division [Data Link](https://factfinder.census.gov/rest/downloadRequest/deliver?reservationId=171919515&_ts=583172362244)
+U.S. Census Bureau, Population Division [Data Link](https://www.census.gov/newsroom/press-kits/2018/pop-estimates-national-state.html?reservationId=171919515&_ts=583172362244)
 
 December 2018. 
