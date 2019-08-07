@@ -78,7 +78,7 @@ export default class Graze {
         if (!(uid instanceof UID))
             throw new Error("uid argument must be a UID instance");
 
-        const creation_date = (Date.now() / 1000) | 0
+        const creation_date = Date.now() | 0
 
         return Note(
             this,

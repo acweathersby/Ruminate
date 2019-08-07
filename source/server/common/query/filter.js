@@ -12,7 +12,8 @@ function filterValue(value_op, value) {
     
     switch (value_op.type) {
         case "EQUALS_QUALITATIVE":
-            return matchString(val.ids, value) >= 0;
+            var v = matchString(val.ids, value) >= 0;
+            return v
             break;
         case "EQUALS_QUANTITATIVE":
             value = parseFloat(value);
@@ -67,7 +68,10 @@ function filterTag(note, tag_op) {
 
 /* Returns a Boolean value indicating whether the note's data matches the query */
 function filterProcessor(filter, note) {
+
     switch (filter.type) {
+        case "NOT":
+            return ! filterProcessor(filter.left, note)
         case "AND":
             return filterProcessor(filter.left, note) && filterProcessor(filter.right, note)
         case "OR":

@@ -21,7 +21,8 @@
     "test.watch": "mocha -r esm -w test/test.js",
     "build": "rollup --config ./build/config/config.js",
     "build.watch": "rollup --config ./build/config/config.js --watch",
-    "build_test_data": "node ./test/data/data_builder.js"
+    "build_test_data": "node ./test/data/data_builder.js",
+    "build_wasm": "./scripts/debian/build_crdt.sh"
   },
   "dependencies": {
     "@candlefw/charcoal": "latest",

@@ -91,3 +91,6 @@ documents/api/*
 
 #HCG backup compiler files.
 *.hcgb_*
+
+#Emscripten Directories
+emsdk/

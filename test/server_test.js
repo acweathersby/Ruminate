@@ -219,11 +219,14 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
             this.slow(2000);
             this.timeout(5000);
 
+            let total = 0;
+
             before(async function() {
                 graze.connect(server);
                 await fillTestData(graze);
                 await fillTestData(graze, "locfr");
                 await fillTestData(graze, "pop2018");
+                total = (await graze.retrieve("*")).length;
             })
 
             after(function() {
@@ -231,41 +234,175 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
                 server.implode()()();
             })
 
+            async function getLen(query_string) {
+                return (await graze.retrieve(query_string)).length;
+            }
+
+            async function getBody(query_string) {
+                return (await graze.retrieve(query_string)).map(e => e.body);
+            }
+
+            async function getTags(query_string) {
+                return (await graze.retrieve(query_string)).map(e => e.tags);
+            }
+
+            async function getNote(query_string) {
+                return (await graze.retrieve(query_string));
+            }
+
+
             describe("Wild Card *", function() {
 
-                it("[ *                                    ]", async () => (await graze.retrieve("*")).length.should.equal(12480));
-                it("[ book 1/                              ]", async () => (await graze.retrieve("book 1/")).length.should.equal(1));
-                it("[ book 1/*                             ]", async () => (await graze.retrieve("book 1/*")).length.should.equal(1141));
-                it("[ */chapter */                         ]", async () => (await graze.retrieve("*/chapter */")).length.should.equal(11346));
-                it("[ */chapter */ ? The dog               ]", async () => (await graze.retrieve("*/chapter */ ? The dog")).length.should.equal(1));
-                it("[ */chapter */ ? squirrel              ]", async () => (await graze.retrieve("*/chapter */ ? squirrel")).length.should.equal(3));
-                it("[ */chapter */ ? The dog or squirrel   ]", async () => (await graze.retrieve("*/chapter */ ? The dog or squirrel")).length.should.equal(4));
-                it("[ */chapter 1*/ ? The dog or squirrel  ]", async () => (await graze.retrieve("*/chapter 1*/ ? The dog or squirrel")).length.should.equal(2));
-                it("[ */chapter 2*/ ? The dog or squirrel  ]", async () => (await graze.retrieve("*/chapter 2*/ ? The dog or squirrel")).length.should.equal(0));
-                it("[ */films/*                            ]", async () => (await graze.retrieve("*/films/*")).length.should.equal(750));
-                it("[ */essays/*                           ]", async () => (await graze.retrieve("*/essays/*")).length.should.equal(314));
-                it("[ */*pop*/* ? shrunk                   ]", async () => (await graze.retrieve("*/*pop*/* ? shrunk ")).length.should.equal(7));
-                it("[ */*pop*/*                            ]", async () => (await graze.retrieve("*/*pop*/*  ")).length.should.equal(53));
-                it("[ */*pop*/* ? #type=state              ]", async () => (await graze.retrieve("*/*pop*/* ? #type = state")).length.should.equal(50));
-                it("[ */*pop*/* ? #type=territory          ]", async () => (await graze.retrieve("*/*pop*/* ? #type = territory")).length.should.equal(1));
-                it("[ */*pop*/* ? #type=district           ]", async () => (await graze.retrieve("*/*pop*/* ? #type = district ")).length.should.equal(1));
-                it("[ */*pop*/* ? #type=country            ]", async () => (await graze.retrieve("*/*pop*/* ? #type = country")).length.should.equal(1));
-                it("[ * ? #*2010*sus                       ]", async () => (await graze.retrieve("* ? #*2010*sus")).length.should.equal(53));
+                it("[ *                                    ]", async () => (await getLen("*")).should.equal(total));
+                it("[ book 1/                              ]", async () => (await getLen("book 1/")).should.equal(1));
+                it("[ book 1/*                             ]", async () => (await getLen("book 1/*")).should.equal(1141));
+                it("[ */chapter */                         ]", async () => (await getLen("*/chapter */")).should.equal(11346));
+                it("[ */chapter */ ? The dog               ]", async () => (await getLen("*/chapter */ ? The dog")).should.equal(1));
+                it("[ */chapter */ ? squirrel              ]", async () => (await getLen("*/chapter */ ? squirrel")).should.equal(3));
+                it("[ */chapter */ ? The dog or squirrel   ]", async () => (await getLen("*/chapter */ ? The dog or squirrel")).should.equal(4));
+                it("[ */chapter 1*/ ? The dog or squirrel  ]", async () => (await getLen("*/chapter 1*/ ? The dog or squirrel")).should.equal(2));
+                it("[ */chapter 2*/ ? The dog or squirrel  ]", async () => (await getLen("*/chapter 2*/ ? The dog or squirrel")).should.equal(0));
+                it("[ */films/*                            ]", async () => (await getLen("*/films/*")).should.equal(750));
+                it("[ */essays/*                           ]", async () => (await getLen("*/essays/*")).should.equal(314));
+                it("[ */footnote *                         ]", async () => (await getLen("*/footnote *")).should.equal(123));
+                it("[ */*pop*/* ? shrunk                   ]", async () => (await getLen("*/*pop*/* ? shrunk ")).should.equal(7));
+                it("[ */*pop*/*                            ]", async () => (await getLen("*/*pop*/*  ")).should.equal(53));
+                it("[ */*pop*/* ? #type=state              ]", async () => (await getLen("*/*pop*/* ? #type = state")).should.equal(50));
+                it("[ */*pop*/* ? #type=territory          ]", async () => (await getLen("*/*pop*/* ? #type = territory")).should.equal(1));
+                it("[ */*pop*/* ? #type=district           ]", async () => (await getLen("*/*pop*/* ? #type = district ")).should.equal(1));
+                it("[ */*pop*/* ? #type=country            ]", async () => (await getLen("*/*pop*/* ? #type = country")).should.equal(1));
+                it("[ * ? #*2010*sus                       ]", async () => (await getLen("* ? #*2010*sus")).should.equal(53));
             })
 
-            describe("Sorting", function() {
-                it("",async function(){
+            describe("Filter", async function() {
+                var a = 0;
 
-                    //(await graze.retrieve("*/films/ sort #Released dec, #Created asc")).map(note => note.body);
-                    // console.log((await graze.retrieve("*/films/ sort #Selected dec, #Released asc")).map(note => note.body));
-                    console.log((await graze.retrieve(" */*pop*/* | #type, #Geo*, #*2018 dec ")).map(note => ({a:note.body, b:note.tags})));
-                    //console.log((await graze.retrieve("*/*pop*/* ? shrunk")).map(note => ({a:note.body, b:note.tags})));
-                    //console.log((await graze.retrieve("book */chapter */* filter Andrew and #book is from 1 to 5 sort: #book ASC")).length);
-                })
+                it("[ * ? * and *]", async function() {
+                    a = (await getLen("* ? * and *"));
+                    a.should.equal(total);
+                });
+
+                it("[ * ? ! * ]", async function() {
+                    a = (await getLen("* ? ! *"));
+                    a.should.not.equal(total);
+                    a.should.equal(0);
+                });
+
+                it("[ * ? chapter ]", async function() {
+                    a = (await getLen(" * ? chapter"));
+                    a.should.not.equal(total);
+                    a.should.equal(11346);
+                });
+
+                it("[ * ? not chapter ]", async function() {
+                    const c = (await getLen(" * ? not chapter"));
+                    c.should.not.equal(total);
+                    c.should.equal(total - a);
+                });
+
+                it("[ * ? footnote ]", async function() {
+                    a = (await getLen(" * ? footnote"));
+                    a.should.not.equal(total);
+                    a.should.equal(123);
+                });
+
+                it("[ * ? ! footnote ]", async function() {
+                    const c = (await getLen(" * ? ! footnote"));
+                    c.should.not.equal(total);
+                    c.should.equal(total - a);
+                });
+
+                it("[ */*pop*/* ? #state ]", async function() {
+                    a = (await getLen(" */*pop*/* ? state"));
+                    a.should.not.equal(53);
+                    a.should.equal(50);
+                });
+
+                it("[ */*pop*/* ? ! #state ]", async function() {
+                    const c = (await getLen(" */*pop*/* ? ! state"));
+                    c.should.not.equal(total);
+                    c.should.equal(53 - a);
+                });
+
+                it("[ * ? #state or #footnote ]", async function() {
+                    const c = (await getLen(" * ? #state or #footnote "));
+                    c.should.not.equal(total);
+                    c.should.equal(173);
+                });
+            })
+
+            describe("Sort", function() {
+                it("[ * ? #state sort #*2018* [ descending | ascending ] ]", async function() {
+                    const c = (await getNote(" * ? #state sort #*2018* des"));
+                    let v = Infinity;
+                    c.map((e)=> {
+                        let p = parseInt(e.tags[13].split(":")[1]);
+                        p.should.be.lessThan(v);
+                        v = p;
+                    } )
+
+                    const d = (await getNote(" * ? #state sort #*2018* asc"));
+                    v = -Infinity;
+                    d.map((e)=> {
+                        let p = parseInt(e.tags[13].split(":")[1]);
+                        p.should.be.greaterThan(v);
+                        v = p;
+                    } )
+                });
+
+                it("[ *pop*/* sort #type asc #*2018* ]", async function() {
+                    const c = (await getNote(" */*pop*/* sort #type asc, #*2018* des"));
+                    let v = Infinity;
+                    c.length.should.equal(53);
+                    c[0].tags[14].split(":")[1].should.equal("country")
+                    c[1].tags[14].split(":")[1].should.equal("district")
+                    for(let i = 2; i < 52; i++){
+                        const note = c[i]
+                        let p = parseInt(note.tags[13].split(":")[1]);
+                        p.should.be.lessThan(v);
+                        v = p;
+                    }
+                    c[52].tags[14].split(":")[1].should.equal("territory")
+                });
+
+                it("[ *book*/* sort created ]", async function() {
+                    const c = (await getNote(" *book*/* sort created asc"));
+                    let v = -Infinity;
+                    c.length.should.equal(11363);
+                    for(let i = 0; i < 11363; i++){
+                        const note = c[i]
+                        let p = note.created;
+                        p.should.be.least(v);
+                        v = p;
+                    }
+                });
             })
         })
 
-        it("Auto update")
+        it("Auto update", async function(){
+
+            graze.connect(server);
+
+            const valA = "This note is going to be transformed here:; that is in the middle of this here note.";
+
+            const valB = "(this is in the middle of the note!)";
+
+            const valC = valA.slice(0, 42) + valB + valA.slice(42);
+
+            const noteG = graze.createNote("autoupdate/mynote", "", valA);
+
+            await noteG.store();
+
+            const noteGd = (await graze.retrieve("autoupdate/mynote"))[0];
+
+            noteGd.body.should.equal(valA);
+
+            await noteG.insert(10, "This is in the middle of the note!");
+
+            noteG.body.should.equal(valC);
+
+            noteGd.body.should.equal(valC);
+        })
         //*/
     }
 }

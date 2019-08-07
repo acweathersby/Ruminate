@@ -188,7 +188,7 @@ function Server(delimeter = "/") {
 
             const
                 uid = note.uid.string,
-                modifed_time = (Date.now() / 1000) | 0;
+                modifed_time = Date.now() | 0;
 
             if (uid_store.has(uid))
                 stored_note = noteFromID(uid_store.get(uid));

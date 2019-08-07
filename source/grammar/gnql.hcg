@@ -80,11 +80,11 @@
 
 <> created_statement → 
 
-    (τcreated │ τCREATED) comparison_expression order?              ↦c=>creatednode
+    (τcreated │ τCREATED) comparison_expression? order?              ↦c=>creatednode
 
 <> modified_statement → 
 
-    (τmodifier │ τMODIFIED) comparison_expression order?            ↦c=>modifiednode
+    (τmodifier │ τMODIFIED) comparison_expression? order?            ↦c=>modifiednode
 
 <> size_statement → 
 

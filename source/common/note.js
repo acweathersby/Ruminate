@@ -11,7 +11,9 @@ export default function Note(graze, uid, id, tags, body, refs, created, modified
         body,
         refs,
         created,
-        modified
+        modified,
+        change_index : 0,
+        changed : [] // For change states
     }
 
     const store = async () => (await graze.store(note)) > 0;
@@ -27,6 +29,14 @@ export default function Note(graze, uid, id, tags, body, refs, created, modified
         get tags() { return note.tags },
         //set tags(str) { note.tags = str },
         get meta() { return note.tags },
+
+        async insert(index, string){
+            note.body
+            //note.changed.push({i:change_index++, type:update; ste:})
+            //push upate to the server.
+            await graze.store(this);
+        },
+        async delete(index, length){},
         //set meta(str) { note.tags = str },
         // saves the note's data to the backing server. returns true if the save was successfull, or returns false.
         save: store,

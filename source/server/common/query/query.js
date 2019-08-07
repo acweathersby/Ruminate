@@ -2,7 +2,6 @@ import whind from "@candlefw/whind";
 
 import query_parser from "../../../compiler/gnql";
 import UID from "../../../common/uid";
-import worker from "./query_worker";
 import sort from "./sort.js";
 import filter from "./filter.js";
 
