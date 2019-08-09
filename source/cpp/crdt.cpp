@@ -1,11 +1,6 @@
 #include <iostream>
-#include <vector>
 #include <cstring>
 #include <sstream>
-#include <emscripten.h>
-#include <emscripten/bind.h>
-
-using namespace emscripten;
 
 namespace crdt {
 
@@ -195,7 +190,7 @@ struct CharOp {
 	}
 
 	bool isSame(const CharOp<MetaStamp, Operator>& op) const {
-		return !(op.getIDClock() - getIDClock() + op.getIDSite() - getIDSite());
+		return ((int)op.getIDClock() - (int)getIDClock() + (int)op.getIDSite() - (int)getIDSite()) == 0;
 	}
 
 	friend std::ostream& operator << (std::ostream& os, const CharOp<MetaStamp, Operator>& op) {
@@ -207,17 +202,17 @@ struct CharOp {
 
 	/***** Compares the ids site and clock value *****/
 	friend bool operator == (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
-		return a.id.getIDClock() == b.getIDClock() && a.getIDSite() == b.getIDSite();
+		return a.isSame(b);
 	}
 
 	/***** Compares the ids site and clock value *****/
 	friend bool operator < (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
-		return a.getIDClock() < b.getIDClock() || a.getIDSite() < b.getIDSite();
+		return  a.getIDClock() < b.getIDClock() || (a.getIDClock() == b.getIDClock() && a.getIDSite() < b.getIDSite());
 	}
 
 	/***** Compares the ids site and clock value *****/
 	friend bool operator > (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
-		return a.getIDClock() > b.getIDClock() || a.getIDSite() > b.getIDSite();
+		return  a.getIDClock() > b.getIDClock() || (a.getIDClock() == b.getIDClock() && a.getIDSite() > b.getIDSite());
 	}
 
 
@@ -237,6 +232,8 @@ struct OPBuffer {
 
 	char * data = NULL;
 
+	bool CLONED = false;
+
 	Operator last;
 
 	OPBuffer() {}
@@ -246,26 +243,34 @@ struct OPBuffer {
 	}
 
 	~OPBuffer() {
-		delete[] data;
+
+		if(!CLONED)
+			delete[] data;
 	}
 
-	void clone(OPBuffer& clone) const {
+	void copy(OPBuffer& copy_to_buffer) const {
 
-		clone.byte_length = byte_length;
-		clone.op_marker = op_marker;
-		clone.size = size;
-		clone.count = count;
-		clone.data = data;
+		if(copy_to_buffer.data == data || copy_to_buffer.CLONED){
+			return; // Do not overwite data!
+		}
 
-		clone.data = new char[size];
+		copy_to_buffer.byte_length = byte_length;
+		copy_to_buffer.op_marker = op_marker;
+		copy_to_buffer.count = count;
 
-		std::memcpy(clone.data, data, size);
+		if(copy_to_buffer.size != size){
+			delete[] copy_to_buffer.data;
+			copy_to_buffer.data = new char[size];
+		}
+
+		std::memcpy(copy_to_buffer.data, data, size);
+
+		copy_to_buffer.size = size;
 
 		return;
 	}
 
 	OPBuffer(const OPBuffer& buffer) {
-
 		byte_length = buffer.byte_length;
 		op_marker = buffer.op_marker;
 		size = buffer.size;
@@ -274,31 +279,17 @@ struct OPBuffer {
 		last = buffer.last;
 	}
 
-	OPBuffer copy() const {
+	OPBuffer clone() const {
 
 		OPBuffer copy;
-
 
 		copy.byte_length = byte_length;
 		copy.op_marker = op_marker;
 		copy.size = size;
 		copy.count = count;
 		copy.last = last;
-		
 		copy.data =  data;
-		copy.data =  data;
-		
-		std::cout << "COPY!!!!1 " << (unsigned) &*(copy.data) << " "<< (unsigned) &*(data)<< std::endl;
-
-
-		std::cout << "COPY!!!!2 " <<(copy.size) << " "<< (size)<< std::endl;
-		std::cout << "COPY!!!!3 " <<(copy.count) << " "<< (count)<< std::endl;
-		std::cout << "COPY!!!!4 " <<(copy.op_marker) << " "<< (op_marker)<< std::endl;
-		std::cout << "COPY!!!!5 " <<(copy.byte_length) << " "<< (byte_length)<< std::endl;
-		std::cout << "COPY!!!!6 " <<(copy.last) << " "<< (last)<< std::endl;
-
-		std::cout << "COPY!!!!00 " << *((Operator *) &data[1]) << std::endl;
-		std::cout << "COPY!!!!00 " << *((Operator *) &copy.data[1]) << std::endl;
+		copy.CLONED = true;
 
 		return copy;
 	}
@@ -325,7 +316,6 @@ struct OPBuffer {
 		Operator curr = current();
 
 		if (atEnd()){
-			std::cout << last << "#####33##########" << std::endl;
 			return last;
 		}
 
@@ -376,8 +366,8 @@ struct OPBuffer {
 
 		unsigned op_size = op.byteSize();
 		//*
-		if (!atEnd()){
-			std::cout<< (char)op.getValue() << " Inserting " << op_marker + op_size << " " << std::endl;
+		if (!atEnd())
+		{
 			std::memmove(
 			    &data[op_marker + op_size],
 			    a,
@@ -455,18 +445,25 @@ private:
 
 	CharOperation findOpAtIndex(unsigned index) {
 
-		int offset = -1, i = 0;
+		int offset = -1;
+
+		CharOperation prev_op;
 
 		for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next())
-		{
-
+		{	
 			if (op.isDeleteOperation())
-				offset--;
-			else
+			{
+				offset -= (unsigned) op.isOrigin(prev_op);
+			}
+			else 
+			{
 				offset++;
+			}
 
 			if (offset >= index)
 				break;
+
+			prev_op = op;
 		}
 
 		return ops.current();
@@ -474,52 +471,52 @@ private:
 
 
 	unsigned insertOp(CharOperation& op, unsigned short_circuit = 0) {
-		std::cout << "____________START" << (unsigned)site <<"____________" << op << "_____" <<std::endl;
 		//If the op is new (root of the tree) insert
 		int i = 0;
 		for (CharOperation candidate = ops.reset().current(); !ops.atEnd(); candidate = ops.next())
 		{
 
-				//std::cout << "________________________" << candidate << "_____" <<std::endl;
-			//find parent
 			if (op.isOrigin(candidate))
 			{
 
-				CharOperation peer_candidate = ops.next();
-
-				//std::cout <<std::endl<< "________________________" << ops.atEnd() << "_____" <<std::endl;
+				CharOperation peer_candidate = ops.next();				
 				
-				
-				while (!ops.atEnd())
+				if(op.isDeleteOperation())
 				{
-
-					if
-					(
-					    peer_candidate.isSame(op)
-					    ||
-					    (
-					        peer_candidate.getIDSite() == op.getIDSite()
-					        && peer_candidate.getIDSite() > op.getIDSite()
-					    )
-					)
-					{
-						std::cout << "Op " << op.id << " is already a member." << std::endl;
+					if(peer_candidate.isDeleteOperation() && peer_candidate.isOrigin(candidate))
 						return false;
-					}
-					if
-					(
-					    op > peer_candidate
-					)
+				}
+				else
+				{
+					while (!ops.atEnd())
 					{
-					//	std::cout << "________________________===_____" <<std::endl;
-						break;
-					}
+						if
+						(
+						    peer_candidate == op
+						    ||
+						    (
+						        peer_candidate.getIDSite() == op.getIDSite()
+						        && peer_candidate.getIDClock() >= op.getIDClock()
+						    )
+						)
+						{
+							return false;
+						}
+						if
+						(	
+							peer_candidate < op && !peer_candidate.isDeleteOperation()
+						)
+						{
+							break;
+						}
 
-					peer_candidate = ops.next();
+						peer_candidate = ops.next();
+					}
 				}
 
-				if (!ops.insert(op)) {
-					std::cout << "Unable to insert " << op.id << "Cannot Allocate enough memory to expand ops." << std::endl;
+				if (!ops.insert(op)) 
+				{
+					std::cout << "Unable to insert " << op.id << ". Cannot Allocate enough memory to expand ops." << std::endl;
 					return false;
 				}
 
@@ -529,7 +526,7 @@ private:
 		}
 
 		//if here no candidate has been found.
-		std::cout <<"Unable to locate position of op with id " << op.id << std::endl;
+		std::cout <<"Unable to locate position of op: " << op << std::endl;
 
 		//complete
 		return false;
@@ -541,19 +538,22 @@ public:
 
 		unsigned i = 0;
 
-		CharOperation source_op = findOpAtIndex(index);
-
 		for (; i < length; i++)
 		{
-
+			CharOperation source_op = findOpAtIndex(index--);
 			CharOperation op;
-			op.id.setSite(site);
-			op.id.setClock(clock++);
-			op.origin = source_op.id;
 
-			if (!insertOp(op)){
+			if(source_op.isDeleteOperation())
+				std::cout << "DELETE" << std::endl;
 
-			} return false;
+			op.setValue(0);
+
+			op.setIDSite(site);
+			op.setIDClock(clock++);
+			op.setOriginSite(source_op.getIDSite());
+			op.setOriginClock(source_op.getIDClock());
+
+			if (!insertOp(op)) return false;
 
 			source_op = op;
 		}
@@ -586,9 +586,6 @@ public:
 			source_op = op;
 		}
 
-
-		std::cout << "COPY!!!!01 " << *((CharOperation *) &ops.data[17]) << std::endl;
-
 		return true;
 	}
 
@@ -601,7 +598,7 @@ public:
 		unsigned i = 0;
 
 		
-		Buffer ops = string.ops.copy();
+		Buffer ops = string.ops.clone();
 
 		for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next(), i++)
 		{
@@ -621,32 +618,30 @@ public:
 	/*
 		Returns a string of the consumable value.
 	*/
-	std::wstring& getValue() const {
-		return *(std::wstring *) uber_buffer;
-		std::cout << "IS ---------------------------" << std::endl;
+	std::wstring getValue() const {
 		
 		unsigned offset = 0;
 
-		Buffer ops_ = ops.copy();
+		Buffer ops_ = ops.clone(); 
 
+		CharOperation prev_op;
 
 		for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next())
 		{	
-			if (op.isDeleteOperation()){
-				std::cout << "IS DELETE" << std::endl;
-				offset--;
+			if (op.isDeleteOperation())
+			{
+				offset -= (unsigned) op.isOrigin(prev_op);
 			}
-			else
+			else {
 				uber_buffer[offset++] = (wchar_t) op.getWChar();
-		}
-		std::cout << (unsigned) &uber_buffer << " " << (unsigned)&(ops_.data) << std::endl;
+			}
 
+			prev_op = op;
+		}
 
 		uber_buffer[offset] = 0;
 
-		std::wcout << uber_buffer << " ct: "<< ops_.count << " offset " << offset << std::endl;
-
-		return *(std::wstring *) uber_buffer;//std::wstring(uber_buffer));
+		return std::wstring(uber_buffer);
 	}
 
 	void setValue(int x) {}
@@ -669,29 +664,29 @@ public:
 		delete this;
 	}
 
-	OPString<CharOperation, Buffer>* split() {
+	OPString<CharOperation, Buffer>& split()  {
 
-		OPString<CharOperation, Buffer> * string = new OPString<CharOperation, Buffer>(sites++);
-		//TODO make sure to make buffer the same size as other;
+		OPString<CharOperation, Buffer>& string = * new OPString<CharOperation, Buffer>(sites++);
 
-		ops.clone(string->ops);
+		ops.copy(string.ops);
 
-		string->clock = clock;
+		string.clock = clock;
 
 		return string;
 	}
 
-	bool merge(OPString<CharOperation, Buffer>& other) {
-
+	bool merge(OPString<CharOperation, Buffer>& other) 
+	{
+	
 		if (other.site == site || &other == this)
 			return false;
 
 		bool result = false;
 
-		Buffer ops_ = other.ops.copy();
+		Buffer ops_  = other.ops.clone(); 
 
 		for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next())
-		{
+		{	
 			if (insertOp(op))
 				result = true;
 		}
@@ -704,33 +699,36 @@ public:
 };
 }
 
-namespace js {
 
-using namespace crdt;
+#ifdef  JAVASCRIPT_WASM
 
-typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
+#include <emscripten.h>
+#include <emscripten/bind.h>
 
+namespace javascript {
 
-typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCDTString;
+	using namespace crdt;
+	using namespace emscripten;
+	
+	typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
+	typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
 
+	JSCRDTString *myTempPtr;
+	// Binding code
+	EMSCRIPTEN_BINDINGS(CDTString) {
 
-JSCDTString *myTempPtr;
-// Binding code
-EMSCRIPTEN_BINDINGS(CDTString) {
-
-	class_<JSCDTString>("CTString")
-	.constructor<int>()
-	.function("merge", &JSCDTString::merge)
-	.function("split", &JSCDTString::split, allow_raw_pointers())
-	.function("insert", &JSCDTString::insert)
-	.function("delete", &JSCDTString::remove)
-	.function("destroy", &JSCDTString::destroy)
-	.property("inspect", &JSCDTString::getInspect, &JSCDTString::setInspect)											// CLASS FUNCTION
-	.property("value", &JSCDTString::getValue, &JSCDTString::setValue)			// CLASS FUNCTION
-	//.property("x", &MyClass::getX, &MyClass::setX)							// PUBLIC PROPERTY USING getters and setters
-	//.class_function("getStringFromInstance", &MyClass::getStringFromInstance) // STATIC FUNCTION
-	;
+		class_<JSCRDTString>("CTString")
+		.constructor<int>()
+		.function("merge", &JSCRDTString::merge)
+		.function("split", &JSCRDTString::split, allow_raw_pointers())
+		.function("insert", &JSCRDTString::insert)
+		.function("delete", &JSCRDTString::remove)
+		.function("destroy", &JSCRDTString::destroy)
+		.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)											// CLASS FUNCTION
+		.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)			// CLASS FUNCTION
+		//.property("x", &MyClass::getX, &MyClass::setX)							// PUBLIC PROPERTY USING getters and setters
+		//.class_function("getStringFromInstance", &MyClass::getStringFromInstance) // STATIC FUNCTION
+		;
+	}
 }
-}
-
-//int main(){ return 0 }
+#endif

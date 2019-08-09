@@ -11,49 +11,55 @@ export default function() {
 
     describe("WebAssembly", function() {
         it.only("test", function(done) {
+
+
             var Module = {
                 onRuntimeInitialized: function() {
 
                         var string = new Module.CTString(2);
-
-                        //console.log(JSON.parse(string.inspect));
-
-                        const cursor = string.insert(0, "This is the test");
-                        //console.log("SDFSDFDSFSDF")
-                        string.insert(5, "Testing ");
-       
-                        const other_site = string.split();
+                        const cursor = string.insert(0, "I need some hell");
+                        const other_site_a = string.split();
                         const other_site_b = string.split();
 
-                        other_site.insert(5, "(oops) ");
-                        other_site_b.insert(9, " bob ")
+                        other_site_a.delete(16, 4);
+                        other_site_b.delete(16, 4);
 
-                        string.merge(other_site);
-
-                        string.insert(13, " [justice] ")
-
-                        //console.log(JSON.parse(other_site.inspect).ops)
-                        //console.log(JSON.parse(string.inspect).ops)
-                        other_site.merge(other_site_b)
-                        console.log(other_site.value);
-                        return done()
-                        other_site.insert(18, " (oops) ")
+                        console.log(other_site_a.value);
                         console.log(other_site_b.value);
 
-                        other_site_b.merge(other_site)
-                        other_site.merge(other_site)
-                        string.merge(other_site_b)
-                        other_site.merge(string)
-                        other_site.delete(6, 2)
-                        other_site_b.merge(other_site)
-                        string.merge(other_site)
+                        other_site_b.insert(12, "cow bell!");
+                        other_site_a.insert(5, "help");
 
+                        console.log(other_site_a.value);
+                        console.log(other_site_b.value);
+
+                        other_site_b.merge(other_site_a);
+                        other_site_a.merge(other_site_b);
+                        string.merge(other_site_a);
+                        console.log("--------------------------")
                         console.log(string.value)
-                        console.log(other_site.value);
-                        console.log(other_site_b.value)
+                        console.log(other_site_a.value);
+                        console.log(other_site_b.value);
 
-                        string.destroy();
-                        other_site.destroy();
+                        string.insert(5, "d ")
+                        other_site_b.insert(9, "e")
+                        other_site_a.delete(9, 4)
+                        console.log("--------------------------")
+                        console.log(string.value)
+                        console.log(other_site_a.value);
+                        console.log(other_site_b.value);
+
+                        other_site_a.merge(string);
+                        other_site_b.merge(other_site_a);
+                        other_site_a.merge(other_site_b);
+                        string.merge(other_site_a);
+                        console.log("--------------------------")
+                        other_site_a.delete(7, 1)
+                        other_site_b.merge(other_site_a);
+                        console.log(string.value)
+                        console.log(other_site_a.value);
+                        console.log(other_site_b.value);
+
                         done();
                 }
             }

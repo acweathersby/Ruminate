@@ -1,6 +1,7 @@
 #! /bin/bash
 
 emcc ./source/cpp/crdt.cpp \
+	-D JAVASCRIPT_WASM \
 	-std=c++17 \
 	-s WASM=1 \
 	-O0 \
