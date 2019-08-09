@@ -473,17 +473,21 @@ private:
 	unsigned insertOp(CharOperation& op, unsigned short_circuit = 0) {
 		//If the op is new (root of the tree) insert
 		int i = 0;
-		for (CharOperation candidate = ops.reset().current(); !ops.atEnd(); candidate = ops.next())
+		for (CharOperation origin_candidate = ops.reset().current(); !ops.atEnd(); origin_candidate = ops.next())
 		{
 
-			if (op.isOrigin(candidate))
+			if (op.isOrigin(origin_candidate))
 			{
 
 				CharOperation peer_candidate = ops.next();				
 				
-				if(op.isDeleteOperation())
+				if(op.isDeleteOperation()) 
+				// Delete Operations immediatelly follow there origin operation. This ensures that it's effect applies BEFORE any other 
+				// Operation, maintaining the relation [A <=deletes= B]. Since this operation must remain idempotent, any number of 
+				// delete operations on a single origin operation must be ignored after the first one that is observed. 
 				{
-					if(peer_candidate.isDeleteOperation() && peer_candidate.isOrigin(candidate))
+					if(peer_candidate.isDeleteOperation() && peer_candidate.isOrigin(origin_candidate))
+						//For simplicity's sake, just ignore any delete operation for a givin origin following an initial one.  
 						return false;
 				}
 				else
@@ -499,9 +503,12 @@ private:
 						        && peer_candidate.getIDClock() >= op.getIDClock()
 						    )
 						)
+						// Prevent duplicate operations from being inserted.
 						{
 							return false;
 						}
+
+
 						if
 						(	
 							peer_candidate < op && !peer_candidate.isDeleteOperation()
@@ -525,7 +532,7 @@ private:
 			i++;
 		}
 
-		//if here no candidate has been found.
+		//if here no origin candidate has been found.
 		std::cout <<"Unable to locate position of op: " << op << std::endl;
 
 		//complete
@@ -632,7 +639,8 @@ public:
 			{
 				offset -= (unsigned) op.isOrigin(prev_op);
 			}
-			else {
+			else 
+			{
 				uber_buffer[offset++] = (wchar_t) op.getWChar();
 			}
 
