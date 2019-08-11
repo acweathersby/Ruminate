@@ -46,9 +46,9 @@ export default class UID extends ArrayBuffer {
         const dv = new DataView(this);
         return (
             "" + ("0000" + dv.getUint16(0).toString(16)).slice(-4) +
+            "" + ("0000" + dv.getUint16(2).toString(16)).slice(-4) +
             "" + ("0000" + dv.getUint16(4).toString(16)).slice(-4) +
-            "" + ("0000" + dv.getUint16(4).toString(16)).slice(-4) +
-            "-" + ("0000" + dv.getUint16(4).toString(16)).slice(-4) +
+            "-" + ("0000" + dv.getUint16(6).toString(16)).slice(-4) +
             "-" + ("00000000" + dv.getUint32(8).toString(16)).slice(-8) +
             "-" + ("00000000" + dv.getUint32(12).toString(16)).slice(-8)
         )

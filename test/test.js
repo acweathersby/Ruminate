@@ -8,7 +8,13 @@ chai.should();
 
 import utility_tests from "./utility_test.js";
 
-describe("Graze Utilites", utility_tests)
+describe("Utilites", utility_tests)
+
+/*********************** NOTE TESTS *************************************/
+
+import note_test from "./note_test.js";
+
+describe("Note",note_test(graze_constructor))
 
 /*********************** SERVER BACKED TESTS *******************************/
 
@@ -17,8 +23,7 @@ import graze_json_server_constructor from "../source/server/json/server.js";
 import graze_fs_server_constructor from "../source/server/fs/server.js";
 import graze_mongo_server_constructor from "../source/server/mongo/server.js";
 import graze_couchdb_server_constructor from "../source/server/couchdb/server.js";
-
-describe("JSON FILE BACKED", graze_test_suite(graze_constructor, graze_json_server_constructor, {
+describe("JSON File Backed", graze_test_suite(graze_constructor, graze_json_server_constructor, {
     type: "JSON BACKED",
     server_id: "JSONDB",
     server_test_store: "./test/test.json"

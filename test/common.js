@@ -26,6 +26,8 @@ export async function fillTestData(graze, file = "w&p") {
 
     for (const entry of entries) {
         count++;
-        await graze.createNote(entry.id, entry.meta, entry.body).store();
+        await graze.createNote(entry.id, entry.meta, entry.body);
     }
+
+    graze.sync()
 }

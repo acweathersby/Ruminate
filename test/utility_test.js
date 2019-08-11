@@ -1,23 +1,51 @@
 import graze_constructor from "../source/graze.js";
+import { GRAZE_SERVER, GRAZE_UPDATE_QUEUE_ALERT } from "../source/common/symbols.js";
 import Note from "../source/common/note.js";
 import Container from "../source/server/common/container.js";
 import UID from "../source/common/uid.js";
 import fuzzy from "../source/common/fuzzy.js";
 import crdt from "../source/cpp/crdt.asm.js";
 
-const massiveTextA = 
-`“Oh, don’t speak to me of Austria. Perhaps I don’t understand things, but Austria never has wished, and does not wish, for war. She is betraying us! Russia alone must save Europe. Our gracious sovereign recognizes his high vocation and will be true to it. That is the one thing I have faith in! Our good and wonderful sovereign has to perform the noblest role on earth, and he is so virtuous and noble that God will not forsake him. He will fulfill his vocation and crush the hydra of revolution, which has become more terrible than ever in the person of this murderer and villain! We alone must avenge the blood of the just one. . . . Whom, I ask you, can we rely on? . . . England with her commercial spirit will not and cannot understand the Emperor Alexander’s loftiness of soul. She has refused to evacuate Malta. She wanted to find, and still seeks, some secret motive in our actions. What answer did Novosiltsev get? None. The English have not understood and cannot understand the self-abnegation of our Emperor who wants nothing for himself, but only desires the good of mankind. And what have they promised? Nothing! And what little they have promised they will not perform! Prussia has always declared that Buonaparte is invincible, and that all Europe is powerless before him. . . . And I don’t believe a word that Hardenburg says, or Haugwitz either. This famous Prussian neutrality is just a trap. I have faith only in God and the lofty destiny of our adored monarch. He will save Europe!”`
-const massiveTextB = 
-`“Oh, don’t speak to me of Austria. [Redacted!] but Austria never has wished, and does not wish, for war. [Redacted!] of our Emperor who wants nothing for himself, but only desires the good of mankind. And what have they promised? Nothing! And what little they have promised they will not perform! Prussia has always declared that Buonaparte is invincible, and that all Europe is powerless before him. . . . And I don’t believe a word that Hardenburg says, or Haugwitz either. This famous Prussian neutrality is just a trap. I have faith only in God and the lofty destiny of our adored monarch. He will save Europe!”`
+const massiveTextA =
+    `“Oh, don’t speak to me of Austria. Perhaps I don’t understand things, but Austria never has wished, and does not wish, for war. She is betraying us! Russia alone must save Europe. Our gracious sovereign recognizes his high vocation and will be true to it. That is the one thing I have faith in! Our good and wonderful sovereign has to perform the noblest role on earth, and he is so virtuous and noble that God will not forsake him. He will fulfill his vocation and crush the hydra of revolution, which has become more terrible than ever in the person of this murderer and villain! We alone must avenge the blood of the just one. . . . Whom, I ask you, can we rely on? . . . England with her commercial spirit will not and cannot understand the Emperor Alexander’s loftiness of soul. She has refused to evacuate Malta. She wanted to find, and still seeks, some secret motive in our actions. What answer did Novosiltsev get? None. The English have not understood and cannot understand the self-abnegation of our Emperor who wants nothing for himself, but only desires the good of mankind. And what have they promised? Nothing! And what little they have promised they will not perform! Prussia has always declared that Buonaparte is invincible, and that all Europe is powerless before him. . . . And I don’t believe a word that Hardenburg says, or Haugwitz either. This famous Prussian neutrality is just a trap. I have faith only in God and the lofty destiny of our adored monarch. He will save Europe!”`
+const massiveTextB =
+    `“Oh, don’t speak to me of Austria. [Redacted!] but Austria never has wished, and does not wish, for war. [Redacted!] of our Emperor who wants nothing for himself, but only desires the good of mankind. And what have they promised? Nothing! And what little they have promised they will not perform! Prussia has always declared that Buonaparte is invincible, and that all Europe is powerless before him. . . . And I don’t believe a word that Hardenburg says, or Haugwitz either. This famous Prussian neutrality is just a trap. I have faith only in God and the lofty destiny of our adored monarch. He will save Europe!”`
 export default function() {
-    this.slow(50000)
-    this.timeout(50000)
 
     const graze = new graze_constructor();
 
+    describe("Options", function() {
+        describe("sync_rate", function() {
+            it("2000", () => (new graze_constructor({ sync_rate: 2000 })).sync_rate.should.equal(2000));
+            it("0", () => (new graze_constructor({ sync_rate: 0 })).sync_rate.should.equal(1000));
+            it("3000000000", () => (new graze_constructor({ sync_rate: 3000000000 })).sync_rate.should.equal(3600000));
+            it("null", () => (new graze_constructor({ sync_rate: null })).sync_rate.should.equal(-1));
+        })
+
+        describe("server", function() {
+            it("generic_server", () => {
+
+                const base_server = {
+                    storeNote: () => {},
+                    removeNote: () => {},
+                    implode: () => {},
+                    query: () => {},
+                    getUpdatedUIDs: () => {}
+                };
+
+                const g = (new graze_constructor({ server: base_server }));
+                g[GRAZE_SERVER].should.equal(base_server);
+            });
+        })
+    })
+
     describe("WebAssembly", function() {
 
-        it("CRDT", function(done) {
+        this.slow(50000)
+        this.timeout(50000)
+
+        it.skip("CRDT", function(done) {
+
 
 
             var Module = {
@@ -67,8 +95,6 @@ export default function() {
                     console.log(other_site_a.value);
                     console.log(other_site_b.value);
 
-                    console.dir(JSON.parse(other_site_a.inspect).ops, { depth: null })
-
                     done();
                 }
             }
@@ -78,12 +104,12 @@ export default function() {
 
     it("jsdiff-note", function(done) {
         const note = Note({
-            store:(note)=>{
-                note.body.should.equal(massiveTextB);
+            [GRAZE_UPDATE_QUEUE_ALERT]: (note) => {
+                note.getNote().body.should.equal(massiveTextB);
                 done()
             }
         }, null, null, null, massiveTextA)
-        
+
         note.body = massiveTextB;
     })
 
@@ -157,10 +183,15 @@ export default function() {
         uidb.date_created.getDay().should.equal(new Date().getDay());
         uida.string.should.not.equal(uidb.string);
         const uidc = new UID(uida)
+        const uidd = new UID(uida.string)
         uida.string.should.equal(uidc.string);
+        uida.string.should.equal(uidd.string);
     })
 
     it.skip("UID", function() {
+
+        this.slow(50000)
+        this.timeout(50000)
         const size = 10000;
         let iter = 0;
         //Stress test for UID.
