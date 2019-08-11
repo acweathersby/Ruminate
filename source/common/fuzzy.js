@@ -104,7 +104,7 @@ function loopLR(search_string, match_string, search_window, base){
 
 
 
-export default function(search_string, match_string, BEST = false, search_window = search_string.length << 1){
+export default function fuzzy(search_string, match_string, BEST = false, search_window = search_string.length << 1){
 
 	if(search_string.length > match_string.length)
 		return {score:-1};
@@ -130,4 +130,8 @@ export default function(search_string, match_string, BEST = false, search_window
 	}
 	/* First */
 	else return loopLR(search_string, match_string, search_window, base);
+}
+
+fuzzy.closest = function(search_strings, match_string){
+
 }

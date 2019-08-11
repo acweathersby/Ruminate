@@ -1,5 +1,5 @@
 function receivedMessage(data){
-	console.log(data)
+	//console.log(data)
 }
 
 if(typeof on !== "undefined")

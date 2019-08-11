@@ -188,25 +188,20 @@ function Server(delimeter = "/") {
 
         /* Stores new note or updates existing note with new values */
         async storeNote(note) {
-
             var stored_note = null;
 
             const
                 uid = note.uid.string,
-                modifed_time = Date.now() | 0;
-
-
+                modified_time = Date.now();
+                
             stored_note = noteFromUID(uid);
 
             if (!stored_note)
-                stored_note = {
-                    id: note.id,
-                    created: note.created
-                }
+                stored_note = { id: note.id }
 
             const old_id = stored_note.id;
 
-            stored_note.modifed = modifed_time;
+            stored_note.modified = modified_time;
             stored_note.uid = uid;
             stored_note.body = note.body;
             stored_note.id = note.id;
@@ -225,6 +220,22 @@ function Server(delimeter = "/") {
         async query(query_string) {
             await read(); //Hack - mack sure store is up to date;
             return await queryRunner(query_string, container)
+        }
+
+        // Return a list of all uid's that a modified time greater than [date] given
+        async getUpdatedUIDs(date){
+            const d = (new Date(date).valueOf());
+
+            const out = [];
+
+            for(const store of container_store.values()){
+
+                for(const note of store.values()){
+                    if(note.modified > d)
+                        out.push(note.uid.toString());
+                }
+            }
+            return out;
         }
 
         /* 

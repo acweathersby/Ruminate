@@ -1,13 +1,14 @@
+// ((graze pull: use js_comments : graze/docs/functions/common/options.js : options, common ))
 // Parses options from an object and updates the target according to parameters in option_params
 // options is an object
 // target is an object
 // target_name is a string used for warning messages. 
 //
-// options_params is a Map that contains [key, value] pairs of the type [string, object]:
+// options_params is a Map that contains [key, value] pairs of the type [string_name, object_pro]:
 //
-//      The string is the name of the option. It is matched to the option key names and should be a lower case phrase or word.
+//      The [string_name] is the name of the option. It is matched to the option key names and should be a lower case phrase or word.
 //
-//      The object [keys] and assocated [values] are 
+//      The [object]'s [keys] and associated [values] are 
 //
 //          value : [Function | String | Symbol ] -
 // 
@@ -29,49 +30,61 @@
 //      
 //                  If after using all parse entries to render a value the value is still [undefined | null] the
 //                  option will not be considered at all.
-//
-//          
+//    
+
+function NumberIsNaN(value) {
+    return typeof value === "number" && isNaN(value);
+}
 
 export default function OptionHandler(options = null, target = null, target_name = "", option_params = null) {
-    if (option_params instanceof Map)
-        return console.trace("Option paramaters for [" + target_name + "] need to be placed within a Map")
+    if (!(option_params instanceof Map))
+        throw new Error("Option paramaters for [" + target_name + "] need to be placed within a Map")
 
     // Parser for handling options
     if (options && typeof options == "object" && !Array.isArray(options))
-        for (let name of options) {
+        for (let name in options) {
 
             name = name.toLowerCase();
 
-            const option_params = option_params.get(name);
+            const option_param = option_params.get(name);
 
-            if (option_params) {
-                let parse = option_params.parse;
+            if (option_param) {
+                let parse = option_param.parse;
 
-                if (!option_params.parse) parse = [e => e];
+                if (!option_param.parse) parse = [e => e];
 
                 if (!Array.isArray(parse))
                     parse = [parse]
 
-                let value = null;
+                const original_value = options[name];
+                let value = null,
+                    index = 0;
 
-                while ((value === null || value === undefined || value === NaN)
+                while ((value === null || value === undefined || NumberIsNaN(value))
                     && index < parse.length) {
 
-                    value = (typeof parse[index] == "function") ? parse[index++](options[name]) : parse[index++];
+                    if (typeof parse[index] == "function")
+                        value = parse[index++](original_value);
+                    else if (parse[index] === original_value) {
+                        value = parse[index++];
+                        break;
+                    }else{
+                        value = parse[index++];
+                    }
                 }
 
-                if (value === undefined || value === NaN) {
+                if (value === undefined || NumberIsNaN(value)) {
                     console.warn(`${target_name} option [${name}] does not accept value [${value}] of type ${typeof value}.`);
                     break;
                 }
 
-                switch (typeof option_params.value) {
+                switch (typeof option_param.value) {
                     case "function":
-                        option_params.value.call(target, value)
+                        option_param.value.call(target, value)
                         break;
                     case "symbol":
                     case "string":
-                        target[option_params.value] = value
+                        target[option_param.value] = value
                         break;
                 }
             } else {
