@@ -107,7 +107,7 @@
     ( (τto │ - │ τTO │ τTo │ τthrough ) θnum ↦r { $sym2 })?         ↦r { { type: "RANGE", val : [$sym2, $sym3].map(parseFloat).sort((a,b)=>a<b ? -1:1) } }
 
 <> date_expression → (τon │ τdate) (string_data │ θnum) 
-    ( (τto │ -│ τTO │ τTo ) (string_data │ θnum) ↦r { $sym2 })?     ↦r { { type: "DATE",  val : [$sym2,$sym3].map(d=>new Date(d).valueOf()).sort((a,b)=>a<b ? -1:1) } }
+    ( (τto │ -│ τTO │ τTo ) (string_data │ θnum) ↦r { $sym2 })?     ↦r { { type: "DATE",  val : [$sym2,$sym3].map(d=>new Date(d).valueOf()).sort((a,b)=>a<b ? -1:1) }}
 
 <>order → (τDES │ τdes │ τdescending │ τDESCENDING │ τdown │ >)         ↦r {-1}
     │ (τASC │ τasc │ τascending │ τASCENDING │ τup │ <)             ↦r {1}

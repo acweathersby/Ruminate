@@ -1,0 +1,21 @@
+<import url="./note_header.html"/>
+<import url="./inline-body.html"/>
+
+<scope id="note" component=inline-note>
+
+    <inline-note-body/>
+
+    <script on=((loaded))>
+        updated = this.model;
+    </script>
+
+    <style>
+        #note {
+            position: relative;
+            min-height:10px;
+            width:100%;
+            background-color: rgb(120,120,120);
+            color: white;
+        }
+    </style>
+</scope>

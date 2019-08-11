@@ -24,7 +24,7 @@ struct OP_ID {
 	}
 
 	friend std::ostream& operator << (std::ostream& os, const OP_ID& i) {
-		return os << "{\"s\":" << (unsigned short)i.site << ",\"t\":" << i.clock << "}";
+		return os << "{\"site\":" << (unsigned short)i.site << ",\"clock\":" << i.clock << "}";
 	}
 
 	friend bool operator == (const OP_ID& a, const OP_ID& b) {
@@ -195,8 +195,8 @@ struct CharOp {
 
 	friend std::ostream& operator << (std::ostream& os, const CharOp<MetaStamp, Operator>& op) {
 		if (op.isDeleteOperation())
-			return os << "{\"id\":" << op.id << ",\"o\":" << op.origin << ",\"v\":\"DEL\"}";
-		return os << "{\"id\":" << op.id << ",\"o\":" << op.origin << ",\"v\":\"" << (char) op.getValue() << "\"}";
+			return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"DEL\"}";
+		return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"" << (char) op.getValue() << "\"}";
 		return os;
 	}
 
@@ -244,13 +244,13 @@ struct OPBuffer {
 
 	~OPBuffer() {
 
-		if(!CLONED)
+		if (!CLONED)
 			delete[] data;
 	}
 
 	void copy(OPBuffer& copy_to_buffer) const {
 
-		if(copy_to_buffer.data == data || copy_to_buffer.CLONED){
+		if (copy_to_buffer.data == data || copy_to_buffer.CLONED) {
 			return; // Do not overwite data!
 		}
 
@@ -258,7 +258,7 @@ struct OPBuffer {
 		copy_to_buffer.op_marker = op_marker;
 		copy_to_buffer.count = count;
 
-		if(copy_to_buffer.size != size){
+		if (copy_to_buffer.size != size) {
 			delete[] copy_to_buffer.data;
 			copy_to_buffer.data = new char[size];
 		}
@@ -315,7 +315,7 @@ struct OPBuffer {
 
 		Operator curr = current();
 
-		if (atEnd()){
+		if (atEnd()) {
 			return last;
 		}
 
@@ -407,6 +407,29 @@ struct OPBuffer {
 
 		return true;
 	}
+
+	friend std::ostream& operator << (std::ostream& os, const OPBuffer& op) {
+		os << "[";
+
+		if (op.count > 0)
+		{
+
+			OPBuffer c = op.clone();
+
+			c.reset();
+
+			os << c.current();
+
+			if (op.count > 1)
+				do
+				{
+					os << "," << c.next();
+				}
+				while (!c.atEnd());
+		}
+
+		return os << "]";
+	}
 };
 
 
@@ -438,8 +461,7 @@ public:
 		ops.insert(op);
 	}
 
-	~OPString() {
-	}
+	~OPString() {}
 
 private:
 
@@ -450,12 +472,12 @@ private:
 		CharOperation prev_op;
 
 		for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next())
-		{	
+		{
 			if (op.isDeleteOperation())
 			{
 				offset -= (unsigned) op.isOrigin(prev_op);
 			}
-			else 
+			else
 			{
 				offset++;
 			}
@@ -471,23 +493,23 @@ private:
 
 
 	unsigned insertOp(CharOperation& op, unsigned short_circuit = 0) {
+		
 		//If the op is new (root of the tree) insert
-		int i = 0;
 		for (CharOperation origin_candidate = ops.reset().current(); !ops.atEnd(); origin_candidate = ops.next())
 		{
 
 			if (op.isOrigin(origin_candidate))
 			{
 
-				CharOperation peer_candidate = ops.next();				
-				
-				if(op.isDeleteOperation()) 
-				// Delete Operations immediatelly follow there origin operation. This ensures that it's effect applies BEFORE any other 
-				// Operation, maintaining the relation [A <=deletes= B]. Since this operation must remain idempotent, any number of 
-				// delete operations on a single origin operation must be ignored after the first one that is observed. 
+				CharOperation peer_candidate = ops.next();
+
+				if (op.isDeleteOperation())
+					// Delete Operations immediatelly follow there origin operation. This ensures that it's effect applies BEFORE any other
+					// Operation, maintaining the relation [A <=deletes= B]. Since this operation must remain idempotent, any number of
+					// delete operations on a single origin operation must be ignored after the first one that is observed.
 				{
-					if(peer_candidate.isDeleteOperation() && peer_candidate.isOrigin(origin_candidate))
-						//For simplicity's sake, just ignore any delete operation for a givin origin following an initial one.  
+					if (peer_candidate.isDeleteOperation() && peer_candidate.isOrigin(origin_candidate))
+						//For simplicity's sake, just ignore any delete operation for a givin origin following an initial one.
 						return false;
 				}
 				else
@@ -503,15 +525,15 @@ private:
 						        && peer_candidate.getIDClock() >= op.getIDClock()
 						    )
 						)
-						// Prevent duplicate operations from being inserted.
+							// Prevent duplicate operations from being inserted.
 						{
 							return false;
 						}
 
 
 						if
-						(	
-							peer_candidate < op && !peer_candidate.isDeleteOperation()
+						(
+						    peer_candidate < op && !peer_candidate.isDeleteOperation()
 						)
 						{
 							break;
@@ -521,7 +543,7 @@ private:
 					}
 				}
 
-				if (!ops.insert(op)) 
+				if (!ops.insert(op))
 				{
 					std::cout << "Unable to insert " << op.id << ". Cannot Allocate enough memory to expand ops." << std::endl;
 					return false;
@@ -533,7 +555,7 @@ private:
 		}
 
 		//if here no origin candidate has been found.
-		std::cout <<"Unable to locate position of op: " << op << std::endl;
+		std::cout << "Unable to locate position of op: " << op << std::endl;
 
 		//complete
 		return false;
@@ -550,7 +572,7 @@ public:
 			CharOperation source_op = findOpAtIndex(index--);
 			CharOperation op;
 
-			if(source_op.isDeleteOperation())
+			if (source_op.isDeleteOperation())
 				std::cout << "DELETE" << std::endl;
 
 			op.setValue(0);
@@ -587,7 +609,7 @@ public:
 			op.setIDClock(clock++);
 			op.setOriginSite(source_op.getIDSite());
 			op.setOriginClock(source_op.getIDClock());
-			
+
 			if (!insertOp(op)) return false;
 
 			source_op = op;
@@ -597,27 +619,9 @@ public:
 	}
 
 	friend std::ostream& operator << (std::ostream& os, const OPString<CharOperation, Buffer>& string) {
-
-		os 	<< "{\"site\":" << (unsigned) string.site
-		    << ",\"clock\":" << string.clock
-		    << ",\"ops\":[";
-
-		unsigned i = 0;
-
-		
-		Buffer ops = string.ops.clone();
-
-		for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next(), i++)
-		{
-			os << op;
-
-			if (i < ops.count - 1)
-				os << ",";
-		}
-
-		os << "]}";
-
-		return os;
+		return os << "{\"site\":" << (unsigned) string.site
+		       << ",\"clock\":" << string.clock
+		       << ",\"ops\":" << string.ops << "}";
 	}
 
 
@@ -626,20 +630,20 @@ public:
 		Returns a string of the consumable value.
 	*/
 	std::wstring getValue() const {
-		
+
 		unsigned offset = 0;
 
-		Buffer ops_ = ops.clone(); 
+		Buffer ops_ = ops.clone();
 
 		CharOperation prev_op;
 
 		for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next())
-		{	
+		{
 			if (op.isDeleteOperation())
 			{
 				offset -= (unsigned) op.isOrigin(prev_op);
 			}
-			else 
+			else
 			{
 				uber_buffer[offset++] = (wchar_t) op.getWChar();
 			}
@@ -654,9 +658,8 @@ public:
 
 	void setValue(int x) {}
 
-	/*
-		Returns a string value that represents the internal state of the CTString.
-	*/
+
+	// Returns a string value that is a JSON formated representation of the String's internal state.
 	std::string getInspect() const {
 
 		std::ostringstream ostring;
@@ -683,18 +686,18 @@ public:
 		return string;
 	}
 
-	bool merge(OPString<CharOperation, Buffer>& other) 
+	bool merge(OPString<CharOperation, Buffer>& other)
 	{
-	
+
 		if (other.site == site || &other == this)
 			return false;
 
 		bool result = false;
 
-		Buffer ops_  = other.ops.clone(); 
+		Buffer ops_  = other.ops.clone();
 
 		for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next())
-		{	
+		{
 			if (insertOp(op))
 				result = true;
 		}
@@ -717,13 +720,14 @@ namespace javascript {
 
 	using namespace crdt;
 	using namespace emscripten;
-	
+
 	typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
 	typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
 
 	JSCRDTString *myTempPtr;
 	// Binding code
-	EMSCRIPTEN_BINDINGS(CDTString) {
+	EMSCRIPTEN_BINDINGS(CDTString) 
+	{
 
 		class_<JSCRDTString>("CTString")
 		.constructor<int>()

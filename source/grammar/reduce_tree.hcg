@@ -4,7 +4,7 @@
 
 @SYMBOL (( ))
 
-↦ reducenode 	{ this.type ="REDUCE"; 	this.value=$$sym2; }
+↦ reducenode 	{ this.type ="REDUCE"; 	this.value=$$sym2; this.meta=$$sym4; }
 
 <> ReduceTree → tree
 
@@ -13,7 +13,7 @@
 <> item → string_data(+") 					
 	│ data_insert_point 						
 
-<> data_insert_point → \(( data_string \)) 		↦c=>reducenode
+<> data_insert_point → \(( data_string \)) ( \[  data_string? \] ↦r{ $sym2 } )?		↦c=>reducenode
 	│ \(( data_string 							↦r { $sym1 + $sym2 }
 
 <> data_string → ( string_data_val(*") )

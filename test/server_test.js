@@ -71,17 +71,16 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
                 const noteA = graze.createNote("Temp Name A", "tagA, tagB, tagC", "Message A");
 
-                noteA.save();
+                await noteA.save();
 
                 const noteB = graze.createNote("Temp Name B", "tagA, tagB, tagC", "Message B");
 
-                graze.store(noteB);
-
+                await graze.store(noteB);
                 const noteAd = (await graze.retrieve(noteA.uid.string))[0];
                 const noteBd = (await graze.retrieve(noteB.id))[0];
 
-                noteA.body.should.equal(noteAd.body);
                 noteB.body.should.equal(noteBd.body);
+                noteA.body.should.equal(noteAd.body);
                 noteA.body.should.not.equal(noteBd.body);
 
                 noteA.uid.string.should.equal(noteAd.uid.string);

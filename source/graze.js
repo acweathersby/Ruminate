@@ -33,7 +33,7 @@ export default class Graze {
         query // Query string
     ) {
         const results = await this.server.query(query);
-
+        
         return (results) ?
             new NoteContainer(...results
                 .map(

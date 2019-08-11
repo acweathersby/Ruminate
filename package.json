@@ -31,7 +31,10 @@
     "@candlefw/radiate": "latest",
     "@candlefw/whind": "latest",
     "@candlefw/wick": "latest",
-    "electron": "^6.0.0"
+    "codemirror": "^5.48.2",
+    "diff": "^4.0.1",
+    "electron": "^6.0.0",
+    "jsdiff": "^1.1.1"
   },
   "devDependencies": {
     "@candlefw/hydrocarbon": "latest",

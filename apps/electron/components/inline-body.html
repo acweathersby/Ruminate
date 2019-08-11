@@ -1,0 +1,23 @@
+<scope 
+	id=body 
+	component="inline-note-body" 
+	import="updated"
+>
+
+	<input type="checkbox">
+	
+	<div 
+		id=note-body 
+		pin=body
+		contenteditable=true 
+	></div>
+
+	<script on=((loaded))>
+		this.note = updated;
+		this.renderer = renderer(this, body$);
+	</script>
+
+	<script on=((updated))>
+	    updated.render(this.renderer);
+    </script>
+</scope>

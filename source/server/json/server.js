@@ -115,8 +115,10 @@ function Server(delimeter = "/") {
 
             if (json.data)
                 for (const note of json.data)
-                    if (note.uid)
-                        container_store.set(note.uid, note);
+                    if (note.uid) {
+                        getContainer(container.get(note.id).uid).set(note.uid, note);
+                        uid_store.set(note.uid, note.id);
+                    }
             return true;
         } catch (e) {
             writeError(e);
@@ -124,18 +126,21 @@ function Server(delimeter = "/") {
         return false
     }
 
-    function noteFromID(uid) {
-
+    function noteFromUID(uid) {
         const id = uid_store.get(uid + "");
 
         if (!id) return null;
 
+        return noteFromID(id, uid);
+    }
+
+    function noteFromID(id, uid) {
         return getContainer(container.get(id, delimeter).uid).get(uid) || null;
     }
 
     const queryRunner = QueryEngine({
             getNotesFromContainer: container_uid => [...getContainer(container_uid).values()],
-            getNoteFromUID: note_uid => noteFromID(note_uid)
+            getNoteFromUID: note_uid => noteFromUID(note_uid)
         },
         false
     );
@@ -190,9 +195,10 @@ function Server(delimeter = "/") {
                 uid = note.uid.string,
                 modifed_time = Date.now() | 0;
 
-            if (uid_store.has(uid))
-                stored_note = noteFromID(uid_store.get(uid));
-            else
+
+            stored_note = noteFromUID(uid);
+
+            if (!stored_note)
                 stored_note = {
                     id: note.id,
                     created: note.created
@@ -208,11 +214,9 @@ function Server(delimeter = "/") {
             stored_note.query_data = `${note.id.split(".").pop()} ${note.tags.join(";")} ${note.body}`;
 
             uid_store.set(uid, note.id);
-
             getContainer(container.change(old_id, note.id, delimeter).uid).set(uid, stored_note);
 
             await write();
-
             return true;
         }
 

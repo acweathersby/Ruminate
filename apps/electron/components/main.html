@@ -1,26 +1,12 @@
 <import url="./components/note.html"/>
+<import url="./components/note.html"/>
 <import url="./components/notethumb.html"/>
 
 <scope>
 
 	<container element=div>((note)) <note/> </container>
 
-	<container element=div>((notes)) <notethumb/> </container>
-
 	<script on=((loading))>
-		
-		graze.createNote("groceries.", "", "This is a reminder to get milk!").store();
-		graze.createNote("groceries.", "", "This is a reminder to get butter!").store();
-		graze.createNote("groceries.", "", "This is a reminder to get cream!").store();
-		graze.createNote("signatures. main", "", "Anthony C Weathersby").store();
-		graze.createNote("places to visit.", "", "I'd like to go to rome someday").store();
-		
-		const n2 = graze.createNote("test2", "", "test");
-		
-		n2.store();
-
-		note = [n2];
-
-		graze.retrieve("*").then(n=>notes = n);
+		graze.retrieve("/test2").then(n=>note = [n[0]]);
 	</script>
 </scope>
