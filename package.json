@@ -1,7 +1,7 @@
 {
   "name": "graze",
   "type": "module",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Simple Notes",
   "main": "source/graze.js",
   "repository": "https://github.com/acweathersby/graze",
