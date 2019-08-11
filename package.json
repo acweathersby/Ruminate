@@ -1,7 +1,7 @@
 {
   "name": "graze",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple Notes",
   "main": "source/graze.js",
   "repository": "https://github.com/acweathersby/graze",
@@ -28,6 +28,7 @@
     "@candlefw/charcoal": "latest",
     "@candlefw/glow": "latest",
     "@candlefw/lantern": "latest",
+    "@candlefw/observer": "^1.0.1-0",
     "@candlefw/radiate": "latest",
     "@candlefw/whind": "latest",
     "@candlefw/wick": "latest",

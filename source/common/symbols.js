@@ -1,4 +1,5 @@
 export const GRAZE_NOTE = Symbol("GRAZE NOTE");
+export const GRAZE_NOTE_BODY = Symbol("GRAZE NOTE BODY");
 export const GRAZE_NOTES = Symbol("GRAZE NOTES");
 export const GRAZE_SYNC_RATE = Symbol("GRAZE SYNC RATE");
 export const GRAZE_SYNC_INTERVAL_REF = Symbol("GRAZE SYNC INTERVAL REF");
@@ -6,4 +7,11 @@ export const GRAZE_SERVER = Symbol("GRAZE SERVER");
 export const GRAZE_UPDATE_QUEUE = Symbol("GRAZE UPDATE");
 export const GRAZE_UPDATE_QUEUE_ALERT = Symbol("GRAZE UPDATE QUEUE ALERT");
 export const GRAZE_NOTE_UPDATE = Symbol("GRAZE NOTE UPDATE FUNCTION");
+export const GRAZE_REFERENCE = Symbol("GRAZE REFERENCE")
+export const GRAZE_NOTE_SYNC = Symbol("GRAZE NOTE SYNC")
+export const GRAZE_NOTE_PREPARE_FOR_SERVER = Symbol("GRAZE NOTE PREPARE FOR SERVER")
+export const GRAZE_NOTE_SYNC_LIST = Symbol("GRAZE NOTE SYNC LIST")
+export const GRAZE_NOTE_TAGS = Symbol("GRAZE NOTE TAGS")
+export const GRAZE_NOTE_NEED_UPDATE = Symbol("GRAZE NOTE NEED UPDATE")
+
 

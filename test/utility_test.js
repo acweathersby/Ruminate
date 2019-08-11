@@ -103,9 +103,9 @@ export default function() {
     })
 
     it("jsdiff-note", function(done) {
-        const note = Note({
+        const note = new  Note({
             [GRAZE_UPDATE_QUEUE_ALERT]: (note) => {
-                note.getNote().body.should.equal(massiveTextB);
+                note.body.should.equal(massiveTextB);
                 done()
             }
         }, null, null, null, massiveTextA)

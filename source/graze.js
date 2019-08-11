@@ -12,6 +12,9 @@ import {
     GRAZE_SERVER,
     GRAZE_UPDATE_QUEUE,
     GRAZE_UPDATE_QUEUE_ALERT,
+    GRAZE_NOTE_PREPARE_FOR_SERVER,
+    GRAZE_NOTE_BODY,
+    GRAZE_NOTE_SYNC
 } from "./common/symbols";
 
 
@@ -150,17 +153,17 @@ export default class Graze {
 
             if (out_queue.length > 0) {
 
-                for (const note_ref of out_queue) {
+                for (const note of out_queue) {
 
-                    const RESULT = (await server.storeNote(note_ref.getNote()));
+                    const RESULT = (await server.storeNote(note[GRAZE_NOTE_PREPARE_FOR_SERVER]()));
 
                     if (!RESULT) {
                         console.warn(`Unable to sync note ${id} with uid ${note.uid}`);
                     } else {
-                        note_ref.getNote().modified = (new Date).valueOf();
+                        note[GRAZE_NOTE_BODY].modified = (new Date).valueOf();
                     }
 
-                    note_ref.sync(RESULT);
+                    note[GRAZE_NOTE_SYNC](RESULT);
                 }
             }
 
@@ -216,7 +219,7 @@ export default class Graze {
                 if (!note_data) continue;
 
                 if (!this[GRAZE_NOTES].has(uid)) {
-                    this[GRAZE_NOTES].set(uid, Note(
+                    this[GRAZE_NOTES].set(uid, new Note(
                         this,
                         new UID(uid),
                         note_data.id,
@@ -265,7 +268,7 @@ export default class Graze {
         if (!(uid instanceof UID))
             throw new Error("uid argument must be a UID instance");
 
-        const note = Note(
+        const note = new Note(
             this,
             uid,
             note_id,

@@ -70,7 +70,7 @@
   resolved "http://localhost:4873/@candlefw%2fmath/-/math-0.0.2-0.tgz#1a0554fe8eeb4b02337a29f10238952632004eff"
   integrity sha512-dV6tZXK2W1wu/bavJ8RL5ld6IMOJ0xMwcm4r74FiOetQQIIkXhJf451vu0MNI3KvZ1MHXCJaTTF83vrUfh463g==
 
-"@candlefw/observer@latest":
+"@candlefw/observer@^1.0.1-0", "@candlefw/observer@latest":
   version "1.0.1-0"
   resolved "http://localhost:4873/@candlefw%2fobserver/-/observer-1.0.1-0.tgz#a3943847a73eadbad978eb3b87bcaf9aa6249fde"
   integrity sha512-t7unBY3RMQVc1mZmT72ocV0cRrSB2dxQkUtCf5F48+oDvZlNQEvV0jHJwMd7nLqabLIBRwRL7OpZeppAFer8+A==
