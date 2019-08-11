@@ -7,9 +7,15 @@ var graze_objects = (function (exports, worker_threads, fs, path) {
     /* TODO - Make sure UID algorithm generates effectivly unique IDs */
     class UID extends ArrayBuffer {
 
-        static stringIsUID(string) {
-            const match = string.match(/[a-f\d]{12}\-[a-f\d]{4}\-[a-f\d]{8}\-[a-f\d]{8}/);
-            return match && match[0] == string;
+        static isUID(candidate, temp) {
+            return (
+                (candidate instanceof UID)
+                || (
+                    (typeof candidate == "string")
+                    && (temp = (candidate.match(/[a-f\d]{12}\-[a-f\d]{4}\-[a-f\d]{8}\-[a-f\d]{8}/)))
+                    && temp[0] == candidate
+                )
+            )
         }
 
         constructor(string_val) {
@@ -26,7 +32,7 @@ var graze_objects = (function (exports, worker_threads, fs, path) {
                 string_val
                     .replace(/\-/g, "")
                     .split("")
-                    .reduce((r,v,i)=> (i%2 ? r[i>>1] += v:r.push(v),r),[])
+                    .reduce((r, v, i) => (i % 2 ? r[i >> 1] += v : r.push(v), r), [])
                     .map((v, i) => dv.setUint8(i, parseInt(v, 16)));
             } else {
                 dv.setBigUint64(0, BigInt((new Date).valueOf()));
@@ -13879,7 +13885,7 @@ var graze_objects = (function (exports, worker_threads, fs, path) {
             if (!query_string)
                 return results;
 
-            if (UID.stringIsUID(query_string + ""))
+            if (UID.isUID(query_string + ""))
                 return [SERVER_getNoteFromUID(query_string)];
 
             if (Array.isArray(query_string)) {

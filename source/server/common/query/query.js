@@ -60,7 +60,7 @@ export function QueryEngine(
         if (!query_string)
             return results;
 
-        if (UID.stringIsUID(query_string + ""))
+        if (UID.isUID(query_string + ""))
             return [SERVER_getNoteFromUID(query_string)];
 
         if (Array.isArray(query_string)) {

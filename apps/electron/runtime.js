@@ -1,9 +1,9 @@
-const graze = new graze_objects.graze;
 const server = new graze_objects.server.json;
 const codemirror = require("codemirror");
 
 server.connect("./notes.json");
-graze.connect(server)
+
+const graze = new graze_objects.graze({sync_rate:2000, server});
 
 const EPOCH_Date = wick.scheme.date;
 const EPOCH_Time = wick.scheme.time;

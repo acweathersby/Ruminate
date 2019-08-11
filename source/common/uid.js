@@ -1,9 +1,15 @@
 /* TODO - Make sure UID algorithm generates effectivly unique IDs */
 export default class UID extends ArrayBuffer {
 
-    static stringIsUID(string) {
-        const match = string.match(/[a-f\d]{12}\-[a-f\d]{4}\-[a-f\d]{8}\-[a-f\d]{8}/)
-        return match && match[0] == string;
+    static isUID(candidate, temp) {
+        return (
+            (candidate instanceof UID)
+            || (
+                (typeof candidate == "string")
+                && (temp = (candidate.match(/[a-f\d]{12}\-[a-f\d]{4}\-[a-f\d]{8}\-[a-f\d]{8}/)))
+                && temp[0] == candidate
+            )
+        )
     }
 
     constructor(string_val) {
@@ -20,7 +26,7 @@ export default class UID extends ArrayBuffer {
             string_val
                 .replace(/\-/g, "")
                 .split("")
-                .reduce((r,v,i)=> (i%2 ? r[i>>1] += v:r.push(v),r),[])
+                .reduce((r, v, i) => (i % 2 ? r[i >> 1] += v : r.push(v), r), [])
                 .map((v, i) => dv.setUint8(i, parseInt(v, 16)))
         } else {
             dv.setBigUint64(0, BigInt((new Date).valueOf()));
