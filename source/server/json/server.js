@@ -188,12 +188,14 @@ function Server(delimeter = "/") {
 
         /* Stores new note or updates existing note with new values */
         async storeNote(note) {
+
             var stored_note = null;
 
             const
                 uid = note.uid.string,
                 modified_time = Date.now();
                 
+            console.log(modified_time, note)
             stored_note = noteFromUID(uid);
 
             if (!stored_note)
@@ -224,6 +226,9 @@ function Server(delimeter = "/") {
 
         // Return a list of all uid's that a modified time greater than [date] given
         async getUpdatedUIDs(date){
+            
+            await read(); //Hack - mack sure store is up to date;
+
             const d = (new Date(date).valueOf());
 
             const out = [];
@@ -257,7 +262,7 @@ function Server(delimeter = "/") {
                         if (file_path)
                             await fsp.unlink(file_path).catch(e => {});
                     } catch (e) {
-
+                        writeError(e);
                     }
 
                     file_path = "";

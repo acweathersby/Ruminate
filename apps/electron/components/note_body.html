@@ -1,8 +1,4 @@
-<scope 
-	id=body 
-	component="note-body" 
-	import="updated"
->
+<scope 	id=body component="note-body">
 
 	<div 
 		id=note-body 
@@ -10,14 +6,13 @@
 		contenteditable=true 
 	></div>
 
-	<script on=((loaded))>
-		this.renderer = renderer(this, body$);
+	<script on=((model_loaded))>
+		this.renderer = renderer(this, this.model);
 	</script>
 
-	<script on=((updated))>
-		this.note = updated;
-	    updated.render(this.renderer);
-    </script>
+	<script on=((body))>
+		this.renderer.update(body$);
+	</script>
 
 	<style>
 		#body{

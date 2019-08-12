@@ -4,6 +4,13 @@ import chai from "chai";
 
 chai.should();
 
+/*********************** Markdom TESTS *************************************/
+
+import markdom_tests from "./markdom_test.js";
+
+describe("MarkDOM", markdom_tests)
+
+
 /*********************** UTILITY TESTS *************************************/
 
 import utility_tests from "./utility_test.js";
@@ -23,6 +30,7 @@ import graze_json_server_constructor from "../source/server/json/server.js";
 import graze_fs_server_constructor from "../source/server/fs/server.js";
 import graze_mongo_server_constructor from "../source/server/mongo/server.js";
 import graze_couchdb_server_constructor from "../source/server/couchdb/server.js";
+
 describe("JSON File Backed", graze_test_suite(graze_constructor, graze_json_server_constructor, {
     type: "JSON BACKED",
     server_id: "JSONDB",

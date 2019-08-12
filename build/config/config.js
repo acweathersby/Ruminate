@@ -4,7 +4,8 @@ const output = [{
     name: "graze_objects",
     file: "./build/graze.js",
     globals:(id)=>`require("${id}")`,
-    format: "iife"
+    format: "iife",
+    sourcemap:"inline"
 }];
 
 export default {

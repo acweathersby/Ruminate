@@ -34,6 +34,14 @@
     "@candlefw/css" latest
     "@candlefw/math" latest
 
+"@candlefw/html@candlefw/html":
+  version "0.0.5"
+  resolved "https://codeload.github.com/candlefw/html/tar.gz/5cfca614984c0257054f6c472609b3d7253c4c5c"
+  dependencies:
+    "@candlefw/ll" "*"
+    "@candlefw/url" "*"
+    "@candlefw/whind" "*"
+
 "@candlefw/hydrocarbon@latest":
   version "0.1.2"
   resolved "http://localhost:4873/@candlefw%2fhydrocarbon/-/hydrocarbon-0.1.2.tgz#6e271bbbd3cb04d0cb4e0652e77c1217edd6813b"
@@ -65,6 +73,11 @@
     "@candlefw/wick" latest
     resolve "^1.11.1"
 
+"@candlefw/ll@*":
+  version "0.1.4"
+  resolved "http://localhost:4873/@candlefw%2fll/-/ll-0.1.4.tgz#95bcc790f87b8596a66e32264ab55a498d5f3a59"
+  integrity sha512-3vKlkVzEORoG74MmNEOu8kttlaxVcu8xfrIIW4U/hlP6spxgp1y+c7NcbSVN+zPfMudJwMUv97bv+juypU8AHw==
+
 "@candlefw/math@latest":
   version "0.0.2-0"
   resolved "http://localhost:4873/@candlefw%2fmath/-/math-0.0.2-0.tgz#1a0554fe8eeb4b02337a29f10238952632004eff"
@@ -89,6 +102,13 @@
   resolved "http://localhost:4873/@candlefw%2fspark/-/spark-0.0.8.tgz#f4f2e662e5d389d7eabb98e8e571179c6ccba485"
   integrity sha512-wsgXUOz5qYVFMGSECzu4585j4hJp9otperAI1FKWHbXnOsMdw3kukUOrwfufJuKavnAb3omAAHembrllSnN6xQ==
 
+"@candlefw/url@*":
+  version "0.0.5"
+  resolved "http://localhost:4873/@candlefw%2furl/-/url-0.0.5.tgz#adb25965921666f03804aa9fcd54ade19ebfdc69"
+  integrity sha512-2aQMHTbEt2L0xP3xNnvzCGPvwmwoVt+DDVCuWkS6/urJ04Ro/OyZVhE54KNsdRIV95UOu+59vqAqTebMkbAT9Q==
+  dependencies:
+    "@candlefw/whind" latest
+
 "@candlefw/url@latest":
   version "0.0.8-0"
   resolved "http://localhost:4873/@candlefw%2furl/-/url-0.0.8-0.tgz#b3c9ad6f72b177c9cbdcd50f9e27480709c90313"
@@ -96,15 +116,15 @@
   dependencies:
     "@candlefw/whind" latest
 
+"@candlefw/whind@*", "@candlefw/whind@^0.3.5", "@candlefw/whind@latest":
+  version "0.3.5"
+  resolved "http://localhost:4873/@candlefw%2fwhind/-/whind-0.3.5.tgz#fd84f7ba29e0910f57d2185d17ca40ec28ea41de"
+  integrity sha512-9V4ff935vWuE2F1LW5JR712K1b+Miy6nFW3nDH6BTi8IT0qVjiRC0I8Hmv5/GFKHdBmnlIMWjJJ1+PMWVU6I9g==
+
 "@candlefw/whind@^0.2.5-a":
   version "0.2.11"
   resolved "http://localhost:4873/@candlefw%2fwhind/-/whind-0.2.11.tgz#1b356345fc8e1da0bd36c2977702238a9f1792f5"
   integrity sha512-IPheC+erYIzpX9MFM1g1nEHfalljez4PgfTKjrjZxuYAJQsZOuhHA8ZvxIK7/Ity23kgkZ4mq3bdAoasG456CQ==
-
-"@candlefw/whind@^0.3.5", "@candlefw/whind@latest":
-  version "0.3.5"
-  resolved "http://localhost:4873/@candlefw%2fwhind/-/whind-0.3.5.tgz#fd84f7ba29e0910f57d2185d17ca40ec28ea41de"
-  integrity sha512-9V4ff935vWuE2F1LW5JR712K1b+Miy6nFW3nDH6BTi8IT0qVjiRC0I8Hmv5/GFKHdBmnlIMWjJJ1+PMWVU6I9g==
 
 "@candlefw/wick@latest":
   version "0.8.8"

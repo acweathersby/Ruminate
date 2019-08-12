@@ -93,6 +93,8 @@ export default class Note {
 		note.modified = note_data.modified;
 		note.tags = note_data.tags;
 		note.body = note_data.body;
+
+		this.updateObservers()
 	}
 
 	// Called by graze after data has been sent to server and response has been received. 
@@ -290,4 +292,4 @@ export default class Note {
 	}
 }
 
-Observer("updated", Note.prototype);
+Observer("update", Note.prototype);

@@ -27,6 +27,7 @@
   "dependencies": {
     "@candlefw/charcoal": "latest",
     "@candlefw/glow": "latest",
+    "@candlefw/html": "candlefw/html",
     "@candlefw/lantern": "latest",
     "@candlefw/observer": "^1.0.1-0",
     "@candlefw/radiate": "latest",
