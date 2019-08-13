@@ -49,24 +49,6 @@ export default (function MarkDOM() {
         return { type, start, reduceUP, reduceDN, ignore, end, cap: 0, children: [] }
     }
 
-    function code_block_node(start) {
-        return node(cb, start, 0, 0, p | cb | br, cb)
-    }
-
-    function new_line_node() {
-        var intermediate = node(br, 0, 0, 0, br);
-        setChild(intermediate, node(br, 0, 0, 0, br));
-        return intermediate;
-    }
-
-    function paragraph_node(start) {
-        return node(p, start, 0, p);
-    }
-
-    function text_node(start, end) {
-        return node(tx, start, end);
-    }
-
     function setChild(node, ...children) {
         node.children.push(...children);
         return children[children.length - 1];
@@ -77,12 +59,26 @@ export default (function MarkDOM() {
         return node;
     }
 
+    function paragraph_node(start) {
+        return node(p, start, 0, p);
+    }
+
+    function text_node(start, end) {
+        return node(tx, start, end);
+    }
+
+    function new_line_node() {
+        var intermediate = node(br, 0, 0, 0, br);
+        setChild(intermediate, node(br, 0, 0, 0, br));
+        return intermediate;
+    }
+
     function end(char, lex) { var i = 0; while (lex.ch == char && !lex.END) lex.next(), ++i; return i; }
 
     function space(lex) { return (lex.ty == lex.types.ws) ? (lex.next(), !0) : !1 }
 
     const md_headers = {
-
+        
         "#": (lex, start, count) =>
             (count = end("#", lex), space(lex) && count < 7)
             ? node(2 << count, start + count)
@@ -92,18 +88,20 @@ export default (function MarkDOM() {
 
         "`": (lex, start) => (end("`", lex) >= 3)
             ? node(cb, start, 0, 0, p | cb | br, cb)
-            : code_block_node(start),
+            : paragraph_node(start),
 
         [space_char]: function space(lex, start) {
             const pk = lex.pk;
+            let count = 0;
 
-            let count = lex.tx.length;
+            if (pk.ty == lex.types.ws) {
+                pk.next(), count++;
+            }
 
-            return (count >= 4)
-                ? paragraph_node(start)
-                : paragraph_node(start);
+            console.log(count)
+
+            return (count >= 4) ? codeblock(lex, start) : paragraph_node(start);
         },
-
         [new_line]: () => (new_line_node())
     }
 
@@ -111,12 +109,8 @@ export default (function MarkDOM() {
         [p]: {
             [p]: (t, b) => (setChild(t, new_line_node(), ...b.children), t)
         },
-        [bq]: {
-            [bq]: (t, b) => (setChild(t, ...b.children), t),
-        },
-        [li]: {
-            [li]: (t, b) => (setChild(t, b), t),
-        },
+        [bq]: {},
+        [li]: {},
         [cb]: {
             [p]: (t, b) => (setChild(t, ...b.children), t),
             [br]: (t, b) => (setChild(t, node(nl)), t),
@@ -328,11 +322,10 @@ export default (function MarkDOM() {
                 }
 
                 return str;
-            }   
+            }
 
-            let str = `<div>${output_stack.map(r).join("")}</div>`;
-            console.log(str)
-            HTMLtoMarkdown(vDOM(str));
+            for (let i = 0; i < output_stack.length; i++)
+                console.log(r(output_stack[i]))
 
             return ele;
         },
@@ -343,38 +336,40 @@ export default (function MarkDOM() {
     }
 })()
 
-function vDOM(string){
-    const lex = whind(string);
+/* Parses a markdown encoded string and returns a list of markdown nodes */
+function ParseMarkdown(lex) {
+    const nodes = [];
     lex.IWS = false;
-    
-    function parse(lex, node = {}){
-        while(!lex.END){
-            switch(lex.ch){
-                case "<":
-                    if(lex.n == "/" )
-                        return; 
-                    else{
-                        lex.IWS = true;
+    lex.tl = 0;
+    lex.next();
 
-                        while(!lex.)
+    while (!lex.END) {
+        const node = new MarkDownNode(lex);
 
-                        lex.IWS = false;
-                    }
-                break;
-                case "/":{}
-
-
-            }
+        switch (lex.tx) {
+            case "#": //Header
+                if (ParseHeader(lex, node))
+                    break;
+            case ">": //Block Quote
+                if (ParseBlockQuote(lex, node))
+                    break;
+                //default is a paragraph node
+            default:
+                ParseParagraph(lex, node)
         }
+
+        if (lex.ty = lex.types.nl) {
+            nodes.push(node);
+        }
+
+        lex.next()
     }
 
-    return parse(lex);
+    return new MarkDownNode(lex, lex.off, lex.str, nodes);
 }
 
 function HTMLtoMarkdown(html_node) {
-    console.log(html_node.fch.children)
-    const out =  processChildren(html_node);
-    console.log(out)
+    return processChildren(html_node);
 }
 
 function HTMLtoMarkdownParse(html_node, level = 0) {
@@ -386,8 +381,10 @@ function HTMLtoMarkdownParse(html_node, level = 0) {
 
 function processChildren(node, level = 0) {
     let str = "";
-    const children = node.children;
+
+    const children = node.childNodes;
     const length = children.length;
+
     for (let i = 0; i < length; i++)
         str += HTMLtoMarkdownParse(children[i], level + 1);
 
@@ -405,7 +402,6 @@ function defaultNodeRender(node, level) {
         return str += `</${tag}>`
 
     } else {
-    //    console.log(node)
         return node.data;
     }
 }
@@ -436,13 +432,10 @@ tagReplace("H4", "#### ", "\n", false, 1)
 tagReplace("H5", "##### ", "\n", false, 1)
 tagReplace("H6", "###### ", "\n", false, 1)
 tagReplace("BLOCKQOUTE", ">", "\n", true, 1)
-tagReplace("CODE", "```", "\n```\n", true, 1)
 tagReplace("A", "[%href](", ")", false, Infinity)
 tagReplace("IMG", "![%src](", ")", false, Infinity)
-tagReplace("I", "*", "*", true, Infinity)
-tagReplace("B", "**", "**", true, Infinity)
-tagReplace("PRE", "```", "```", true, Infinity, true)
-tagReplace("BR", "\n", "", true, Infinity, false)
+tagReplace("B", "*", "*", true, Infinity)
+tagReplace("BR", "<br/>", "", true, Infinity, false)
 tagReplace("STRONG", "*", "*", true, Infinity)
 tagReplace("P", "", "\n", false, 1)
 tagReplace("NOTES", "((%query))[%meta]\n", "", true, 1, false)

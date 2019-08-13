@@ -1,22 +1,27 @@
 import HTML from "@candlefw/html";
 import markdom from "../source/client/common/markdom.js";
 
-console.log(HTML)
 HTML.polyfill();
 
 export default function() {
     describe.only("String Parsing", function(){
         describe("Markdown data",function(){
             it.only("# **Header**", ()=>markdom.DOMify(
-`### *d* **Header** \`\`t**es**t\`\` 
- #te this is th only way to live  
+`### *d*   ***Header*** Test ** \`\`\`t**es**t\`\`\` 
+ #te this is th<a href="reset">tesr</a> only way to live  
+
+s
 
 \`\`\`
- Test this out!
-
- ant
+Test this out!
+     
+  ant
 
 \`\`\`
+
+This is my test
+This is the only test *To wit*
+
 `).tag.should.equal("h1"));
             it("## Header", ()=>markdom.DOMify(`## Header`).tag.should.equal("h2"));
             it("### Header", ()=>markdom.DOMify(`### Header`).tag.should.equal("h3"));
