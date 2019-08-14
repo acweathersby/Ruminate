@@ -43,10 +43,11 @@ export default (function MarkDOM() {
         lex.off = off;
         lex.tl = 0;
         lex.next();
+        return lex;
     }
 
     function node(type = 0, start = 0, end = 0, reduceUP = 0, reduceDN = 0, cap = 0, ignore = 0) {
-        return { type, start, reduceUP, reduceDN, ignore, end, cap: 0, children: [] }
+        return { type, start, reduceUP, reduceDN, ignore, end, cap: 0, children: [], active: true }
     }
 
     function code_block_node(start) {
@@ -68,8 +69,14 @@ export default (function MarkDOM() {
     }
 
     function setChild(node, ...children) {
-        node.children.push(...children);
-        return children[children.length - 1];
+        let c = null;
+        for(const child of children){
+            if(child) {
+                node.children.push(child)
+                c = child;
+            }
+        }
+        return c;
     }
 
     function setIgnore(node) {
@@ -84,24 +91,24 @@ export default (function MarkDOM() {
     const md_headers = {
 
         "#": (lex, start, count) =>
-            (count = end("#", lex), space(lex) && count < 7)
-            ? node(2 << count, start + count)
-            : paragraph_node(start),
+            (count = end("#", lex), space(lex) && count < 7) ?
+            node(2 << count, start + count) :
+            paragraph_node(start),
 
         ">": (lex, start) => node(bq, start, 0, bq),
 
-        "`": (lex, start) => (end("`", lex) >= 3)
-            ? node(cb, start, 0, 0, p | cb | br, cb)
-            : code_block_node(start),
+        "`": (lex, start) => (end("`", lex) >= 3) ?
+            node(cb, start, 0, 0, p | cb | br, cb) :
+            code_block_node(start),
 
         [space_char]: function space(lex, start) {
             const pk = lex.pk;
 
             let count = lex.tx.length;
 
-            return (count >= 4)
-                ? paragraph_node(start)
-                : paragraph_node(start);
+            return (count >= 4) ?
+                paragraph_node(start) :
+                paragraph_node(start);
         },
 
         [new_line]: () => (new_line_node())
@@ -128,17 +135,27 @@ export default (function MarkDOM() {
         }
     }
 
-    const join = (top, bottom, up, j) =>
-        (!top.cap && (j = joins[top.type]) && j[bottom.type])
-        ? j[bottom.type](top, bottom)
-        : null;
+    const join = (top, bottom, up, j) => {
 
-    const parseLineStart = (lex, ch) => (ch = lex.ch, md_headers[ch])
-        ? md_headers[ch](lex, lex.off)
-        : paragraph_node(lex.off);
+        if (!bottom.active) {
+            top.children.push(...bottom.children)
+            return top;
+        }
+
+        return (!top.cap && (j = joins[top.type]) && j[bottom.type]) ?
+            j[bottom.type](top, bottom) :
+            null;
+    }
+
+    const parseLineStart = (lex, ch) => (ch = lex.ch, md_headers[ch]) ?
+        md_headers[ch](lex, lex.off) :
+        paragraph_node(lex.off);
 
     function parseLine(lex, object, escape = "", escape_count = 0, start = lex.off) {
-
+        
+        if(escape_count > 0)
+            object.active = false;
+        
         while (!lex.END && lex.ty != lex.types.nl) {
 
             var off = lex.off,
@@ -168,34 +185,26 @@ export default (function MarkDOM() {
                 case "_":
                     const ch = lex.ch;
                     count = end(ch, lex);
+                    let txt = text_node(start, off), obj = null;
                     if (count == 1)
-                        var obj = setChild(
-                            object,
-                            text_node(start, off),
-                            parseLine(lex, node(italic, lex.off), ch, 1)
-                        );
+                        obj = parseLine(lex, node(italic, lex.off), ch, 1)
                     else if (count == 2)
-                        obj = setChild(
-                            object,
-                            text_node(start, off),
-                            parseLine(lex, node(bold, lex.off), ch, 2, count)
-                        );
+                        obj = parseLine(lex, node(bold, lex.off), ch, 2)
                     else if (count > 2) {
                         const diff = count - Math.min(2, count);
                         lex.off -= diff;
                         lex.tl = 0;
                         lex.next();
-                        obj = setChild(
-                            object,
-                            text_node(start, off),
-                            parseLine(lex, node(bold, lex.off), ch, 2)
-                        );
+                        obj = parseLine(lex, node(bold, lex.off), ch, 2)
                     }
+
                     if (!obj.active) {
-                        obj.children.length = 0;
                         reset(lex, off + count)
+                    }else{
+                        setChild(object, txt, obj);
+                        start = lex.off;
                     }
-                    start = lex.off;
+
                     break;
                 case "`":
                     count = end("`", lex);
@@ -261,6 +270,8 @@ export default (function MarkDOM() {
                 //should be at nl or lex.END
                 lex.assert("\n");
 
+
+
                 if (output_stack.length > 0) {
                     const
                         index = output_stack.length - 1,
@@ -278,115 +289,171 @@ export default (function MarkDOM() {
 
             //REnder test
             function r(d) {
-                let str = ""
+                let ele = { nodeName: "", childNodes: null },
+                    tag = "DIV";
                 switch (d.type) {
                     case p:
-                        str += `<p>${d.children.map(r).join("")}</p>`
+                        tag = "P";
                         break;
                     case bq:
-                        str += `<blockqoute>${d.children.map(r).join("")}</blockqoute>`
+                        tag = "BLOCKQUOTE";
                         break;
                     case h1:
-                        str += `<h1>${d.children.map(r).join("")}</h1>`
+                        tag = "H1";
                         break;
                     case h2:
-                        str += `<h1>${d.children.map(r).join("")}</h2>`
+                        tag = "H2";
                         break;
                     case h3:
-                        str += `<h3>${d.children.map(r).join("")}</h3>`
+                        tag = "H3";
                         break;
                     case h4:
-                        str += `<h4>${d.children.map(r).join("")}</h4>`
+                        tag = "H4";
                         break;
                     case h5:
-                        str += `<h5>${d.children.map(r).join("")}</h5>`
+                        tag = "H5";
                         break;
                     case h6:
-                        str += `<h6>${d.children.map(r).join("")}</h6>`
+                        tag = "H6";
                         break;
                     case li:
-                        str += `<ul>${d.children.map(r).map(r=>`<li>${r}</li>`).join("")}</ul>`
+                        tag = "L1";
                         break;
                     case cb:
-                        str += `<code>\n${d.children.map(r).join("\n")}\n</code>`
-                        break;
+                        ele.nodeName = "CODE";
+                        ele.childNodes = 
+                            [{ 
+                                nodeName: "#text", 
+                                data: d.children
+                                        .map(r)
+                                        .reduce((r, tx) => (tx.data == "\n" ? r + tx.data : r  +"\n" + tx.data), "")
+                            }]
+                        return ele;
                     case br:
-                        str += `<br>`
+                        tag = "BR";
                         break;
+                    case nl:
+                        return { nodeName: "#text", data: "\n" };
                     case tx:
-                        str += MDString.slice(d.start, d.end)
-                        break;
+                        return { nodeName: "#text", data: MDString.slice(d.start, d.end) };
                     case bold:
-                        str += d.active ? `<b>${d.children.map(r).join("")}</b>` : "**" + d.children.map(r).join("");
+                        tag = "B";
                         break;
                     case italic:
-                        str += d.active ? `<i>${d.children.map(r).join("")}</i>` : "*" + d.children.map(r).join("");
+                        tag = "EM";
                         break;
                     case inline_code:
-                        str += d.active ? `<pre>${d.children.map(r).join("")}</pre>` : ("`").repeat(d.cap) + d.children.map(r).join("");
+                        tag = "PRE";
                         break;
                 }
+                ele.nodeName = tag;
+                ele.childNodes = d.children.map(r);
 
-                return str;
-            }   
+                return ele;
+            }
 
-            let str = `<div>${output_stack.map(r).join("")}</div>`;
-            console.log(str)
-            HTMLtoMarkdown(vDOM(str));
+            const n = node();
+            setChild(n, ...output_stack);
+            const vDom = r(n);
+            buildHash(vDom)
+            console.log(vDom.childNodes)
+            //HTMLtoMarkdown();
 
             return ele;
         },
         //Given a DOM tree output a MD string representing the DOM structure. 
         MDify(HTMLElement) {
-            return "";
+            return HTMLtoMarkdown(HTMLElement);
         }
     }
-})()
+})();
 
-function vDOM(string){
-    const lex = whind(string);
-    lex.IWS = false;
-    
-    function parse(lex, node = {}){
-        while(!lex.END){
-            switch(lex.ch){
-                case "<":
-                    if(lex.n == "/" )
-                        return; 
-                    else{
-                        lex.IWS = true;
+function render(node){
+    if(node.nodeName == "#text"){
+        return new Text(node.data);
+    }else{
+        const ele = document.createElement(node.nodeName);
+        
+        if(node.attribs)
+            for(const attribute of node.attribs)
+                ele.setAttribute(attribute[0], attribute[1]);
 
-                        while(!lex.)
+        node.children.map(render).map(ele.appendChild.bind(ele));
 
-                        lex.IWS = false;
-                    }
-                break;
-                case "/":{}
-
-
-            }
-        }
+        return ele;
     }
-
-    return parse(lex);
 }
 
+function buildHash(node, hash = 0x43FF543172){
+    
+    let index = 0;
+
+    if(node.childNodes)
+        for(const child of node.childNodes)
+            hash ^= buildHash(child, index ^ 0x43FF543172 << index) << (index++ % 3) + 1;
+
+
+    if(node.nodeName == "#text")
+        hash = node.data.split("").reduce((r,v,i)=>(r ^ (r << (i%16)) | v.charCodeAt(0) ), hash );
+            else
+        hash = node.nodeName.split("").reduce((r,v,i)=>r ^= v.charCodeAt(0) << (i%4), hash );
+
+    node.hash = hash ;
+}
+
+function diff(DOMnode, vDOMnode){
+
+    const 
+        Children = Array.prototype.slice.call(DOMnode.childNodes),
+        vChildren = vDOMnode.childNodes;
+
+    const out = [];
+
+    outer:
+        for(let i = 0; i < vChildren.length; i++){
+
+            const vchild = vChildren[i];
+            
+            for(let j = 0; j < Children.length; j++){
+                const child = Children[j];
+
+                if(vchild.hash == child.hash){
+                    out.push(child);
+                    Children.splice(j,1);
+                    continue outer;
+                    //Continue looking            
+                }
+
+                if(j == Children.length-1){ /* child is discarded */ }
+            }
+            
+            out.push(render(child));
+        }
+
+    DOMnode.innerHTML = "";
+
+    for(const child of out)
+        DOMnode.appendNode(child);
+
+    return DOMnode;
+}
+
+
+
 function HTMLtoMarkdown(html_node) {
-    console.log(html_node.fch.children)
-    const out =  processChildren(html_node);
-    console.log(out)
+    const out = processChildren(html_node);
 }
 
 function HTMLtoMarkdownParse(html_node, level = 0) {
-    if (TAGS[html_node.tagName])
-        return TAGS[html_node.tagName](html_node, level);
+    if (TAGS[html_node.nodeName])
+        return TAGS[html_node.nodeName](html_node, level);
     else
         return defaultNodeRender(html_node, level);
 }
 
 function processChildren(node, level = 0) {
     let str = "";
-    const children = node.children;
+    const children = node.childNodes;
     const length = children.length;
     for (let i = 0; i < length; i++)
         str += HTMLtoMarkdownParse(children[i], level + 1);
@@ -395,8 +462,8 @@ function processChildren(node, level = 0) {
 }
 
 function defaultNodeRender(node, level) {
-    if (node instanceof HTMLElement) {
-        const tag = node.tagName;
+    if (node.nodeName !== "#text") {
+        const tag = node.nodeName;
 
         let str = `<${tag}>`;
 
@@ -405,7 +472,7 @@ function defaultNodeRender(node, level) {
         return str += `</${tag}>`
 
     } else {
-    //    console.log(node)
+        //    console.log(node)
         return node.data;
     }
 }
@@ -415,8 +482,8 @@ const TAGS = {};
     Returns new function that will replace a given nodes tags with an unary or binary
     [replace] tag(s). 
 */
-function tagReplace(tagname, pre, end, replace, max_level, PARSE_CHILDREN = true) {
-    TAGS[tagname] = function(node, level) {
+function tagReplace(nodeName, pre, end, replace, max_level, PARSE_CHILDREN = true) {
+    TAGS[nodeName] = function(node, level) {
         if (level > max_level)
             return defaultNodeRender(node, level);
         let str = pre;
@@ -439,7 +506,7 @@ tagReplace("BLOCKQOUTE", ">", "\n", true, 1)
 tagReplace("CODE", "```", "\n```\n", true, 1)
 tagReplace("A", "[%href](", ")", false, Infinity)
 tagReplace("IMG", "![%src](", ")", false, Infinity)
-tagReplace("I", "*", "*", true, Infinity)
+tagReplace("EM", "*", "*", true, Infinity)
 tagReplace("B", "**", "**", true, Infinity)
 tagReplace("PRE", "```", "```", true, Infinity, true)
 tagReplace("BR", "\n", "", true, Infinity, false)
