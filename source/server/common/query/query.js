@@ -78,7 +78,7 @@ export function QueryEngine(
             return [];
         }
 
-        const uids = container.query(query.container.containers || default_container);
+        const uids = container.query(query.container ? query.container.containers : default_container);
 
         for (const uid of uids)
             results.push(...await SERVER_getNotesFromContainer(uid));

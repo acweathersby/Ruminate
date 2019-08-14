@@ -257,6 +257,7 @@ export default class Note {
 			graze = this[GRAZE_REFERENCE];
 
 		if (handler) {
+			return handler("string", note.body);
 			for (const value of reducer(whind(note.body))) {
 				if (typeof value == "string")
 					await handler("string", value);

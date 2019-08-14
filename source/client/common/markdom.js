@@ -29,10 +29,14 @@ const
     bold = 4096,
     italic = 8192,
     inline_code = 16384,
-    br = 32768;
+    br = 32768,
+    note = 65536;
 const space_char = " ",
     new_line = "\n",
     hashtag = "#";
+
+// Methods needed
+
 
 export default (function MarkDOM() {
 
@@ -70,8 +74,8 @@ export default (function MarkDOM() {
 
     function setChild(node, ...children) {
         let c = null;
-        for(const child of children){
-            if(child) {
+        for (const child of children) {
+            if (child) {
                 node.children.push(child)
                 c = child;
             }
@@ -89,17 +93,33 @@ export default (function MarkDOM() {
     function space(lex) { return (lex.ty == lex.types.ws) ? (lex.next(), !0) : !1 }
 
     const md_headers = {
+        "(": (lex, start, count) => {
+            if (lex.next().ch == "(") {
+                lex.next();
+                //graze_note data
+                const nt = node(note, lex.off);
+                
+                nt.ignore = true;
+                
+                parseLine(lex, nt, ")", 2);
+                
+                if(!nt.active){
+                    reset(lex, start);
+                    return paragraph_node(start)
+                }
 
+                return nt;
+            }
+            return paragraph_node(start)
+        },
         "#": (lex, start, count) =>
             (count = end("#", lex), space(lex) && count < 7) ?
-            node(2 << count, start + count) :
-            paragraph_node(start),
+            node(2 << count, start + count) : paragraph_node(start),
 
-        ">": (lex, start) => node(bq, start, 0, bq),
+        ">": (lex, start) => (lex.next(), node(bq, start, 0, bq)),
 
         "`": (lex, start) => (end("`", lex) >= 3) ?
-            node(cb, start, 0, 0, p | cb | br, cb) :
-            code_block_node(start),
+            node(cb, start, 0, 0, p | cb | br, cb) : code_block_node(start),
 
         [space_char]: function space(lex, start) {
             const pk = lex.pk;
@@ -152,10 +172,10 @@ export default (function MarkDOM() {
         paragraph_node(lex.off);
 
     function parseLine(lex, object, escape = "", escape_count = 0, start = lex.off) {
-        
-        if(escape_count > 0)
+
+        if (escape_count > 0)
             object.active = false;
-        
+
         while (!lex.END && lex.ty != lex.types.nl) {
 
             var off = lex.off,
@@ -185,7 +205,8 @@ export default (function MarkDOM() {
                 case "_":
                     const ch = lex.ch;
                     count = end(ch, lex);
-                    let txt = text_node(start, off), obj = null;
+                    let txt = text_node(start, off),
+                        obj = null;
                     if (count == 1)
                         obj = parseLine(lex, node(italic, lex.off), ch, 1)
                     else if (count == 2)
@@ -200,7 +221,7 @@ export default (function MarkDOM() {
 
                     if (!obj.active) {
                         reset(lex, off + count)
-                    }else{
+                    } else {
                         setChild(object, txt, obj);
                         start = lex.off;
                     }
@@ -247,8 +268,6 @@ export default (function MarkDOM() {
             //MD is a line based rule system. split the string into lines 
             const lines = MDString.split("\n");
 
-            const ele = new HTMLElement;
-
             const output_stack = [];
 
             const rule_stack = [];
@@ -268,9 +287,8 @@ export default (function MarkDOM() {
                 var intermediate = parseLine(lex, parseLineStart(lex));
 
                 //should be at nl or lex.END
-                lex.assert("\n");
-
-
+                if (!lex.END)
+                    lex.assert("\n");
 
                 if (output_stack.length > 0) {
                     const
@@ -319,14 +337,16 @@ export default (function MarkDOM() {
                     case li:
                         tag = "L1";
                         break;
+                    case note:
+                        tag = "note";
+                        break;
                     case cb:
                         ele.nodeName = "CODE";
-                        ele.childNodes = 
-                            [{ 
-                                nodeName: "#text", 
-                                data: d.children
-                                        .map(r)
-                                        .reduce((r, tx) => (tx.data == "\n" ? r + tx.data : r  +"\n" + tx.data), "")
+                        ele.childNodes = [{
+                            nodeName: "#text",
+                            data: d.children
+                                .map(r)
+                                .reduce((r, tx) => (tx.data == "\n" ? r + tx.data : r + "\n" + tx.data), "")
                             }]
                         return ele;
                     case br:
@@ -355,85 +375,98 @@ export default (function MarkDOM() {
             const n = node();
             setChild(n, ...output_stack);
             const vDom = r(n);
-            buildHash(vDom)
-            console.log(vDom.childNodes)
             //HTMLtoMarkdown();
 
-            return ele;
+            return vDom;
         },
+
         //Given a DOM tree output a MD string representing the DOM structure. 
         MDify(HTMLElement) {
             return HTMLtoMarkdown(HTMLElement);
+        },
+
+        //Rebuilds element tree based on vDOM
+        merge(element, mdVDOM, renderNote) {
+            buildHash(element);
+            buildHash(mdVDOM);
+            diff(element, mdVDOM, renderNote);
+            return element;
         }
     }
 })();
 
-function render(node){
-    if(node.nodeName == "#text"){
+function render(node, renderNote) {
+    const name = node.nodeName
+    if (name == "#text") {
         return new Text(node.data);
-    }else{
-        const ele = document.createElement(node.nodeName);
-        
-        if(node.attribs)
-            for(const attribute of node.attribs)
+    } else if (name == "note") {
+        return renderNote(node.childNodes[0].data, node.childNodes[1] && node.childNodes[1].data);
+    } else {
+
+        const ele = document.createElement(name);
+
+        if (node.attribs)
+            for (const attribute of node.attribs)
                 ele.setAttribute(attribute[0], attribute[1]);
 
-        node.children.map(render).map(ele.appendChild.bind(ele));
+        node.childNodes.map(render).map(ele.appendChild.bind(ele));
 
         return ele;
     }
 }
 
-function buildHash(node, hash = 0x43FF543172){
-    
+function buildHash(node, hash = 0) {
+
     let index = 0;
 
-    if(node.childNodes)
-        for(const child of node.childNodes)
-            hash ^= buildHash(child, index ^ 0x43FF543172 << index) << (index++ % 3) + 1;
+    if (node.childNodes)
+        for (const child of node.childNodes)
+            hash ^= buildHash(child, 0x134 << (((index++) % 4) * 8));
 
 
-    if(node.nodeName == "#text")
-        hash = node.data.split("").reduce((r,v,i)=>(r ^ (r << (i%16)) | v.charCodeAt(0) ), hash );
-            else
-        hash = node.nodeName.split("").reduce((r,v,i)=>r ^= v.charCodeAt(0) << (i%4), hash );
+    if (node.nodeName == "#text")
+        hash = node.data.split("").reduce((r, v, i) => (r ^ (v.charCodeAt(0) << ((i % 4) * 7))), hash);
+    else
+        hash = node.nodeName.split("").reduce((r, v, i) => (r ^ (v.charCodeAt(0) << ((i % 4) * 7))), hash);
 
-    node.hash = hash ;
+    node.hash = hash;
+
+    return hash;
 }
 
-function diff(DOMnode, vDOMnode){
+function diff(DOMnode, vDOMnode, renderNote) {
 
-    const 
+    const
         Children = Array.prototype.slice.call(DOMnode.childNodes),
         vChildren = vDOMnode.childNodes;
 
     const out = [];
 
     outer:
-        for(let i = 0; i < vChildren.length; i++){
+        for (let i = 0; i < vChildren.length; i++) {
 
             const vchild = vChildren[i];
-            
-            for(let j = 0; j < Children.length; j++){
+
+            for (let j = 0; j < Children.length; j++) {
                 const child = Children[j];
 
-                if(vchild.hash == child.hash){
+                if (vchild.hash == child.hash) {
                     out.push(child);
-                    Children.splice(j,1);
+                    Children.splice(j, 1);
                     continue outer;
                     //Continue looking            
                 }
 
-                if(j == Children.length-1){ /* child is discarded */ }
+                if (j == Children.length - 1) { /* child is discarded */ }
             }
-            
-            out.push(render(child));
+
+            out.push(render(vchild, renderNote));
         }
 
     DOMnode.innerHTML = "";
 
-    for(const child of out)
-        DOMnode.appendNode(child);
+    for (const child of out)
+        DOMnode.appendChild(child);
 
     return DOMnode;
 }
@@ -441,7 +474,7 @@ function diff(DOMnode, vDOMnode){
 
 
 function HTMLtoMarkdown(html_node) {
-    const out = processChildren(html_node);
+    return processChildren(html_node);
 }
 
 function HTMLtoMarkdownParse(html_node, level = 0) {
@@ -477,7 +510,7 @@ function defaultNodeRender(node, level) {
     }
 }
 
-const TAGS = {};
+
 /* 
     Returns new function that will replace a given nodes tags with an unary or binary
     [replace] tag(s). 
@@ -495,14 +528,14 @@ function tagReplace(nodeName, pre, end, replace, max_level, PARSE_CHILDREN = tru
         return str += (PARSE_CHILDREN ? processChildren(node, level) : "") + end
     }
 }
-
+const TAGS = {};
 tagReplace("H1", "# ", "\n", false, 1)
 tagReplace("H2", "## ", "\n", false, 1)
 tagReplace("H3", "### ", "\n", false, 1)
 tagReplace("H4", "#### ", "\n", false, 1)
 tagReplace("H5", "##### ", "\n", false, 1)
 tagReplace("H6", "###### ", "\n", false, 1)
-tagReplace("BLOCKQOUTE", ">", "\n", true, 1)
+tagReplace("BLOCKQUOTE", ">", "\n", true, 1)
 tagReplace("CODE", "```", "\n```\n", true, 1)
 tagReplace("A", "[%href](", ")", false, Infinity)
 tagReplace("IMG", "![%src](", ")", false, Infinity)

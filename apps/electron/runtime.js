@@ -3,7 +3,7 @@ const codemirror = require("codemirror");
 
 server.connect("./notes.json");
 
-const graze = new graze_objects.graze({sync_rate:2000, server});
+const graze = new graze_objects.graze({ sync_rate: 2000, server });
 
 const EPOCH_Date = wick.scheme.date;
 const EPOCH_Time = wick.scheme.time;
@@ -12,28 +12,27 @@ const Latitude = wick.scheme.number;
 const $Number = wick.scheme.number;
 const $String = wick.scheme.string;
 const $Boolean = wick.scheme.bool;
-
+const markdom = graze_objects.client.markdom;
 
 function CodeMirrorBootStrapper(element) {
     codemirror(element);
 }
 
-
-
 function renderer(scope, note) {
 
-    var parentElement;
-
-
-
-    var NEW_RUNNING = true,
+    var parentElement,
+        NEW_RUNNING = true,
         children = null,
         index = 0,
         length = 0;
 
     setInterval(function() {
-        note.body = HTMLtoMarkdown(parentElement);
-    }, 500)
+        if (parentElement) {
+            const d = markdom.MDify(parentElement);
+            console.log(d);
+          //  note.body = d;
+        }
+    }, 2000)
 
     /** 
         This function is called by note.render and 
@@ -46,18 +45,31 @@ function renderer(scope, note) {
             children = parentElement.children, index = 0, length = children.length;
         switch (type) {
             case "string":
-                index = ParseMarkdown(whind.default(obj)).merge(parentElement, length, children, index);
+                const vDOM = markdom.DOMify(obj);
+                markdom.merge(parentElement, vDOM, (notequery, meta) => {
+                    const note = document.createElement("notes");
+                    graze.retrieve(notequery).then(async (notes) => {
+                        if (notes.length > 0) {
+                            const scope = await wick("./components/list.html", presets)
+                                .pending
+                                .then(comp => comp.mount(note, { notes }));
+                        }
+                    })
+                    note.setAttribute("query", notequery);
+                    note.setAttribute("meta", meta || "");
+                    return note;
+                })
                 break;
             case "notes":
                 const type = query.meta;
-                
+
                 const scope = await wick("./components/list.html", presets)
                     .pending
-                    .then(comp => comp.mount(parentElement, {notes:obj}));
+                    .then(comp => comp.mount(parentElement, { notes: obj }));
 
                 scope.ele.setAttribute("query", query.value);
                 scope.ele.setAttribute("meta", query.meta || "");
-                
+
                 break;
             case "complete":
                 //Remove any extra children
@@ -67,9 +79,8 @@ function renderer(scope, note) {
     }
 
     return {
-        async update(p){
+        async update(p) {
             parentElement = p;
-            parentElement.innerHTML = "";
             note.render(render);
         }
     }
@@ -82,19 +93,21 @@ const presets = wick.presets({
 })
 //*
 
-//graze.createNote("groceries.", "", "This is a reminder to get milk!");
-//graze.createNote("groceries.", "", "This is a reminder to get butter!");
-//graze.createNote("groceries.", "", "This is a reminder to get cream!");
+//graze.createNote("groceries/milk", "", "This is a reminder to get milk!");
+//graze.createNote("groceries/butter", "", "This is a reminder to get butter!");
+//graze.createNote("groceries/cream", "", "This is a reminder to get cream!");
 //graze.createNote("signatures. main", "", "Anthony C Weathersby");
 //graze.createNote("places to visit.", "", "I'd like to go to rome someday");
-//*/
+/*/
 const n2 = graze.createNote("/test2", "",
     `# This is the markdown
-I never really liked to eat too mutch
 
-((*groceries*))[great]
+I never really liked to **eat** too mutch
+((groceries/*?milk))
+> But theres always a I chance I could eat more.
 
-> But theres always a I chance I could eat more.`);
+`);
+/*/
 //n2.store().then(() => {})
 window.addEventListener("load", () =>
     wick("./components/main.html", presets)
