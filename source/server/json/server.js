@@ -1,9 +1,9 @@
-import UID from "../../common/uid";
-import { QueryEngine } from "../common/query/query";
-import { matchString, parseContainer, parseId } from "../common/query/query_functions";
+import UID from "../../common/uid.js";
+import { QueryEngine } from "../common/query/query.js";
+import { matchString, parseContainer, parseId } from "../common/query/query_functions.js";
 import fs from "fs";
 import path from "path";
-import Container from "../common/container";
+import Container from "../common/container.js";
 
 const fsp = fs.promises;
 var log = "";
@@ -195,7 +195,6 @@ function Server(delimeter = "/") {
                 uid = note.uid.string,
                 modified_time = Date.now();
                 
-            console.log(modified_time, note)
             stored_note = noteFromUID(uid);
 
             if (!stored_note)

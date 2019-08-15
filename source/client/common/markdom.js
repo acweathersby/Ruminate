@@ -38,6 +38,9 @@ const space_char = " ",
 // Methods needed
 
 
+
+
+
 export default (function MarkDOM() {
 
 
@@ -380,7 +383,7 @@ export default (function MarkDOM() {
             return vDom;
         },
 
-        //Given a DOM tree output a MD string representing the DOM structure. 
+        //Given a DOM like object tree output a MD string representing the DOM structure. 
         MDify(HTMLElement) {
             return HTMLtoMarkdown(HTMLElement);
         },

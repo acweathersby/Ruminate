@@ -1,8 +1,9 @@
-import * as jsdiff from "diff";
-import Observer from "@candlefw/observer";
 import whind from "@candlefw/whind";
-import reducer from "../compiler/reduce_tree";
-import UID from "./uid";
+import Observer from "@candlefw/observer";
+
+import * as jsdiff from "diff";
+import reducer from "../compiler/reduce_tree.js";
+import UID from "./uid.js";
 import crdt from "../cpp/crdt.asm.js";
 
 import {

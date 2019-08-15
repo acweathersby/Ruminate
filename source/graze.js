@@ -1,8 +1,8 @@
-import UID from "./common/uid";
-import Note from "./common/note";
-import OptionHandler from "./common/option";
-import NoteContainer from "./common/container";
-import fuzzy from "./common/fuzzy";
+import UID from "./common/uid.js";
+import Note from "./common/note.js";
+import OptionHandler from "./common/option.js";
+import NoteContainer from "./common/container.js";
+import fuzzy from "./common/fuzzy.js";
 import {
     GRAZE_NOTE,
     GRAZE_NOTE_UPDATE,
@@ -15,7 +15,7 @@ import {
     GRAZE_NOTE_PREPARE_FOR_SERVER,
     GRAZE_NOTE_BODY,
     GRAZE_NOTE_SYNC
-} from "./common/symbols";
+} from "./common/symbols.js";
 
 
 

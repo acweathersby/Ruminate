@@ -1,4 +1,4 @@
-import { matchString, parseId } from "./query_functions";
+import { matchString, parseId } from "./query_functions.js";
 
 function sortValue(value_op, value) {
     if (value_op)

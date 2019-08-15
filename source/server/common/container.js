@@ -1,5 +1,5 @@
-import UID from "../../common/uid"
-import { matchString /*, parseContainer*/ } from "./query/query_functions";
+import UID from "../../common/uid.js";
+import { matchString /*, parseContainer*/ } from "./query/query_functions.js";
 /*
     This Module is responsible for creating lookup and comparison tables for 
     the container syntax of the note system. Container syntax follows a classical

@@ -1,12 +1,12 @@
 import whind from "@candlefw/whind";
 
-import query_parser from "../../../compiler/gnql";
-import UID from "../../../common/uid";
+import query_parser from "../../../compiler/gnql.js";
+import UID from "../../../common/uid.js";
 import sort from "./sort.js";
 import filter from "./filter.js";
 
-import { parseId } from "./query_functions";
-import { Worker } from "worker_threads";
+import { parseId } from "./query_functions.js";
+//import { Worker } from "worker_threads.js";
 
 
 export function QueryEngine(
@@ -59,10 +59,8 @@ export function QueryEngine(
 
         if (!query_string)
             return results;
-
-        console.log(query_string)
+        
         if (UID.isUID(query_string + "")){
-            console.log("IS_UID!")
             return [SERVER_getNoteFromUID(query_string)];
         }
 

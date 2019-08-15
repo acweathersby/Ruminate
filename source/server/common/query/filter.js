@@ -1,4 +1,4 @@
-import { matchString, parseId } from "./query_functions";
+import { matchString, parseId } from "./query_functions.js";
 
 function filterValue(value_op, value) {
 	
