@@ -4,7 +4,7 @@
 
 @SYMBOL (( ))
 
-↦ reducenode 	{ this.type ="REDUCE"; 	this.value=$$sym2; this.meta=$$sym4; }
+↦ reducenode 	{ this.text_end = lex.off; this.type ="REDUCE"; 	this.value=$$sym2; this.meta=$$sym4; }
 
 <> ReduceTree → tree
 

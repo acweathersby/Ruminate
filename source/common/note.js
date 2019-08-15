@@ -1,7 +1,7 @@
 import whind from "@candlefw/whind";
 import Observer from "@candlefw/observer";
 
-import * as jsdiff from "diff";
+import jsdiff from "diff";
 import reducer from "../compiler/reduce_tree.js";
 import UID from "./uid.js";
 import crdt from "../cpp/crdt.asm.js";
@@ -136,7 +136,7 @@ export default class Note {
 		let modstr = note.body,
 			NEED_SYNC_UPDATE_LOCAL = false,
 			offset = 0;
-
+			
 		//Get Minimum changes to note
 		for (const diff of jsdiff.diffChars(note.body, str)) {
 			if (diff.added) {
