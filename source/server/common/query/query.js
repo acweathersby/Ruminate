@@ -60,8 +60,11 @@ export function QueryEngine(
         if (!query_string)
             return results;
 
-        if (UID.isUID(query_string + ""))
+        console.log(query_string)
+        if (UID.isUID(query_string + "")){
+            console.log("IS_UID!")
             return [SERVER_getNoteFromUID(query_string)];
+        }
 
         if (Array.isArray(query_string)) {
             for (const item of query_string)

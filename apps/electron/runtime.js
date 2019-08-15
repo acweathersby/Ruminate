@@ -29,8 +29,7 @@ function renderer(scope, note) {
     setInterval(function() {
         if (parentElement) {
             const d = markdom.MDify(parentElement);
-            console.log(d);
-          //  note.body = d;
+            note.body = d;
         }
     }, 2000)
 

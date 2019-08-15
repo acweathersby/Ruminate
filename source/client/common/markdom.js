@@ -98,12 +98,12 @@ export default (function MarkDOM() {
                 lex.next();
                 //graze_note data
                 const nt = node(note, lex.off);
-                
+
                 nt.ignore = true;
-                
+
                 parseLine(lex, nt, ")", 2);
-                
-                if(!nt.active){
+
+                if (!nt.active) {
                     reset(lex, start);
                     return paragraph_node(start)
                 }
@@ -387,8 +387,8 @@ export default (function MarkDOM() {
 
         //Rebuilds element tree based on vDOM
         merge(element, mdVDOM, renderNote) {
-            buildHash(element);
-            buildHash(mdVDOM);
+            Array.prototype.forEach.call(element.childNodes, (e) => buildHash(e));
+            Array.prototype.forEach.call(mdVDOM.childNodes, (e) => buildHash(e));
             diff(element, mdVDOM, renderNote);
             return element;
         }
@@ -451,19 +451,17 @@ function diff(DOMnode, vDOMnode, renderNote) {
                 const child = Children[j];
 
                 if (vchild.hash == child.hash) {
-                    out.push(child);
-                    Children.splice(j, 1);
+                    out.push(Children.splice(j, 1)[0]);
                     continue outer;
                     //Continue looking            
                 }
-
-                if (j == Children.length - 1) { /* child is discarded */ }
             }
 
             out.push(render(vchild, renderNote));
         }
 
-    DOMnode.innerHTML = "";
+    for (const child of Children)
+        DOMnode.removeChild(child);
 
     for (const child of out)
         DOMnode.appendChild(child);
@@ -545,4 +543,6 @@ tagReplace("PRE", "```", "```", true, Infinity, true)
 tagReplace("BR", "\n", "", true, Infinity, false)
 tagReplace("STRONG", "*", "*", true, Infinity)
 tagReplace("P", "", "\n", false, 1)
-tagReplace("NOTES", "((%query))[%meta]\n", "", true, 1, false)
+tagReplace("NOTES", "((%query))\n", "", true, 1, false)
+//tagReplace("NOTES", "((%query))[%meta]\n", "", true, 1, false)
+
