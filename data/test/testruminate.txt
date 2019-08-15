@@ -1,0 +1,11 @@
+((ruminate/docs/introduction))[upload]
+
+# Welcome to Graze Notes
+
+Graze notes is an Experimental DB system for notes. 
+Every graze note is a collection of textual data comprised of:
+ID
+UID
+MODIFIED
+TAGS
+BODY

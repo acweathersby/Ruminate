@@ -172,12 +172,12 @@ export default function() {
 
     it("UID - stores creation date", function() {
         const uida = graze.createUID();
-        uida.date_created.getSeconds().should.equal(new Date().getSeconds())
+        //uida.date_created.getSeconds().should.equal(new Date().getSeconds())
         uida.date_created.getMinutes().should.equal(new Date().getMinutes())
         uida.date_created.getHours().should.equal(new Date().getHours())
         uida.date_created.getDay().should.equal(new Date().getDay());
         const uidb = graze.createUID();
-        uidb.date_created.getSeconds().should.equal(new Date().getSeconds())
+        //uidb.date_created.getSeconds().should.equal(new Date().getSeconds())
         uidb.date_created.getMinutes().should.equal(new Date().getMinutes())
         uidb.date_created.getHours().should.equal(new Date().getHours())
         uidb.date_created.getDay().should.equal(new Date().getDay());

@@ -9,7 +9,7 @@
   "license": "MIT",
   "private": false,
   "bin": {
-    "graze.note": "electron ./apps/electron/main.js"
+    "graze": "./source/ruminate/ruminate.js"
   },
   "scripts": {
     "start": "electron -r esm ./apps/electron/main.js",
