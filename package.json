@@ -1,15 +1,15 @@
 {
-  "name": "graze",
+  "name": "ruminate",
   "type": "module",
   "version": "0.1.1",
   "description": "Simple Notes",
-  "main": "source/graze.js",
-  "repository": "https://github.com/acweathersby/graze",
+  "main": "source/ruminate.js",
+  "repository": "https://github.com/acweathersby/ruminate",
   "author": "Anthony C Weathersby",
   "license": "MIT",
   "private": false,
   "bin": {
-    "graze": "./source/ruminate/ruminate.js"
+    "ruminate": "./source/ruminate/ruminate.js"
   },
   "scripts": {
     "start": "electron -r esm ./apps/electron/main.js",

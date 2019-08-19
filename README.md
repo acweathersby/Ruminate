@@ -1,4 +1,4 @@
-# GRAZE NOTES
+# RUMINATE NOTES
 
 #### seriously, an experimental work-in-progress
 

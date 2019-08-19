@@ -36,11 +36,6 @@ const space_char = " ",
     hashtag = "#";
 
 // Methods needed
-
-
-
-
-
 export default (function MarkDOM() {
 
 
@@ -87,7 +82,7 @@ export default (function MarkDOM() {
     }
 
     function setIgnore(node) {
-        node.ignore = 1;
+        node.ignore = true;
         return node;
     }
 
@@ -99,7 +94,7 @@ export default (function MarkDOM() {
         "(": (lex, start, count) => {
             if (lex.next().ch == "(") {
                 lex.next();
-                //graze_note data
+                //ruminate note data
                 const nt = node(note, lex.off);
 
                 nt.ignore = true;
@@ -121,8 +116,7 @@ export default (function MarkDOM() {
 
         ">": (lex, start) => (lex.next(), node(bq, start, 0, bq)),
 
-        "`": (lex, start) => (end("`", lex) >= 3) ?
-            node(cb, start, 0, 0, p | cb | br, cb) : code_block_node(start),
+        "`": (lex, start) => (end("`", lex) >= 3) ? parseLine(lex, setIgnore(code_block_node(start)), "`", 3) : paragraph_node(start),
 
         [space_char]: function space(lex, start) {
             const pk = lex.pk;
@@ -134,12 +128,13 @@ export default (function MarkDOM() {
                 paragraph_node(start);
         },
 
-        [new_line]: () => (new_line_node())
+        [new_line]: (lex) => {return (lex.next(), setIgnore(new_line_node()))}
     }
 
     const joins = {
         [p]: {
-            [p]: (t, b) => (setChild(t, new_line_node(), ...b.children), t)
+            [p]: (t, b) => (setChild(t, ...b.children), t),
+            [br]: (t) => {t.cap = true; return t}
         },
         [bq]: {
             [bq]: (t, b) => (setChild(t, ...b.children), t),
@@ -159,6 +154,7 @@ export default (function MarkDOM() {
     }
 
     const join = (top, bottom, up, j) => {
+        console.log(top, bottom)
 
         if (!bottom.active) {
             top.children.push(...bottom.children)
@@ -179,10 +175,11 @@ export default (function MarkDOM() {
         if (escape_count > 0)
             object.active = false;
 
-        while (!lex.END && lex.ty != lex.types.nl) {
+        while (!lex.END) {
 
             var off = lex.off,
                 count = 0;
+
             object.cap = escape_count;
 
             if (lex.ch == escape) {
@@ -201,7 +198,11 @@ export default (function MarkDOM() {
             if (object.ignore) {
                 lex.next();
                 continue;
+            } else {
+                if (lex.ty == lex.types.nl)
+                    break;
             }
+
 
             switch (lex.ch) {
                 case "*":
@@ -242,6 +243,7 @@ export default (function MarkDOM() {
                     start = lex.off;
                     break;
                 case "[":
+                    lex.next();
                     break;
                 case "\\":
                     lex.next();
@@ -281,17 +283,22 @@ export default (function MarkDOM() {
             // reducing the output stack when a rule accepts
             const lex = whind(MDString, true);
             lex.IWS = false;
+            lex.PARSE_STRING = true;
             lex.addSymbol("`");
             lex.tl = 0;
             lex.next();
 
             while (!lex.END) {
 
-                var intermediate = parseLine(lex, parseLineStart(lex));
+                var intermediate = parseLineStart(lex);
 
-                //should be at nl or lex.END
-                if (!lex.END)
-                    lex.assert("\n");
+                if (!intermediate.ignore) {
+                    intermediate = parseLine(lex, intermediate);
+                    //should be at nl or lex.END
+                    if (!lex.END)
+                        lex.assert("\n");
+                }
+
 
                 if (output_stack.length > 0) {
                     const
@@ -344,17 +351,16 @@ export default (function MarkDOM() {
                         tag = "note";
                         break;
                     case cb:
-                        ele.nodeName = "CODE";
+                        ele.nodeName = "PRE";
                         ele.childNodes = [{
                             nodeName: "#text",
                             data: d.children
                                 .map(r)
-                                .reduce((r, tx) => (tx.data == "\n" ? r + tx.data : r + "\n" + tx.data), "")
+                                .reduce((r, tx) => (r + tx.data), "")
                             }]
                         return ele;
                     case br:
-                        tag = "BR";
-                        break;
+                        return { nodeName: "BR", childNodes: [] }
                     case nl:
                         return { nodeName: "#text", data: "\n" };
                     case tx:
@@ -366,7 +372,7 @@ export default (function MarkDOM() {
                         tag = "EM";
                         break;
                     case inline_code:
-                        tag = "PRE";
+                        tag = "CODE";
                         break;
                 }
                 ele.nodeName = tag;
@@ -536,16 +542,15 @@ tagReplace("H3", "### ", "\n", false, 1)
 tagReplace("H4", "#### ", "\n", false, 1)
 tagReplace("H5", "##### ", "\n", false, 1)
 tagReplace("H6", "###### ", "\n", false, 1)
-tagReplace("BLOCKQUOTE", ">", "\n", true, 1)
-tagReplace("CODE", "```", "\n```\n", true, 1)
-tagReplace("A", "[%href](", ")", false, Infinity)
-tagReplace("IMG", "![%src](", ")", false, Infinity)
-tagReplace("EM", "*", "*", true, Infinity)
-tagReplace("B", "**", "**", true, Infinity)
-tagReplace("PRE", "```", "```", true, Infinity, true)
-tagReplace("BR", "\n", "", true, Infinity, false)
-tagReplace("STRONG", "*", "*", true, Infinity)
-tagReplace("P", "", "\n", false, 1)
+tagReplace("PRE", "``` %langauge", "```", true, 1)
+tagReplace("CODE", "```", "```", true, Infinity)
+tagReplace("BLOCKQUOTE", ">", "\n", false, 1)
+tagReplace("A", "[%href](", ")", true, Infinity)
+tagReplace("IMG", "![%src](", ")", true, Infinity)
+tagReplace("EM", "*", "*", false, Infinity)
+tagReplace("B", "**", "**", false, Infinity)
+tagReplace("BR", "\n", "", false, Infinity, false)
+tagReplace("STRONG", "*", "*", false, Infinity)
+tagReplace("P", "", "\n\n", false, 1)
 tagReplace("NOTES", "((%query))\n", "", true, 1, false)
 //tagReplace("NOTES", "((%query))[%meta]\n", "", true, 1, false)
-

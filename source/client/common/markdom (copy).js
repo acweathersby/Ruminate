@@ -3,8 +3,8 @@ import whind from "@candlefw/whind";
 
 /* 
     The Goal of MarkDOM is to provide HTML to MD and MD to HTML
-    parsers that can integrate will with the graze note system.
-    This means the parers must be aware of Graze constructs
+    parsers that can integrate will with the ruminate note system.
+    This means the parers must be aware of ruminate constructs
     including: 
         query_fields
 

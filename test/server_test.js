@@ -1,16 +1,16 @@
 import { fillTestData } from "./common.js";
 import {
-    GRAZE_NOTE,
-    GRAZE_NOTES,
-    GRAZE_SYNC_RATE,
-    GRAZE_SYNC_INTERVAL_REF,
-    GRAZE_SERVER
+    RUMINATE_NOTE,
+    RUMINATE_NOTES,
+    RUMINATE_SYNC_RATE,
+    RUMINATE_SYNC_INTERVAL_REF,
+    RUMINATE_SERVER
 } from "../source/common/symbols.js";
 import UID from "../source/common/uid.js";
 
-export default function graze_test_suite(GrazeConstructor, ServerConstructor, params) {
+export default function ruminate_test_suite(RuminateConstructor, ServerConstructor, params) {
     return function() {
-        const graze = new GrazeConstructor({ sync_rate: null });
+        const ruminate = new RuminateConstructor({ sync_rate: null });
         const server = new ServerConstructor();
 
         before(async function() {
@@ -28,43 +28,43 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
         describe("Basic", function() {
 
             beforeEach(function() {
-                graze.connect(server);
-                graze.sync_rate = null;
+                ruminate.connect(server);
+                ruminate.sync_rate = null;
             })
 
             afterEach(function() {
-                graze.disconnect();
+                ruminate.disconnect();
                 server.implode()()();
-                graze.sync_rate = null;
-                graze.purgeCache();
+                ruminate.sync_rate = null;
+                ruminate.purgeCache();
             })
 
             it("warning: empty test", function() {
-                graze.should.not.be.undefined;
+                ruminate.should.not.be.undefined;
             })
 
             it(`connect to server`, function() {
 
-                const graze = new GrazeConstructor();
+                const ruminate = new RuminateConstructor();
 
-                graze.should.have.property(GRAZE_SERVER, null);
+                ruminate.should.have.property(RUMINATE_SERVER, null);
 
-                graze.connect(server);
+                ruminate.connect(server);
 
-                graze[GRAZE_SERVER].type.should.equal(params.server_id)
+                ruminate[RUMINATE_SERVER].type.should.equal(params.server_id)
 
-                graze.disconnect();
+                ruminate.disconnect();
 
-                graze.should.have.property(GRAZE_SERVER, null);
+                ruminate.should.have.property(RUMINATE_SERVER, null);
             })
 
             it("create UID", function() {
 
-                const uid = graze.createUID();
+                const uid = ruminate.createUID();
 
                 uid.length.should.equal(16);
 
-                const note = graze.createNote("Temp Name", "tagA, tagB, tagC", "Message");
+                const note = ruminate.createNote("Temp Name", "tagA, tagB, tagC", "Message");
 
                 note.should.have.property("uid");
 
@@ -72,7 +72,7 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
                 note.body.length.should.equal(7);
 
-                const note2 = graze.createNote("Temp Name", "tagA, tagB, tagC", "Message");
+                const note2 = ruminate.createNote("Temp Name", "tagA, tagB, tagC", "Message");
 
                 note2.uid.length.should.equal(16);
 
@@ -81,13 +81,13 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
             it("store and retrieve - basic", async function() {
 
-                const noteA = graze.createNote("Temp Name A", "tagA, tagB, tagC", "Message A");
-                const noteB = graze.createNote("Temp Name B", "tagA, tagB, tagC", "Message B");
-                await graze.sync();
+                const noteA = ruminate.createNote("Temp Name A", "tagA, tagB, tagC", "Message A");
+                const noteB = ruminate.createNote("Temp Name B", "tagA, tagB, tagC", "Message B");
+                await ruminate.sync();
                 //await sleep(10);
 
-                const noteAd = (await graze.retrieve(noteA.uid.string))[0];
-                const noteBd = (await graze.retrieve(noteB.id))[0];
+                const noteAd = (await ruminate.retrieve(noteA.uid.string))[0];
+                const noteBd = (await ruminate.retrieve(noteB.id))[0];
 
                 noteB.body.should.equal(noteBd.body);
                 noteA.body.should.equal(noteAd.body);
@@ -98,20 +98,20 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
             it("store and retrieve - collection", async function() {
 
-                const noteA = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
-                const noteB = graze.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
-                const noteC = graze.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteA = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
+                const noteB = ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteC = ruminate.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
-                await graze.sync();
+                await ruminate.sync();
 
-                const notes = await graze.retrieve("temp/");
+                const notes = await ruminate.retrieve("temp/");
 
                 notes.length.should.equal(2);
 
-                notes.sort(graze.sort_indexes.create_time)[0].body.should.equal(noteA.body);
-                notes.sort(graze.sort_indexes.create_time)[1].body.should.equal(noteB.body);
+                notes.sort(ruminate.sort_indexes.create_time)[0].body.should.equal(noteA.body);
+                notes.sort(ruminate.sort_indexes.create_time)[1].body.should.equal(noteB.body);
 
-                const notes2 = await graze.retrieve("temp/temp/");
+                const notes2 = await ruminate.retrieve("temp/temp/");
 
                 notes2.length.should.equal(1);
 
@@ -120,13 +120,13 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
             it("store and retrieve - search", async function() {
 
-                const noteA = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
-                const noteB = graze.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
-                const noteC = graze.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteA = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
+                const noteB = ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteC = ruminate.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
-                await graze.sync();
+                await ruminate.sync();
 
-                const notes = await graze.retrieve("temp/*  ? Name B && Message B");
+                const notes = await ruminate.retrieve("temp/*  ? Name B && Message B");
 
                 notes.length.should.equal(2);
 
@@ -135,17 +135,17 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
             it("Renders note referenced inside another note", async function() {
 
-                const noteG = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", "inception");
-                const noteA = graze.createNote("temp/Temp Name A", "tagA, tagB, tagC", `inside ((${noteG.uid}))`);
-                const noteB = graze.createNote("temp/Temp Name B", "tagA, tagB, tagC", `referenced note text: ((${noteA.uid}))`);
+                const noteG = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "inception");
+                const noteA = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", `inside ((${noteG.uid}))`);
+                const noteB = ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", `referenced note text: ((${noteA.uid}))`);
 
-                await graze.sync();
+                await ruminate.sync();
                 //note does not need to be saved in order to take advantage of reference rendering.
 
                 (await noteB.render()).should.equal("referenced note text: inside inception");
             })
             //*
-            //it("warns if no server is connected to graze");
+            //it("warns if no server is connected to ruminate");
 
             it("Loads permanently stored data", async function() {
                 this.slow(500);
@@ -158,30 +158,30 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
                 await serverA.connect(params.server_test_store);
                 await serverC.connect(params.server_test_store);
 
-                graze.disconnect();
+                ruminate.disconnect();
 
-                await graze.connect(serverA);
+                await ruminate.connect(serverA);
 
-                await (graze.createNote("temp/tempA/Temp Name A", "tagA, tagB, tagC", "Test 1"));
-                await (graze.createNote("temp/tempB/Temp Name B", "tagA, tagB, tagC", "Test 2"));
-                await (graze.createNote("temp/tempC/Temp Name C", "tagA, tagB, tagC", "Test 3"));
-                await (graze.createNote("temp/tempD/Temp Name D", "tagA, tagB, tagC", "Test 4"));
-                await (graze.createNote("temp/tempE/Temp Name E", "tagA, tagB, tagC", "Test 5"));
-                await graze.sync();
-                graze.disconnect();
+                await (ruminate.createNote("temp/tempA/Temp Name A", "tagA, tagB, tagC", "Test 1"));
+                await (ruminate.createNote("temp/tempB/Temp Name B", "tagA, tagB, tagC", "Test 2"));
+                await (ruminate.createNote("temp/tempC/Temp Name C", "tagA, tagB, tagC", "Test 3"));
+                await (ruminate.createNote("temp/tempD/Temp Name D", "tagA, tagB, tagC", "Test 4"));
+                await (ruminate.createNote("temp/tempE/Temp Name E", "tagA, tagB, tagC", "Test 5"));
+                await ruminate.sync();
+                ruminate.disconnect();
 
                 await serverB.connect(params.server_test_store);
 
-                graze.connect(serverB);
+                ruminate.connect(serverB);
 
-                (await graze.retrieve("temp/*")).length.should.equal(5);
+                (await ruminate.retrieve("temp/*")).length.should.equal(5);
 
-                graze.disconnect();
+                ruminate.disconnect();
 
-                graze.connect(serverC);
+                ruminate.connect(serverC);
 
-                (await graze.retrieve("temp/tempE/")).length.should.equal(1);
-                (await graze.retrieve("temp/*")).length.should.equal(5);
+                (await ruminate.retrieve("temp/tempE/")).length.should.equal(1);
+                (await ruminate.retrieve("temp/*")).length.should.equal(5);
             })
 
             it("Server.implode dumps all data from store - **dependent on previous test**", async function() {
@@ -192,17 +192,17 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
                 await serverA.connect(params.server_test_store);
                 await serverB.connect(params.server_test_store);
 
-                graze.connect(serverA);
+                ruminate.connect(serverA);
 
-                (await graze.retrieve("temp/*")).length.should.equal(5);
+                (await ruminate.retrieve("temp/*")).length.should.equal(5);
 
                 serverA.implode()()();
 
-                graze.disconnect();
+                ruminate.disconnect();
 
-                await graze.connect(serverB);
+                await ruminate.connect(serverB);
 
-                (await graze.retrieve("temp/*")).length.should.equal(0);
+                (await ruminate.retrieve("temp/*")).length.should.equal(0);
 
             })
         })
@@ -214,32 +214,32 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
             let total = 0;
 
             before(async function() {
-                graze.connect(server);
-                await fillTestData(graze);
-                await fillTestData(graze, "locfr");
-                await fillTestData(graze, "pop2018");
-                total = (await graze.retrieve("*")).length;
+                ruminate.connect(server);
+                await fillTestData(ruminate);
+                await fillTestData(ruminate, "locfr");
+                await fillTestData(ruminate, "pop2018");
+                total = (await ruminate.retrieve("*")).length;
             })
 
             after(function() {
-                graze.disconnect();
+                ruminate.disconnect();
                 server.implode()()();
             })
 
             async function getLen(query_string) {
-                return (await graze.retrieve(query_string)).length;
+                return (await ruminate.retrieve(query_string)).length;
             }
 
             async function getBody(query_string) {
-                return (await graze.retrieve(query_string)).map(e => e.body);
+                return (await ruminate.retrieve(query_string)).map(e => e.body);
             }
 
             async function getTags(query_string) {
-                return (await graze.retrieve(query_string)).map(e => e.tags);
+                return (await ruminate.retrieve(query_string)).map(e => e.tags);
             }
 
             async function getNote(query_string) {
-                return (await graze.retrieve(query_string));
+                return (await ruminate.retrieve(query_string));
             }
 
 
@@ -375,27 +375,27 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
             let total = 0;
 
-            let graze2 = new GrazeConstructor();
+            let ruminate2 = new RuminateConstructor();
 
             beforeEach(async function() {
-                graze.connect(server);
-                graze[GRAZE_SYNC_RATE] = 100;
-                graze2.connect(server);
-                graze2[GRAZE_SYNC_RATE] = 100;
-                graze.setAutoSync(GRAZE_SYNC_RATE, GRAZE_SYNC_INTERVAL_REF)
-                graze2.setAutoSync(GRAZE_SYNC_RATE, GRAZE_SYNC_INTERVAL_REF)
-                //await fillTestData(graze);
-                //await fillTestData(graze, "locfr");
-                //await fillTestData(graze, "pop2018");
-                //total = (await graze.retrieve("*")).length;
+                ruminate.connect(server);
+                ruminate[RUMINATE_SYNC_RATE] = 100;
+                ruminate2.connect(server);
+                ruminate2[RUMINATE_SYNC_RATE] = 100;
+                ruminate.setAutoSync(RUMINATE_SYNC_RATE, RUMINATE_SYNC_INTERVAL_REF)
+                ruminate2.setAutoSync(RUMINATE_SYNC_RATE, RUMINATE_SYNC_INTERVAL_REF)
+                //await fillTestData(ruminate);
+                //await fillTestData(ruminate, "locfr");
+                //await fillTestData(ruminate, "pop2018");
+                //total = (await ruminate.retrieve("*")).length;
             })
 
             afterEach(function() {
-                graze.disconnect();
+                ruminate.disconnect();
                 server.implode()()();
-                graze2.disconnect();
-                graze2.sync_rate = null;
-                graze.sync_rate = null;
+                ruminate2.disconnect();
+                ruminate2.sync_rate = null;
+                ruminate.sync_rate = null;
             })
 
             it("auto update", async function() {
@@ -403,7 +403,7 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
                 this.slow(10000)
                 this.timeout(20000);
 
-                graze.sync_rate = null;
+                ruminate.sync_rate = null;
 
                 const valA = "This note is going to be transformed here:; that is in the middle of this here note.";
 
@@ -411,21 +411,21 @@ export default function graze_test_suite(GrazeConstructor, ServerConstructor, pa
 
                 const valC = valA.slice(0, 42) + valB + valA.slice(42);
 
-                const noteG = graze.createNote("autoupdate/mynote", "", valA);
+                const noteG = ruminate.createNote("autoupdate/mynote", "", valA);
 
-                graze.should.not.equal(graze2);
+                ruminate.should.not.equal(ruminate2);
 
-                graze.sync();
+                ruminate.sync();
 
                 await sleep(200)
 
-                const noteGd = (await graze2.retrieve("/autoupdate/mynote"))[0];
+                const noteGd = (await ruminate2.retrieve("/autoupdate/mynote"))[0];
 
                 noteGd.body.should.equal(valA);
                 
                 noteG.body = valC;
 
-                graze.sync();
+                ruminate.sync();
 
                 await sleep(10);
 

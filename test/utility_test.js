@@ -1,5 +1,5 @@
-import graze_constructor from "../source/graze.js";
-import { GRAZE_SERVER, GRAZE_UPDATE_QUEUE_ALERT } from "../source/common/symbols.js";
+import ruminate_constructor from "../source/ruminate.js";
+import { RUMINATE_SERVER, RUMINATE_UPDATE_QUEUE_ALERT } from "../source/common/symbols.js";
 import Note from "../source/common/note.js";
 import Container from "../source/server/common/container.js";
 import UID from "../source/common/uid.js";
@@ -12,14 +12,14 @@ const massiveTextB =
     `“Oh, don’t speak to me of Austria. [Redacted!] but Austria never has wished, and does not wish, for war. [Redacted!] of our Emperor who wants nothing for himself, but only desires the good of mankind. And what have they promised? Nothing! And what little they have promised they will not perform! Prussia has always declared that Buonaparte is invincible, and that all Europe is powerless before him. . . . And I don’t believe a word that Hardenburg says, or Haugwitz either. This famous Prussian neutrality is just a trap. I have faith only in God and the lofty destiny of our adored monarch. He will save Europe!”`
 export default function() {
 
-    const graze = new graze_constructor();
+    const ruminate = new ruminate_constructor();
 
     describe("Options", function() {
         describe("sync_rate", function() {
-            it("2000", () => (new graze_constructor({ sync_rate: 2000 })).sync_rate.should.equal(2000));
-            it("0", () => (new graze_constructor({ sync_rate: 0 })).sync_rate.should.equal(1000));
-            it("3000000000", () => (new graze_constructor({ sync_rate: 3000000000 })).sync_rate.should.equal(3600000));
-            it("null", () => (new graze_constructor({ sync_rate: null })).sync_rate.should.equal(-1));
+            it("2000", () => (new ruminate_constructor({ sync_rate: 2000 })).sync_rate.should.equal(2000));
+            it("0", () => (new ruminate_constructor({ sync_rate: 0 })).sync_rate.should.equal(1000));
+            it("3000000000", () => (new ruminate_constructor({ sync_rate: 3000000000 })).sync_rate.should.equal(3600000));
+            it("null", () => (new ruminate_constructor({ sync_rate: null })).sync_rate.should.equal(-1));
         })
 
         describe("server", function() {
@@ -33,8 +33,8 @@ export default function() {
                     getUpdatedUIDs: () => {}
                 };
 
-                const g = (new graze_constructor({ server: base_server }));
-                g[GRAZE_SERVER].should.equal(base_server);
+                const g = (new ruminate_constructor({ server: base_server }));
+                g[RUMINATE_SERVER].should.equal(base_server);
             });
         })
     })
@@ -104,7 +104,7 @@ export default function() {
 
     it("jsdiff-note", function(done) {
         const note = new  Note({
-            [GRAZE_UPDATE_QUEUE_ALERT]: (note) => {
+            [RUMINATE_UPDATE_QUEUE_ALERT]: (note) => {
                 note.body.should.equal(massiveTextB);
                 done()
             }
@@ -171,12 +171,12 @@ export default function() {
     })
 
     it("UID - stores creation date", function() {
-        const uida = graze.createUID();
+        const uida = ruminate.createUID();
         //uida.date_created.getSeconds().should.equal(new Date().getSeconds())
         uida.date_created.getMinutes().should.equal(new Date().getMinutes())
         uida.date_created.getHours().should.equal(new Date().getHours())
         uida.date_created.getDay().should.equal(new Date().getDay());
-        const uidb = graze.createUID();
+        const uidb = ruminate.createUID();
         //uidb.date_created.getSeconds().should.equal(new Date().getSeconds())
         uidb.date_created.getMinutes().should.equal(new Date().getMinutes())
         uidb.date_created.getHours().should.equal(new Date().getHours())
@@ -195,7 +195,7 @@ export default function() {
         const size = 10000;
         let iter = 0;
         //Stress test for UID.
-        const createUIDS = (size) => new Array(size).fill(null).map(graze.createUID);
+        const createUIDS = (size) => new Array(size).fill(null).map(ruminate.createUID);
 
         var set_ = new Set();
 

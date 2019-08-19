@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 const fsp = fs.promises;
 
-export async function fillTestData(graze, file = "w&p") {
+export async function fillTestData(ruminate, file = "w&p") {
     var data = "";
 
     switch (file.toLowerCase()) {
@@ -26,8 +26,8 @@ export async function fillTestData(graze, file = "w&p") {
 
     for (const entry of entries) {
         count++;
-        await graze.createNote(entry.id, entry.meta, entry.body);
+        await ruminate.createNote(entry.id, entry.meta, entry.body);
     }
 
-    graze.sync()
+    ruminate.sync()
 }

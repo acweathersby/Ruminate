@@ -1,10 +1,10 @@
 import { fillTestData } from "./common.js";
 import UID from "../source/common/uid.js";
 
-export default function graze_note_test_suite(GrazeConstructor, params) {
+export default function ruminate_note_test_suite(RuminateConstructor, params) {
     return function() {
-        const graze = new GrazeConstructor();
-        const note = graze.createNote("/root/user/test/note_test", "checked, happy, type:note, level:9001", `“Heavens! what a virulent attack!” replied the prince, not in the least disconcerted by this reception. He had just entered, wearing an embroidered court uniform, knee breeches, and shoes, and had stars on his breast and a serene expression on his flat face. He spoke in that refined French in which our grandfathers not only spoke but thought, and with the gentle, patronizing intonation natural to a man of importance who had grown old in society and at court. He went up to Anna Pavlovna, kissed her hand, presenting to her his bald, scented, and shining head, and complacently seated himself on the sofa.` );
+        const ruminate = new RuminateConstructor();
+        const note = ruminate.createNote("/root/user/test/note_test", "checked, happy, type:note, level:9001", `“Heavens! what a virulent attack!” replied the prince, not in the least disconcerted by this reception. He had just entered, wearing an embroidered court uniform, knee breeches, and shoes, and had stars on his breast and a serene expression on his flat face. He spoke in that refined French in which our grandfathers not only spoke but thought, and with the gentle, patronizing intonation natural to a man of importance who had grown old in society and at court. He went up to Anna Pavlovna, kissed her hand, presenting to her his bald, scented, and shining head, and complacently seated himself on the sofa.` );
 
         describe("Tags", function() {
             it("retrieving single tag without value", async function() {

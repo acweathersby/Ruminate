@@ -1,9 +1,9 @@
-const server = new graze_objects.server.json;
+const server = new ruminate_objects.server.json;
 const codemirror = require("codemirror");
 
 server.connect("./notes.json");
 
-const graze = new graze_objects.graze({ sync_rate: 2000, server });
+const ruminate = new ruminate_objects.ruminate({ sync_rate: 2000, server });
 
 const EPOCH_Date = wick.scheme.date;
 const EPOCH_Time = wick.scheme.time;
@@ -12,7 +12,7 @@ const Latitude = wick.scheme.number;
 const $Number = wick.scheme.number;
 const $String = wick.scheme.string;
 const $Boolean = wick.scheme.bool;
-const markdom = graze_objects.client.markdom;
+const markdom = ruminate_objects.client.markdom;
 
 function CodeMirrorBootStrapper(element) {
     codemirror(element);
@@ -36,7 +36,7 @@ function renderer(scope, note) {
     /** 
         This function is called by note.render and 
         recives either strings or array of notes
-        as the body of the note is parsed by graze 
+        as the body of the note is parsed by ruminate 
     **/
     async function render(type, obj, query) {
 
@@ -45,9 +45,10 @@ function renderer(scope, note) {
         switch (type) {
             case "string":
                 const vDOM = markdom.DOMify(obj);
+                console.log(vDOM)
                 markdom.merge(parentElement, vDOM, (notequery, meta) => {
                     const note = document.createElement("notes");
-                    graze.retrieve(notequery).then(async (notes) => {
+                    ruminate.retrieve(notequery).then(async (notes) => {
                         if (notes.length > 0) {
                             const scope = await wick("./components/list.html", presets)
                                 .pending
@@ -87,18 +88,18 @@ function renderer(scope, note) {
 
 
 const presets = wick.presets({
-    custom: { graze, cm: CodeMirrorBootStrapper, renderer },
+    custom: { ruminate, cm: CodeMirrorBootStrapper, renderer },
     schemas: {}
 })
 //*
 
-//graze.createNote("groceries/milk", "", "This is a reminder to get milk!");
-//graze.createNote("groceries/butter", "", "This is a reminder to get butter!");
-//graze.createNote("groceries/cream", "", "This is a reminder to get cream!");
-//graze.createNote("signatures. main", "", "Anthony C Weathersby");
-//graze.createNote("places to visit.", "", "I'd like to go to rome someday");
+//ruminate.createNote("groceries/milk", "", "This is a reminder to get milk!");
+//ruminate.createNote("groceries/butter", "", "This is a reminder to get butter!");
+//ruminate.createNote("groceries/cream", "", "This is a reminder to get cream!");
+//ruminate.createNote("signatures. main", "", "Anthony C Weathersby");
+//ruminate.createNote("places to visit.", "", "I'd like to go to rome someday");
 /*/
-const n2 = graze.createNote("/test2", "",
+const n2 = ruminate.createNote("/test2", "",
     `# This is the markdown
 
 I never really liked to **eat** too mutch

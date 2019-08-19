@@ -7,22 +7,22 @@ import UID from "./uid.js";
 import crdt from "../cpp/crdt.asm.js";
 
 import {
-	GRAZE_REFERENCE,
-	GRAZE_NOTE,
-	GRAZE_NOTE_SYNC,
-	GRAZE_NOTE_PREPARE_FOR_SERVER,
-	GRAZE_NOTE_SYNC_LIST,
-	GRAZE_NOTE_BODY,
-	GRAZE_NOTE_TAGS,
-	GRAZE_NOTE_NEED_UPDATE,
-	GRAZE_UPDATE_QUEUE_ALERT,
-	GRAZE_NOTE_UPDATE
+	RUMINATE_REFERENCE,
+	RUMINATE_NOTE,
+	RUMINATE_NOTE_SYNC,
+	RUMINATE_NOTE_PREPARE_FOR_SERVER,
+	RUMINATE_NOTE_SYNC_LIST,
+	RUMINATE_NOTE_BODY,
+	RUMINATE_NOTE_TAGS,
+	RUMINATE_NOTE_NEED_UPDATE,
+	RUMINATE_UPDATE_QUEUE_ALERT,
+	RUMINATE_NOTE_UPDATE
 } from "./symbols.js";
 
 function CHANGED(note) {
-	if (!note[GRAZE_NOTE_NEED_UPDATE]) {
-		note[GRAZE_NOTE_NEED_UPDATE] = true;
-		note[GRAZE_REFERENCE][GRAZE_UPDATE_QUEUE_ALERT](note);
+	if (!note[RUMINATE_NOTE_NEED_UPDATE]) {
+		note[RUMINATE_NOTE_NEED_UPDATE] = true;
+		note[RUMINATE_REFERENCE][RUMINATE_UPDATE_QUEUE_ALERT](note);
 	}
 }
 
@@ -46,12 +46,12 @@ function ProcessTags(tag_string_list) {
 }
 
 export default class Note {
-	constructor(graze, uid, id, tags, body, refs, modified, NEED_SYNC = false) {
-		this[GRAZE_REFERENCE] = graze;
-		this[GRAZE_NOTE_SYNC_LIST] = [];
-		this[GRAZE_NOTE_NEED_UPDATE] = false;
-		this[GRAZE_NOTE_TAGS] = ProcessTags(tags);
-		this[GRAZE_NOTE_BODY] = {
+	constructor(ruminate, uid, id, tags, body, refs, modified, NEED_SYNC = false) {
+		this[RUMINATE_REFERENCE] = ruminate;
+		this[RUMINATE_NOTE_SYNC_LIST] = [];
+		this[RUMINATE_NOTE_NEED_UPDATE] = false;
+		this[RUMINATE_NOTE_TAGS] = ProcessTags(tags);
+		this[RUMINATE_NOTE_BODY] = {
 			uid,
 			id,
 			modified,
@@ -65,11 +65,11 @@ export default class Note {
 
 	/****************** Basic Properties *************************/
 
-	get created() { return this[GRAZE_NOTE_BODY].uid.date_created.valueOf() }
-	get createdDateObj() { return this[GRAZE_NOTE_BODY].uid.date_created }
-	get modified() { return this[GRAZE_NOTE_BODY].modified }
-	get uid() { return this[GRAZE_NOTE_BODY].uid }
-	get id() { return this[GRAZE_NOTE_BODY].id }
+	get created() { return this[RUMINATE_NOTE_BODY].uid.date_created.valueOf() }
+	get createdDateObj() { return this[RUMINATE_NOTE_BODY].uid.date_created }
+	get modified() { return this[RUMINATE_NOTE_BODY].modified }
+	get uid() { return this[RUMINATE_NOTE_BODY].uid }
+	get id() { return this[RUMINATE_NOTE_BODY].id }
 	async delete(index, length) {}
 
 	/****************** Synchronizing *************************/
@@ -79,17 +79,17 @@ export default class Note {
 	    Graze syncs the note with the server
 	*/
 	sync() {
-		return new Promise(res => this[GRAZE_NOTE_NEED_UPDATE] ? this[GRAZE_NOTE_SYNC_LIST].push(res) : res());
+		return new Promise(res => this[RUMINATE_NOTE_NEED_UPDATE] ? this[RUMINATE_NOTE_SYNC_LIST].push(res) : res());
 	}
 
-	[GRAZE_NOTE_UPDATE](note_data) {
-		const note = this[GRAZE_NOTE_BODY];
+	[RUMINATE_NOTE_UPDATE](note_data) {
+		const note = this[RUMINATE_NOTE_BODY];
 
 		if (note_data.modified < note.modified
 			|| note_data.uid.toString() !== note.uid.toString())
 			return;
 
-		this[GRAZE_NOTE_TAGS] = ProcessTags(note_data.tags);
+		this[RUMINATE_NOTE_TAGS] = ProcessTags(note_data.tags);
 		note.id = note_data.id;
 		note.modified = note_data.modified;
 		note.tags = note_data.tags;
@@ -98,40 +98,40 @@ export default class Note {
 		this.updateObservers()
 	}
 
-	// Called by graze after data has been sent to server and response has been received. 
-	[GRAZE_NOTE_SYNC](RESULT) {
+	// Called by ruminate after data has been sent to server and response has been received. 
+	[RUMINATE_NOTE_SYNC](RESULT) {
 		if (!RESULT) {
 			CHANGED(this); // Prime for next update interval
 		} else {
-			this[GRAZE_NOTE_SYNC_LIST].map(s => s(public_note))
-			this[GRAZE_NOTE_SYNC_LIST].length = 0;
+			this[RUMINATE_NOTE_SYNC_LIST].map(s => s(public_note))
+			this[RUMINATE_NOTE_SYNC_LIST].length = 0;
 		}
 	}
 
-	// Called by graze to process local data cache to send to server
-	[GRAZE_NOTE_PREPARE_FOR_SERVER]() {
+	// Called by ruminate to process local data cache to send to server
+	[RUMINATE_NOTE_PREPARE_FOR_SERVER]() {
 
-		if (this[GRAZE_NOTE_NEED_UPDATE]) {
+		if (this[RUMINATE_NOTE_NEED_UPDATE]) {
 			const list = [];
 
-			for (const t of this[GRAZE_NOTE_TAGS].entries())
+			for (const t of this[RUMINATE_NOTE_TAGS].entries())
 				list.push(`${t[1].d?"!":""}${t[0]}${t[1].v?":"+t[1].v:""}`)
 
-			this[GRAZE_NOTE_BODY].tags = list;
-			this[GRAZE_NOTE_NEED_UPDATE] = false;
+			this[RUMINATE_NOTE_BODY].tags = list;
+			this[RUMINATE_NOTE_NEED_UPDATE] = false;
 		}
 
-		return this[GRAZE_NOTE_BODY];
+		return this[RUMINATE_NOTE_BODY];
 	}
 
 	/****************** BODY *************************/
 
 	get body() {
-		return this[GRAZE_NOTE_BODY].body;
+		return this[RUMINATE_NOTE_BODY].body;
 	}
 
 	set body(str) {
-		const note = this[GRAZE_NOTE_BODY];
+		const note = this[RUMINATE_NOTE_BODY];
 
 		let modstr = note.body,
 			NEED_SYNC_UPDATE_LOCAL = false,
@@ -166,8 +166,8 @@ export default class Note {
 
 		name = name.toString().toLowerCase();
 
-		if (this[GRAZE_NOTE_TAGS].has(name))
-			this[GRAZE_NOTE_TAGS].get(name).d = true;
+		if (this[RUMINATE_NOTE_TAGS].has(name))
+			this[RUMINATE_NOTE_TAGS].get(name).d = true;
 
 		return true;
 	}
@@ -184,7 +184,7 @@ export default class Note {
 
 		name = name.toString().toLowerCase();
 
-		this[GRAZE_NOTE_TAGS].set(name, { v: value, d: false });
+		this[RUMINATE_NOTE_TAGS].set(name, { v: value, d: false });
 
 		CHANGED(this);
 
@@ -217,12 +217,12 @@ export default class Note {
 
 	getTag(name) {
 		name = name.toString().toLowerCase();
-		const tag = this[GRAZE_NOTE_TAGS].get(name);
+		const tag = this[RUMINATE_NOTE_TAGS].get(name);
 		return (tag && !tag.d) ? tag.v ? tag.v : name : null;
 	}
 
 	getTags() {
-		return [...this[GRAZE_NOTE_TAGS].keys()]
+		return [...this[RUMINATE_NOTE_TAGS].keys()]
 			.map((name, v) => (v = this.getTag(name), v ? v == name ? { name } : { name, value: v } : null))
 			.filter(e => e !== null);
 	}
@@ -254,8 +254,8 @@ export default class Note {
 	// render the note's message data into a string output
 	async render(handler, set = new Set) {
 		const 
-			note = this[GRAZE_NOTE_BODY],
-			graze = this[GRAZE_REFERENCE];
+			note = this[RUMINATE_NOTE_BODY],
+			ruminate = this[RUMINATE_REFERENCE];
 
 		if (handler) {
 			return handler("string", note.body);
@@ -263,7 +263,7 @@ export default class Note {
 				if (typeof value == "string")
 					await handler("string", value);
 				else {
-					const notes = await graze.retrieve(value.value)
+					const notes = await ruminate.retrieve(value.value)
 					await handler("notes", notes, value);
 				}
 			}
@@ -279,7 +279,7 @@ export default class Note {
 				if (typeof value == "string")
 					strings.push(value);
 				else {
-					for (const note of await graze.retrieve(value.value)) {
+					for (const note of await ruminate.retrieve(value.value)) {
 
 						if (set.has(note.uid.string))
 							continue;

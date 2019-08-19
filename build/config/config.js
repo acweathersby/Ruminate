@@ -1,8 +1,8 @@
 import resolve from 'rollup-plugin-node-resolve';
 
 const output = [{
-    name: "graze_objects",
-    file: "./build/graze.js",
+    name: "ruminate_objects",
+    file: "./build/ruminate.js",
     globals:(id)=>`require("${id}")`,
     format: "iife",
     sourcemap:"inline"
