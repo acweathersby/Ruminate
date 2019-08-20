@@ -1,6 +1,5 @@
-#! /bin/bash
-
-":" //# comment; exec /usr/bin/bash node --experimental-modules "$0" "$@"
+#! /bin/sh
+":" //# comment; exec /usr/bin/env node --experimental-modules "$0" "$@"
 
 /***
 	((ruminate/docs/ruminate/introduction?#index=1))[upload]
@@ -26,6 +25,8 @@ import json from "../server/json/server.js";
 import junction from "../compiler/junction.js";
 import path from "path";
 import fs from "fs";
+
+console.log(process)
 
 const
 	fsp = fs.promises,
@@ -63,8 +64,12 @@ const
 		return;
 	}
 
+	const actions = [];
+
 	for (const junction of junctions) {
+		
 		if (typeof junction == "string") continue;
+
 		if (junction.type = "JUNCTION") {
 
 			if (!junction.action_block)
@@ -79,17 +84,42 @@ const
 			if (!junction.query)
 				continue;
 
+			let
+				start_slice = junction.text_end,
+				end_slice = data.length;
+
+			if (start) {
+				if (start !== "all") {
+					lex.tl = 0;
+					lex.off = junction.text_end;
+					lex.next();
+
+					findMatchingString(lex, start);
+
+					if (!end)
+						end_slice = lex.off - start.length;
+					else
+						start_slice = lex.off + 1;
+				}
+			}
+
+			if (end) {
+				findNextMatch(lex, end);
+				end_slice = lex.off - end.length;
+			}
+
+
+			const notes = await ruminate.retrieve(junction.query);
+
 			switch (action.trim()) {
 				case "sync":
 					//Try to aquire the note from the query
-					const notes = await ruminate.retrieve(junction.query);
+					var [note] = notes, note_date;
 
 					if (notes.length > 1) {
 						console.warn("Cannot apply `sync` action with a query that returns multiple notes. ");
 						continue;
 					}
-
-					var [note] = notes, note_date;
 
 					if (notes.length == 0) {
 						//create new note.
@@ -104,43 +134,51 @@ const
 						continue;
 					}
 
-
 					if (note_date > file_date) {
-						//insert data into file. 
+						//insert data into file.
+						actions.push({type:"REPLACE", start:start_slice, end:end_slice, data: await n.render()})
 					} else {
 						//extract data from input. 
-						let
-							start_slice = junction.text_end,
-							end_slice = data.length;
-
-						if (start) {
-							if (start !== "all") {
-								lex.tl = 0;
-								lex.off = junction.text_end;
-								lex.next();
-
-								findMatchingString(lex, start);
-
-								if (!end)
-									end_slice = lex.off - start.length;
-								else
-									start_slice = lex.off + 1;
-							}
-						}
-
-						if (end) {
-							findNextMatch(lex, end);
-							end_slice = lex.off - end.length;
-						}
-
 						note.body = data.slice(start_slice, end_slice);
-
 						note.setTag("file", file)
 					}
+
 					break;
+
 				case "upload":
+
+					var [note] = notes, note_date;
+
+					if (notes.length > 1) {
+						console.warn("Cannot apply `upload` action with a query that returns multiple notes. ");
+						continue;
+					}
+
+					if (notes.length == 0) {
+						//create new note.
+						note = createNote(ruminate, junction.query);
+						note_date = -1;
+					} else {
+						note_date = note.modified;
+					}
+
+					if (!note) {
+						console.warn("Unable to create note that fulfills the query: ", stringifyQuery(junction.query));
+						continue;
+					}
+
+					note.body = data.slice(start_slice, end_slice);
+					note.setTag("file", file)
 					break;
+
 				case "insert":
+
+					if (notes.length < 1) {
+						console.warn("Cannot apply `insert` action with a query that does not return any note.");
+						continue;
+					}
+
+					actions.push({type:"REPLACE", start:start_slice, end:end_slice, data: notes.map(async n=>await n.render()).join("\n")})
 					break;
 			}
 		}

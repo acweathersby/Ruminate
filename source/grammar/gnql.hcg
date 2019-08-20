@@ -1,4 +1,4 @@
-# Graze Note Query Language
+# Ruminate Note Query Language
 
 @SYMBOL && ||
 
@@ -16,7 +16,7 @@
 ↦ notnode       { this.type ="NOT";         this.left=$$sym2;   }
 ↦ matchnode     { this.type ="MATCH";       this.value=$$sym1   }
 
-<> GNQL → start
+<> RNQL → start
 
 <> start → query_body
 

@@ -9,13 +9,13 @@
   "license": "MIT",
   "private": false,
   "bin": {
-    "ruminate": "./source/ruminate/ruminate.js"
+    "graze": "./source/graze/graze.js"
   },
   "scripts": {
     "start": "electron -r esm ./apps/electron/main.js",
     "test": "mocha -r esm test/test.js",
-    "compile.reducer": "hydrocarbon compile -u --name query_parser -o ./source/compiler/ -t mjs.js ./source/grammar/reduce_tree.hcg",
-    "compile.reducer.test": "hydrocarbon compile -d -u -m ./source/grammar/reduce_tree.hcg",
+    "compile.junction": "hydrocarbon compile -u --name query_parser -o ./source/compiler/ -t mjs.js ./source/grammar/junction.hcg",
+    "compile.junction.test": "hydrocarbon compile -d -u -m ./source/grammar/junction.hcg",
     "compile.query": "hydrocarbon compile -u --name query_parser -o ./source/compiler/ -t mjs.js ./source/grammar/gnql.hcg",
     "compile.query.test": "hydrocarbon compile -d -u -m ./source/grammar/gnql.hcg",
     "test.watch": "mocha -r esm -w test/test.js",
@@ -34,9 +34,11 @@
     "@candlefw/whind": "latest",
     "@candlefw/wick": "latest",
     "codemirror": "^5.48.2",
+    "commander": "^3.0.0",
     "diff": "^4.0.1",
     "electron": "^6.0.0",
-    "jsdiff": "^1.1.1"
+    "jsdiff": "^1.1.1",
+    "terser": "^4.2.0"
   },
   "devDependencies": {
     "@candlefw/hydrocarbon": "latest",
