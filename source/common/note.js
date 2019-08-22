@@ -2,7 +2,7 @@ import whind from "@candlefw/whind";
 import Observer from "@candlefw/observer";
 
 import jsdiff from "diff";
-import reducer from "../compiler/reduce_tree.js";
+import reducer from "../compiler/junction.js";
 import UID from "./uid.js";
 import crdt from "../cpp/crdt.asm.js";
 
@@ -47,6 +47,7 @@ function ProcessTags(tag_string_list) {
 
 export default class Note {
 	constructor(ruminate, uid, id, tags, body, refs, modified, NEED_SYNC = false) {
+
 		this[RUMINATE_REFERENCE] = ruminate;
 		this[RUMINATE_NOTE_SYNC_LIST] = [];
 		this[RUMINATE_NOTE_NEED_UPDATE] = false;
@@ -103,7 +104,7 @@ export default class Note {
 		if (!RESULT) {
 			CHANGED(this); // Prime for next update interval
 		} else {
-			this[RUMINATE_NOTE_SYNC_LIST].map(s => s(public_note))
+			this[RUMINATE_NOTE_SYNC_LIST].map(s => s(this))
 			this[RUMINATE_NOTE_SYNC_LIST].length = 0;
 		}
 	}
@@ -136,7 +137,7 @@ export default class Note {
 		let modstr = note.body,
 			NEED_SYNC_UPDATE_LOCAL = false,
 			offset = 0;
-			
+
 		//Get Minimum changes to note
 		for (const diff of jsdiff.diffChars(note.body, str)) {
 			if (diff.added) {
@@ -253,7 +254,7 @@ export default class Note {
 
 	// render the note's message data into a string output
 	async render(handler, set = new Set) {
-		const 
+		const
 			note = this[RUMINATE_NOTE_BODY],
 			ruminate = this[RUMINATE_REFERENCE];
 
@@ -273,22 +274,29 @@ export default class Note {
 			if (!set.has(this.uid.string))
 				set.add(this.uid.string)
 
-			var strings = [];
+			var strings = [],
+				start = 0,
+				body = this.body;
 
-			for (const value of reducer(whind(note.body))) {
-				if (typeof value == "string")
-					strings.push(value);
-				else {
-					for (const note of await ruminate.retrieve(value.value)) {
+			for (const junction of reducer(whind(note.body))) {
 
-						if (set.has(note.uid.string))
-							continue;
+				strings.push(body.slice(start, junction.start))
 
-						if (note)
-							strings.push(await note.render(handler, new Set(set)));
-					}
+				start = junction.end;
+
+				for (const note of await ruminate.retrieve(junction.query)) {
+
+					if (set.has(note.uid.string))
+						continue;
+
+					if (note)
+						strings.push(await note.render(handler, new Set(set)));
 				}
+
 			}
+
+			strings.push(body.slice(start));
+
 			return strings.join("");
 		}
 	}

@@ -1,4 +1,5 @@
 #! /bin/sh
+
 ":" //# comment; exec /usr/bin/env node --experimental-modules "$0" "$@"
 
 /***
@@ -26,7 +27,7 @@ import junction from "../compiler/junction.js";
 import path from "path";
 import fs from "fs";
 
-console.log(process)
+const file_path = process.argv.slice(2).pop();
 
 const
 	fsp = fs.promises,
@@ -37,12 +38,13 @@ const
 (async function() {
 	await server.connect("./notes.json");
 
-	const file = "./data/ruminate/getting_started.md";
+	const file = path.resolve(file_path);
 
 	var
 		meta = null,
 		file_date = 0,
 		data = null,
+		out_data = "",
 		junctions = null;
 
 	try {
@@ -67,25 +69,23 @@ const
 	const actions = [];
 
 	for (const junction of junctions) {
-		
+
 		if (typeof junction == "string") continue;
 
 		if (junction.type = "JUNCTION") {
 
-			if (!junction.action_block)
+			//Only work with junctions that define a query for notes. 
+			if (!junction.query || !junction.action)
 				continue;
 
-			let [action, start = "", end = ""] = junction.action_block;
+			let [action, start = "", end = ""] = junction.action;
 
 			start = start.trim();
 			end = end.trim();
 
-			//Only work with junctions that define a query for notes. 
-			if (!junction.query)
-				continue;
 
 			let
-				start_slice = junction.text_end,
+				start_slice = junction.end,
 				end_slice = data.length;
 
 			if (start) {
@@ -108,11 +108,12 @@ const
 				end_slice = lex.off - end.length;
 			}
 
-
 			const notes = await ruminate.retrieve(junction.query);
 
 			switch (action.trim()) {
 				case "sync":
+
+
 					//Try to aquire the note from the query
 					var [note] = notes, note_date;
 
@@ -134,14 +135,18 @@ const
 						continue;
 					}
 
+					console.log(note_date > file_date, {note_date, file_date})
+
 					if (note_date > file_date) {
 						//insert data into file.
-						actions.push({type:"REPLACE", start:start_slice, end:end_slice, data: await n.render()})
+						actions.push({ type: "REPLACE", start: start_slice, end: end_slice, data: await note.render() })
 					} else {
 						//extract data from input. 
-						note.body = data.slice(start_slice, end_slice);
 						note.setTag("file", file)
+						note.body = data.slice(start_slice, end_slice);
+						await note.sync();
 					}
+
 
 					break;
 
@@ -178,10 +183,25 @@ const
 						continue;
 					}
 
-					actions.push({type:"REPLACE", start:start_slice, end:end_slice, data: notes.map(async n=>await n.render()).join("\n")})
+					actions.push({ type: "REPLACE", start: start_slice, end: end_slice, data: notes.map(async n => await n.render()).join("\n") })
 					break;
 			}
 		}
+	}
+
+	out_data = data;
+
+	for(const action of actions.reverse()){
+		console.log(action)
+		switch(action.type){
+			case "REPLACE":
+				out_data = out_data.slice(0, action.start) + action.data + out_data.slice(action.end);
+			break;
+		}
+	}
+
+	if(out_data !== data){
+		await fsp.writeFile(file, out_data, "utf8");
 	}
 })()
 

@@ -66,14 +66,14 @@
 <> wrapped_expression → \( statement \)                                 ↦r {$$sym2}
     │ sentence                                                          ↦c=>matchnode
     │ identifier                                                        ↦c=>matchnode
-    │ stetement 
+    │ statement 
 
 ## Sort Clause ############################################################################################
 
 <> sort_clause → 
-    ( \| │ τs :? │ τsort :? │ τSORT :? │ τSort :? ) stetement(*,)  ↦r { $$sym2 }
+    ( \| │ τs :? │ τsort :? │ τSORT :? │ τSort :? ) statement(*,)  ↦r { $$sym2 }
 
-<> stetement → created_statement
+<> statement → created_statement
     │ modified_statement
     │ size_statement
     │ tag_statement

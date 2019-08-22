@@ -53,29 +53,38 @@ export function QueryEngine(
         A list of UIDs are passed back to the client. The client can decide to query the server for the actual note contents, or do something else with the UID information.
     */
 
-    return async function runQuery(query_string, container) {
+    return async function runQuery(query_candidate, container) {
 
         var results = [];
 
-        if (!query_string)
+        if (!query_candidate)
             return results;
-        
-        if (UID.isUID(query_string + "")){
-            return [SERVER_getNoteFromUID(query_string)];
+
+        if (UID.isUID(query_candidate + "")) {
+            return [SERVER_getNoteFromUID(query_candidate)];
         }
 
-        if (Array.isArray(query_string)) {
-            for (const item of query_string)
+        if (Array.isArray(query_candidate)) {
+            for (const item of query_candidate)
                 results = results.concat(await runQuery(item));
             return results;
         }
 
         /************************************* UTILIZING QUERY SYNTAX *********************************************/
         var query;
-        try {
-            query = query_parser(whind(query_string + ""));
-        } catch (e) {
-            console.error(e)
+
+        if (typeof query_candidate == "object"
+            && (query_candidate.container || query_candidate.filter)
+        ) {
+            query = query_candidate
+        } else if (typeof query_candidate == "string") {
+            try {
+                query = query_parser(whind(query_candidate + ""));
+            } catch (e) {
+                return [];
+            }
+        } else {
+            //Query candidate not in a form suitable for use.
             return [];
         }
 
