@@ -26,6 +26,7 @@ import json from "../server/json/server.js";
 import junction from "../compiler/junction.js";
 import path from "path";
 import fs from "fs";
+import {stringifyQuery} from "../server/common/query/query.js";
 
 const file_path = process.argv.slice(2).pop();
 
@@ -113,7 +114,6 @@ const
 			switch (action.trim()) {
 				case "sync":
 
-
 					//Try to aquire the note from the query
 					var [note] = notes, note_date;
 
@@ -135,8 +135,6 @@ const
 						continue;
 					}
 
-					console.log(note_date > file_date, {note_date, file_date})
-
 					if (note_date > file_date) {
 						//insert data into file.
 						actions.push({ type: "REPLACE", start: start_slice, end: end_slice, data: await note.render() })
@@ -146,7 +144,6 @@ const
 						note.body = data.slice(start_slice, end_slice);
 						await note.sync();
 					}
-
 
 					break;
 
@@ -192,7 +189,6 @@ const
 	out_data = data;
 
 	for(const action of actions.reverse()){
-		console.log(action)
 		switch(action.type){
 			case "REPLACE":
 				out_data = out_data.slice(0, action.start) + action.data + out_data.slice(action.end);
@@ -203,6 +199,8 @@ const
 	if(out_data !== data){
 		await fsp.writeFile(file, out_data, "utf8");
 	}
+
+	process.exit();
 })()
 
 function findNextMatch(lex, string_array, index = 0) {
@@ -248,21 +246,4 @@ function createNote(ruminate, query) {
 	}
 
 	return null;
-}
-
-//TODO - Move to query files. 
-function stringifyQuery(query, { sort = false, filter = false } = {}) {
-	let str = "";
-
-	const { container } = query;
-	//ID
-	str += container.containers.map(c => c.ids.join("")).join("/") + "/" + (container.id ? container.id.ids.join("") : "");
-
-	if (filter && query.filter)
-	; //str += "?" + filter.map
-
-	if (sort && query.sort)
-	; //str += "|" + sort.map
-
-	return str;
 }

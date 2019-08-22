@@ -9,6 +9,24 @@ import { parseId } from "./query_functions.js";
 //import { Worker } from "worker_threads.js";
 
 
+export function stringifyQuery(query, { sort = false, filter = false } = {}) {
+    let str = "";
+
+    const { container } = query;
+    //ID
+    str += container.containers.map(c => c.ids.join("")).join("/") + "/" + (container.id ? container.id.ids.join("") : "");
+
+    if (filter && query.filter)
+    ; //str += "?" + filter.map
+
+    if (sort && query.sort)
+    ; //str += "|" + sort.map
+
+    return str;
+}
+
+
+
 export function QueryEngine(
     server, // Server functions that the query engine will use 
     CAN_USE_WORKER = false
