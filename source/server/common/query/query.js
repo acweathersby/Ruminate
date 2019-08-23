@@ -54,7 +54,7 @@ export function QueryEngine(
     */
 
     return async function runQuery(query_string, container) {
-
+        
         var results = [];
 
         if (!query_string)

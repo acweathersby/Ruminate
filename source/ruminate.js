@@ -205,12 +205,11 @@ export default class Ruminate {
     // Returns a NoteContainer with all notes reveived.
     // Returns null of no notes matched query.
     async retrieve(
-        query // Query string
+        query_candidate
     ) {
-
         const
             output = [],
-            results = await this[RUMINATE_SERVER].query(query);
+            results = await this[RUMINATE_SERVER].query(query_candidate);
 
 
         if (results) {

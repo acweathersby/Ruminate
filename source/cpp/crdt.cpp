@@ -736,6 +736,8 @@ namespace javascript {
 		.function("insert", &JSCRDTString::insert)
 		.function("delete", &JSCRDTString::remove)
 		.function("destroy", &JSCRDTString::destroy)
+		//.function("getIdAtOffset", &JSCRDTString::getID)
+		//.function("getOffsetAtID", &JSCRDTString::getOffet)
 		.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)											// CLASS FUNCTION
 		.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)			// CLASS FUNCTION
 		//.property("x", &MyClass::getX, &MyClass::setX)							// PUBLIC PROPERTY USING getters and setters
