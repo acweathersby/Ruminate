@@ -1,7 +1,7 @@
 import whind from "@candlefw/whind";
 import Observer from "@candlefw/observer";
 
-import jsdiff from "diff";
+import * as jsdiff from "diff";
 import reducer from "../compiler/junction.js";
 import UID from "./uid.js";
 import crdt from "../cpp/crdt.asm.js";

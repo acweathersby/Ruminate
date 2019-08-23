@@ -44,7 +44,7 @@ export default function() {
         this.slow(50000)
         this.timeout(50000)
 
-        it.skip("CRDT", function(done) {
+        it.only("CRDT", function(done) {
 
 
 
@@ -65,6 +65,8 @@ export default function() {
                     other_site_b.insert(12, "cow bell!");
                     other_site_a.insert(5, "help");
 
+                    const ref = string.getReferenceAtOffset(8);
+
                     console.log(other_site_a.value);
                     console.log(other_site_b.value);
 
@@ -83,7 +85,7 @@ export default function() {
                     console.log(string.value)
                     console.log(other_site_a.value);
                     console.log(other_site_b.value);
-
+                    console.log(ref, other_site_b.getOffsetFromReference(ref))
                     other_site_a.merge(string);
                     other_site_b.merge(other_site_a);
                     other_site_a.merge(other_site_b);
@@ -94,6 +96,7 @@ export default function() {
                     console.log(string.value)
                     console.log(other_site_a.value);
                     console.log(other_site_b.value);
+                    console.log(ref, other_site_b.getOffsetFromReference(ref))
 
                     done();
                 }
