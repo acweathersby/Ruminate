@@ -4,6 +4,9 @@ import { matchString, parseContainer, parseId } from "../common/query/query_func
 import fs from "fs";
 import path from "path";
 import Container from "../common/container.js";
+//import crdt from "../../cpp/crdt.asm.js";
+
+
 
 const fsp = fs.promises;
 var log = "";
@@ -41,6 +44,7 @@ function Server(delimeter = "/") {
 
             for (const note_store of container_store.values())
                 for (const note of note_store.values())
+
                     out.data.push(note);
 
             READ_BLOCK = true
@@ -143,7 +147,11 @@ function Server(delimeter = "/") {
             getNoteFromUID: note_uid => noteFromUID(note_uid)
         },
         false
-    );
+    );  
+
+    let CPP_RUNTIME_LOADED = true;//false
+
+    //const crdt_watcher = new Promise(res=>crdt({onRuntimeInitialized: function() {CPP_RUNTIME_LOADED = true; res()}}))
 
     return new(class Server {
 
@@ -160,9 +168,13 @@ function Server(delimeter = "/") {
         */
         async connect(json_file_path) {
 
+            //Await C++ Runtime
+            if(!CPP_RUNTIME_LOADED)
+                await crdt_watcher;
+
             let result = false;
 
-            const temp = path.resolve(process.env.PWD, json_file_path);
+            const temp = path.resolve(process.cwd(), json_file_path);
 
             if (await read(temp)) {
                 file_path = temp;
@@ -187,8 +199,7 @@ function Server(delimeter = "/") {
         }
 
         /* Stores new note or updates existing note with new values */
-        async storeNote(note) {
-
+        async storeNote(note) {    
             var stored_note = null;
 
             const

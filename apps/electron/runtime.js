@@ -39,7 +39,6 @@ function renderer(scope, note) {
         as the body of the note is parsed by ruminate 
     **/
     async function render(type, obj, query) {
-
         if (NEW_RUNNING)
             children = parentElement.children, index = 0, length = children.length;
         switch (type) {
@@ -93,12 +92,12 @@ const presets = wick.presets({
 })
 //*
 
-//ruminate.createNote("groceries/milk", "", "This is a reminder to get milk!");
-//ruminate.createNote("groceries/butter", "", "This is a reminder to get butter!");
-//ruminate.createNote("groceries/cream", "", "This is a reminder to get cream!");
-//ruminate.createNote("signatures. main", "", "Anthony C Weathersby");
-//ruminate.createNote("places to visit.", "", "I'd like to go to rome someday");
-/*/
+ruminate.createNote("groceries/milk", "", "This is a reminder to get milk!");
+ruminate.createNote("groceries/butter", "", "This is a reminder to get butter!");
+ruminate.createNote("groceries/cream", "", "This is a reminder to get cream!");
+ruminate.createNote("signatures. main", "", "Anthony C Weathersby");
+ruminate.createNote("places to visit.", "", "I'd like to go to rome someday");
+//*/
 const n2 = ruminate.createNote("/test2", "",
     `# This is the markdown
 
@@ -107,7 +106,7 @@ I never really liked to **eat** too mutch
 > But theres always a I chance I could eat more.
 
 `);
-/*/
+//*/
 //n2.store().then(() => {})
 window.addEventListener("load", () =>
     wick("./components/main.html", presets)

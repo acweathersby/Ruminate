@@ -750,7 +750,8 @@ public:
 			{
 				offset -= (unsigned) op.isOrigin(prev_op);
 			}
-			else if(ref == op){
+			else if(ref == op)
+			{
 				return offset;
 			}
 			else
@@ -794,6 +795,9 @@ namespace javascript {
 		.function("destroy", &JSCRDTString::destroy)
 		.function("getReferenceAtOffset", &JSCRDTString::offsetToRef) 
 		.function("getOffsetFromReference", &JSCRDTString::refToOffset)
+		.function("toBuffer", &JSCRDTString::toBuffer)
+		.function("fromBuffer", &JSCRDTString::fromBuffer)
+		.property("byteSize", &JSCRDTString::getByteSize, &JSCRDTString::setByteSize)
 		.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)											// CLASS FUNCTION
 		.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)			// CLASS FUNCTION
 		//.property("x", &MyClass::getX, &MyClass::setX)							// PUBLIC PROPERTY USING getters and setters

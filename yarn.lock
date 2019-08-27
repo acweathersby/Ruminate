@@ -53,9 +53,9 @@
     terser "^3.11.0"
 
 "@candlefw/js@^0.0.6":
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.0.7.tgz#d2c43dda781aec0b61e628b1c8809aed46fa59a4"
-  integrity sha512-QxZ3LP0ADDyL56txh+Isn2UDwJTOAcLC8zytnsaPi8/s8+RmzaYi43N0Std4ymed5ihuYuwHFzwSgrQZD2bo2g==
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.0.6.tgz#db9a416bce7a2c0026bfe031a38a42d2d33e88d4"
+  integrity sha512-+rM4zkzt+kEBYciDyjOXltdLBz1Bq3GnRRx06E1QFyF6VJzIDBDunduVdqDKVbWByTQlCILEm2yEauIsvnviqw==
   dependencies:
     "@candlefw/url" latest
     "@candlefw/whind" latest
