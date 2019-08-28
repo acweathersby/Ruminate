@@ -126,7 +126,6 @@ function renderer(scope, note) {
     **/
     async function render(type, obj, query) {
 
-
         if (NEW_RUNNING)
             children = parentElement.children, index = 0, length = children.length;
         switch (type) {
@@ -206,6 +205,7 @@ const presets = wick.presets({
     schemas: {}
 })
 //*
+
 
 //ruminate.createNote("groceries/milk", "", "This is a reminder to get milk!");
 //ruminate.createNote("groceries/butter", "", "This is a reminder to get butter!");

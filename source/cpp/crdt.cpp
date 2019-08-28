@@ -126,10 +126,24 @@ struct CharOp {
 
 	MetaStamp id = MetaStamp();
 	MetaStamp origin = MetaStamp();
-	Operator data = Operator(); //UTF 16 value
+	Operator data = Operator();
+
+	CharOp(){}
+
+	CharOp(unsigned ref){
+		unsigned clock = ref >> 4;
+		unsigned site = ref & 0xF;
+
+		id.site = site;
+		id.clock = clock;
+	}
 
 	static const unsigned max_size() {
 		return sizeof(MetaStamp) * 2 + sizeof(Operator);
+	}
+
+	 unsigned toUnsigned() const {
+		return (unsigned) ((id.site & 0xF) | id.clock << 4);
 	}
 
 	bool isDeleteOperation() const {
@@ -151,7 +165,6 @@ struct CharOp {
 	wchar_t getWChar() const {
 		return data.getWChar();
 	}
-
 
 	void setIDSite(const unsigned v) {
 		id.site = v;
@@ -551,7 +564,6 @@ private:
 
 				return true;
 			}
-			i++;
 		}
 
 		//if here no origin candidate has been found.
@@ -707,6 +719,51 @@ public:
 
 		return result;
 	}
+
+	/* ((/ruminate/docs/c++/objects/crdt/offsetToRef))[sync, comment]
+		#Offset to Reference
+
+		Givin an integer offset returns an encode integer for the Address of the token at the offset.
+	*/
+	unsigned offsetToRef(unsigned offset){
+		const CharOperation& op = findOpAtIndex(offset);
+
+		return op.toUnsigned();
+	}
+
+	/* ((/ruminate/docs/c++/objects/crdt/refToOffset))[sync, comment]
+		#refToOffset
+
+	 	Givin an encoded integer Address returns the offset of the token within the derived string.
+	*/
+	unsigned refToOffset(unsigned ref){
+
+		unsigned offset = 0, i;
+
+		CharOperation comp_op(ref);
+		
+		CharOperation prev_op;
+
+		for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next())
+		{
+			if (op.isDeleteOperation())
+			{
+				offset -= (unsigned) op.isOrigin(prev_op);
+			}
+			else if(ref == op)
+			{
+				return offset;
+			}
+			else
+			{
+				uber_buffer[offset++] = (wchar_t) op.getWChar();
+			}
+
+			prev_op = op;
+		}
+
+		return 0;
+	}
 };
 }
 
@@ -736,8 +793,11 @@ namespace javascript {
 		.function("insert", &JSCRDTString::insert)
 		.function("delete", &JSCRDTString::remove)
 		.function("destroy", &JSCRDTString::destroy)
-		//.function("getIdAtOffset", &JSCRDTString::getID)
-		//.function("getOffsetAtID", &JSCRDTString::getOffet)
+		.function("getReferenceAtOffset", &JSCRDTString::offsetToRef) 
+		.function("getOffsetFromReference", &JSCRDTString::refToOffset)
+		.function("toBuffer", &JSCRDTString::toBuffer)
+		.function("fromBuffer", &JSCRDTString::fromBuffer)
+		.property("byteSize", &JSCRDTString::getByteSize, &JSCRDTString::setByteSize)
 		.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)											// CLASS FUNCTION
 		.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)			// CLASS FUNCTION
 		//.property("x", &MyClass::getX, &MyClass::setX)							// PUBLIC PROPERTY USING getters and setters

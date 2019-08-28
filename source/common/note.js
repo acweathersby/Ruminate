@@ -1,10 +1,9 @@
 import whind from "@candlefw/whind";
 import Observer from "@candlefw/observer";
-
 import * as jsdiff from "diff";
-import reducer from "../compiler/reduce_tree.js";
+import reducer from "../compiler/junction.js";
 import UID from "./uid.js";
-import crdt from "../cpp/crdt.asm.js";
+
 
 import {
 	RUMINATE_REFERENCE,
@@ -47,6 +46,10 @@ function ProcessTags(tag_string_list) {
 
 export default class Note {
 	constructor(ruminate, uid, id, tags, body, refs, modified, NEED_SYNC = false) {
+		const cr_string = ruminate.crdtString;
+
+		cr_string.syncBuffer(body);
+
 		this[RUMINATE_REFERENCE] = ruminate;
 		this[RUMINATE_NOTE_SYNC_LIST] = [];
 		this[RUMINATE_NOTE_NEED_UPDATE] = false;
@@ -56,7 +59,7 @@ export default class Note {
 			id,
 			modified,
 			tags,
-			body,
+			cr_string,
 			refs
 		}
 		if (NEED_SYNC)
@@ -93,7 +96,7 @@ export default class Note {
 		note.id = note_data.id;
 		note.modified = note_data.modified;
 		note.tags = note_data.tags;
-		note.body = note_data.body;
+		note.cr_string.syncBuffer(note_data.body);
 
 		this.updateObservers()
 	}
@@ -103,7 +106,7 @@ export default class Note {
 		if (!RESULT) {
 			CHANGED(this); // Prime for next update interval
 		} else {
-			this[RUMINATE_NOTE_SYNC_LIST].map(s => s(public_note))
+			this[RUMINATE_NOTE_SYNC_LIST].map(s => s(this))
 			this[RUMINATE_NOTE_SYNC_LIST].length = 0;
 		}
 	}
@@ -127,7 +130,23 @@ export default class Note {
 	/****************** BODY *************************/
 
 	get body() {
-		return this[RUMINATE_NOTE_BODY].body;
+		return this[RUMINATE_NOTE_BODY].cr_string.getValue();
+	}
+
+	insert(offset, string){
+		const note = this[RUMINATE_NOTE_BODY];
+
+		note.cr_string.insert(offset, string);
+		
+		CHANGED(this);
+	}
+
+	delete(offset, length){
+		const note = this[RUMINATE_NOTE_BODY];
+
+		note.cr_string.delete(offset, string);
+		
+		CHANGED(this);
 	}
 
 	set body(str) {
@@ -138,12 +157,12 @@ export default class Note {
 			offset = 0;
 
 		//Get Minimum changes to note
-		for (const diff of jsdiff.diffChars(note.body, str)) {
+		for (const diff of jsdiff.diffChars(note.body, str).reverse()) {
 			if (diff.added) {
-				modstr = modstr.slice(0, offset) + diff.value + modstr.slice(offset);
+				this.insert(offset, diff.value);
 				NEED_SYNC_UPDATE_LOCAL = true;
 			} else if (diff.removed) {
-				modstr = modstr.slice(0, offset) + modstr.slice(offset + diff.count);
+				this.delete(offset, diff.count);
 				NEED_SYNC_UPDATE_LOCAL = true;
 				offset -= diff.count;
 			}
@@ -153,7 +172,7 @@ export default class Note {
 
 		//update store with new note changes. 
 		if (NEED_SYNC_UPDATE_LOCAL) {
-			note.body = modstr;
+			note.cr_string. = modstr;
 			CHANGED(this);
 		}
 	}
@@ -253,7 +272,7 @@ export default class Note {
 
 	// render the note's message data into a string output
 	async render(handler, set = new Set) {
-		const 
+		const
 			note = this[RUMINATE_NOTE_BODY],
 			ruminate = this[RUMINATE_REFERENCE];
 
@@ -273,22 +292,29 @@ export default class Note {
 			if (!set.has(this.uid.string))
 				set.add(this.uid.string)
 
-			var strings = [];
+			var strings = [],
+				start = 0,
+				body = this.body;
 
-			for (const value of reducer(whind(note.body))) {
-				if (typeof value == "string")
-					strings.push(value);
-				else {
-					for (const note of await ruminate.retrieve(value.value)) {
+			for (const junction of reducer(whind(note.body))) {
 
-						if (set.has(note.uid.string))
-							continue;
+				strings.push(body.slice(start, junction.start))
 
-						if (note)
-							strings.push(await note.render(handler, new Set(set)));
-					}
+				start = junction.end;
+
+				for (const note of await ruminate.retrieve(junction.query)) {
+
+					if (set.has(note.uid.string))
+						continue;
+
+					if (note)
+						strings.push(await note.render(handler, new Set(set)));
 				}
+
 			}
+
+			strings.push(body.slice(start));
+
 			return strings.join("");
 		}
 	}

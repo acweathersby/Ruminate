@@ -16,10 +16,20 @@ import {
     RUMINATE_NOTE_BODY,
     RUMINATE_NOTE_SYNC
 } from "./common/symbols.js";
+import crdt from "./cpp/crdt.wasm.js";
 
+let CRDTString = null;
 
+crdt({   onRuntimeInitialized: function() {
+        CRDTString = this.CTString;
+    }
+})
 
 export default class Ruminate {
+
+    get crdtString(){
+        return new CRDTString();
+    }
 
     constructor(options) {
         //Private
