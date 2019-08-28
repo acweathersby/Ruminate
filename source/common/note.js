@@ -15,7 +15,8 @@ import {
 	RUMINATE_NOTE_TAGS,
 	RUMINATE_NOTE_NEED_UPDATE,
 	RUMINATE_UPDATE_QUEUE_ALERT,
-	RUMINATE_NOTE_UPDATE
+	RUMINATE_NOTE_UPDATE,
+	RUMINATE_NOTE_SYNC_CR_DATA
 } from "./symbols.js";
 
 function CHANGED(note) {
@@ -26,6 +27,7 @@ function CHANGED(note) {
 }
 
 function ProcessTags(tag_string_list) {
+
 	if (!tag_string_list)
 		return new Map;
 
@@ -36,24 +38,31 @@ function ProcessTags(tag_string_list) {
 		p = typeof t == "string" ? t.split(":") : [t + ""],
 		tag = { v: undefined, d: false },
 		tag.v = (p.length > 1)
-		? isNaN(p[1])
-		? p[1].trim()
-		: parseFloat(p[1].trim())
-		: undefined,
-        [p[0].trim().toLowerCase(), tag]
+			? isNaN(p[1])
+				? p[1].trim()
+				: parseFloat(p[1].trim())
+			: undefined,
+	        [p[0].trim().toLowerCase(), tag]
 	)));
 }
 
 export default class Note {
 	constructor(ruminate, uid, id, tags, body, refs, modified, NEED_SYNC = false) {
+		
 		const cr_string = ruminate.crdtString;
 
-		cr_string.syncBuffer(body);
+		if(body && body.length > 0){
+			if(typeof body == "string"){
+				cr_string.insert(body);
+			}
+			else
+				cr_string.fromBuffer(body);
+		}
 
 		this[RUMINATE_REFERENCE] = ruminate;
 		this[RUMINATE_NOTE_SYNC_LIST] = [];
 		this[RUMINATE_NOTE_NEED_UPDATE] = false;
-		this[RUMINATE_NOTE_TAGS] = ProcessTags(tags);
+		this[RUMINATE_NOTE_TAGS] = tags;
 		this[RUMINATE_NOTE_BODY] = {
 			uid,
 			id,
@@ -64,6 +73,11 @@ export default class Note {
 		}
 		if (NEED_SYNC)
 			CHANGED(this)
+	}
+
+	destroy(){
+		if(this[RUMINATE_NOTE_BODY].cr_string)
+			this[RUMINATE_NOTE_BODY].cr_string.destroy();
 	}
 
 	/****************** Basic Properties *************************/
@@ -92,11 +106,11 @@ export default class Note {
 			|| note_data.uid.toString() !== note.uid.toString())
 			return;
 
-		this[RUMINATE_NOTE_TAGS] = ProcessTags(note_data.tags);
+		this[RUMINATE_NOTE_TAGS] = note_data.tags;
 		note.id = note_data.id;
 		note.modified = note_data.modified;
 		note.tags = note_data.tags;
-		note.cr_string.syncBuffer(note_data.body);
+		note.cr_string.fromBuffer(note_data.body);
 
 		this.updateObservers()
 	}
@@ -130,31 +144,32 @@ export default class Note {
 	/****************** BODY *************************/
 
 	get body() {
-		return this[RUMINATE_NOTE_BODY].cr_string.getValue();
+		return this[RUMINATE_NOTE_BODY].cr_string.value;
 	}
 
-	insert(offset, string){
+	insert(string, offset = 0) {
+
 		const note = this[RUMINATE_NOTE_BODY];
 
 		note.cr_string.insert(offset, string);
-		
+
 		CHANGED(this);
 	}
 
-	delete(offset, length){
+	delete(offset, length) {
 		const note = this[RUMINATE_NOTE_BODY];
 
 		note.cr_string.delete(offset, string);
-		
+
 		CHANGED(this);
 	}
 
 	set body(str) {
 		const note = this[RUMINATE_NOTE_BODY];
 
-		let modstr = note.body,
+		let
 			NEED_SYNC_UPDATE_LOCAL = false,
-			offset = 0;
+			offset = note.cr_string.length;
 
 		//Get Minimum changes to note
 		for (const diff of jsdiff.diffChars(note.body, str).reverse()) {
@@ -164,17 +179,14 @@ export default class Note {
 			} else if (diff.removed) {
 				this.delete(offset, diff.count);
 				NEED_SYNC_UPDATE_LOCAL = true;
-				offset -= diff.count;
-			}
-			offset += diff.count;
+			} else
+				offset -= diff.value.length;
 			//insert into string
 		}
 
 		//update store with new note changes. 
-		if (NEED_SYNC_UPDATE_LOCAL) {
-			note.cr_string. = modstr;
+		if (NEED_SYNC_UPDATE_LOCAL)
 			CHANGED(this);
-		}
 	}
 
 	/****************** TAGS *************************/

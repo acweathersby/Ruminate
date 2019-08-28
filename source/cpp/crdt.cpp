@@ -2,6 +2,14 @@
 #include <cstring>
 #include <sstream>
 
+
+#ifdef JAVASCRIPT_WASM
+#include <emscripten/val.h>
+#include <emscripten/bind.h>
+#include <emscripten.h>
+
+#endif
+
 namespace crdt {
 
 typedef unsigned short opvalue;
@@ -124,6 +132,8 @@ struct OPChar {
 template  <class MetaStamp, class Operator>
 struct CharOp {
 
+
+
 	MetaStamp id = MetaStamp();
 	MetaStamp origin = MetaStamp();
 	Operator data = Operator();
@@ -239,31 +249,28 @@ struct OPBuffer {
 
 	unsigned op_marker = 0;
 
-	unsigned size = 8192;
+	unsigned size = 0;
 
 	unsigned count = 0; // Number of operations stored
 
 	char * data = NULL;
 
-	bool CLONED = false;
+	bool IS_CLONE = false;
 
 	Operator last;
 
 	OPBuffer() {}
 
-	OPBuffer(unsigned size) {
-		data = new char[size];
-	}
+	OPBuffer(unsigned size) {}
 
 	~OPBuffer() {
-
-		if (!CLONED)
+		if (!IS_CLONE)
 			delete[] data;
 	}
 
 	void copy(OPBuffer& copy_to_buffer) const {
 
-		if (copy_to_buffer.data == data || copy_to_buffer.CLONED) {
+		if (copy_to_buffer.data == data || copy_to_buffer.IS_CLONE) {
 			return; // Do not overwite data!
 		}
 
@@ -302,7 +309,7 @@ struct OPBuffer {
 		copy.count = count;
 		copy.last = last;
 		copy.data =  data;
-		copy.CLONED = true;
+		copy.IS_CLONE = true;
 
 		return copy;
 	}
@@ -350,16 +357,22 @@ struct OPBuffer {
 	/* Doubles the size of the buffer or returns false if not enough memory can be allocated. */
 	bool expand() {
 
-		std::cout << "expanding" << size << std::endl;
+		if(size < 1)
+			size = 4096;
 
-		char * n_buffer = new char[size << 1];
+		size <<= 1;
+
+		//std::cout << "expanding " << size << " " << byte_length << std::endl;
+
+		char * n_buffer = new char[size];
 
 		if (n_buffer == NULL)
 			return false;
 
-		std::memcpy(n_buffer, data, byte_length);
-
-		delete[] data;
+		if(data != NULL){
+			std::memcpy(n_buffer, data, byte_length);
+			delete[] data;
+		}
 
 		data = n_buffer;
 
@@ -374,6 +387,9 @@ struct OPBuffer {
 
 		if (maxSizeReached(op.byteSize()) && !expand())
 			return false; //Unable to allocate enough space to expand buffer.
+
+
+		
 
 		char * a = &data[op_marker];
 
@@ -443,6 +459,32 @@ struct OPBuffer {
 
 		return os << "]";
 	}
+
+	unsigned requiredbufferSize() const {
+		return 12 + byte_length;
+	}
+
+	void toBuffer(char * buffer) const {
+		unsigned * int_data = (unsigned *) buffer; 
+		int_data[0] = byte_length;
+		int_data[1] = count;
+		int_data[2] = size;
+		std::memcpy(buffer + 12, data, byte_length);
+	}
+
+	void fromBuffer(const char * buffer) {
+		unsigned * int_data = (unsigned *) buffer; 
+		byte_length = int_data[0];
+		count = int_data[1];
+
+		if(int_data[2] != size){
+			size = int_data[2];
+			delete[] data;
+			data = new char[size];
+		}
+
+		std::memcpy(data, buffer + 12, byte_length);
+	}
 };
 
 
@@ -450,6 +492,8 @@ template <class CharOperation, class Buffer>
 class OPString  {
 
 private:
+
+	static unsigned constexpr SERIALIZED_SIZE = 12;
 
 	Buffer ops;
 
@@ -584,8 +628,8 @@ public:
 			CharOperation source_op = findOpAtIndex(index--);
 			CharOperation op;
 
-			if (source_op.isDeleteOperation())
-				std::cout << "DELETE" << std::endl;
+			if (source_op.isDeleteOperation());
+			//	std::cout << "DELETE" << std::endl;
 
 			op.setValue(0);
 
@@ -616,6 +660,7 @@ public:
 			CharOperation op;
 
 			op.setValue(str[i]);
+			
 
 			op.setIDSite(site);
 			op.setIDClock(clock++);
@@ -631,6 +676,7 @@ public:
 	}
 
 	friend std::ostream& operator << (std::ostream& os, const OPString<CharOperation, Buffer>& string) {
+
 		return os << "{\"site\":" << (unsigned) string.site
 		       << ",\"clock\":" << string.clock
 		       << ",\"ops\":" << string.ops << "}";
@@ -638,12 +684,23 @@ public:
 
 
 	//JS PROPERTIES
+	void destroy() {
+		delete this;
+	}
+
+	// Returns the byte size of the serialized object.
+	unsigned getByteSize() const {
+		return ops.requiredbufferSize() + OPString<CharOperation, Buffer>::SERIALIZED_SIZE;
+	}
+
+	void setByteSize(int x) {}
+
 	/*
 		Returns a string of the consumable value.
 	*/
 	std::wstring getValue() const {
 
-		unsigned offset = 0;
+		unsigned offset = -1;
 
 		Buffer ops_ = ops.clone();
 
@@ -651,6 +708,12 @@ public:
 
 		for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next())
 		{
+			if(offset < 0) //Get rid of root op.
+			{
+				offset = 0;
+				continue;
+			}
+
 			if (op.isDeleteOperation())
 			{
 				offset -= (unsigned) op.isOrigin(prev_op);
@@ -670,6 +733,41 @@ public:
 
 	void setValue(int x) {}
 
+	#ifdef  JAVASCRIPT_WASM
+	/** Returns a raw char buffer of the underlying data. **/
+	void toBuffer(emscripten::val callback){
+
+		unsigned size = getByteSize(); 
+		
+		char buffer[size];
+		
+		unsigned * int_data = (unsigned *)buffer;
+
+		ops.toBuffer(buffer + OPString<CharOperation, Buffer>::SERIALIZED_SIZE);
+
+		int_data[0] = site;
+		int_data[1] = clock;
+		int_data[2] = sites;
+
+		callback(emscripten::typed_memory_view(size, (unsigned char *) buffer));
+	}
+	#endif
+
+	void fromBuffer(std::string char_buffer){
+
+		OPString<CharOperation, Buffer> other(0);
+
+		const char* buffer = char_buffer.c_str();
+
+		unsigned* int_data = (unsigned *)buffer;
+		other.site = int_data[0];
+		other.clock = int_data[1];
+		other.sites = int_data[2];
+
+		other.ops.fromBuffer(buffer + OPString<CharOperation, Buffer>::SERIALIZED_SIZE);
+
+		merge(other);
+	}
 
 	// Returns a string value that is a JSON formated representation of the String's internal state.
 	std::string getInspect() const {
@@ -682,10 +780,6 @@ public:
 	}
 
 	void setInspect(int x) {}
-
-	void destroy() {
-		delete this;
-	}
 
 	OPString<CharOperation, Buffer>& split()  {
 
@@ -768,10 +862,7 @@ public:
 }
 
 
-#ifdef  JAVASCRIPT_WASM
-
-#include <emscripten.h>
-#include <emscripten/bind.h>
+#ifdef JAVASCRIPT_WASM
 
 namespace javascript {
 
@@ -798,11 +889,10 @@ namespace javascript {
 		.function("toBuffer", &JSCRDTString::toBuffer)
 		.function("fromBuffer", &JSCRDTString::fromBuffer)
 		.property("byteSize", &JSCRDTString::getByteSize, &JSCRDTString::setByteSize)
-		.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)											// CLASS FUNCTION
-		.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)			// CLASS FUNCTION
-		//.property("x", &MyClass::getX, &MyClass::setX)							// PUBLIC PROPERTY USING getters and setters
-		//.class_function("getStringFromInstance", &MyClass::getStringFromInstance) // STATIC FUNCTION
+		.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)
+		.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)
 		;
 	}
 }
+
 #endif

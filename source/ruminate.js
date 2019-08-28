@@ -3,6 +3,7 @@ import Note from "./common/note.js";
 import OptionHandler from "./common/option.js";
 import NoteContainer from "./common/container.js";
 import fuzzy from "./common/fuzzy.js";
+import { noteDataToBuffer, noteDataFromBuffer } from "./common/serialization.js";
 import {
     RUMINATE_NOTE,
     RUMINATE_NOTE_UPDATE,
@@ -16,19 +17,24 @@ import {
     RUMINATE_NOTE_BODY,
     RUMINATE_NOTE_SYNC
 } from "./common/symbols.js";
-import crdt from "./cpp/crdt.wasm.js";
+import crdt from "./cpp/crdt.asm.js";
 
-let CRDTString = null;
+let CRDTString = null, CPP_RUNTIME_LOADED = false, SITE = 1;
 
-crdt({   onRuntimeInitialized: function() {
-        CRDTString = this.CTString;
-    }
+const cpp_bootstrap_promise = new Promise(res => {
+    crdt({
+        onRuntimeInitialized: function() {
+            CRDTString = this.CTString;
+            CPP_RUNTIME_LOADED = true;
+            res();
+        }
+    })
 })
 
 export default class Ruminate {
 
-    get crdtString(){
-        return new CRDTString();
+    get crdtString() {
+        return new CRDTString(SITE);
     }
 
     constructor(options) {
@@ -165,7 +171,13 @@ export default class Ruminate {
 
                 for (const note of out_queue) {
 
-                    const RESULT = (await server.storeNote(note[RUMINATE_NOTE_PREPARE_FOR_SERVER]()));
+                    let buffer = null;
+
+                    let nt = note[RUMINATE_NOTE_PREPARE_FOR_SERVER]();
+                    
+                    nt.cr_string.toBuffer(uint8data => (buffer = noteDataToBuffer(nt.uid, undefined, nt.id, nt.tags, uint8data)));
+                    
+                    const RESULT = (await server.storeNote(buffer));
 
                     if (!RESULT) {
                         console.warn(`Unable to sync note ${id} with uid ${note.uid}`);
@@ -187,6 +199,9 @@ export default class Ruminate {
     // Removes all notes from the Graze instance. Any existing client notes will still exists,
     // and can be reconnected by changing one of its values.
     purgeCache() {
+        for(const note of this[RUMINATE_NOTES].values())
+            note.destroy();
+
         this[RUMINATE_NOTES] = new Map;
     }
 
@@ -204,7 +219,11 @@ export default class Ruminate {
             if (!(note = candidate.__ruminate_retrieve_note__))
                 note = candidate;
 
-            RESULT += (await this[RUMINATE_SERVER].storeNote(note)) | 0;
+            let buffer = null;
+
+            note.cr_string.toBuffer(uint8data => buffer = noteDataToBuffer(note.uid,undefined, note.id, note.tags, uint8data));
+
+            RESULT += (await this[RUMINATE_SERVER].storeNote(buffer)) | 0;
         }
 
         return RESULT;
@@ -217,20 +236,27 @@ export default class Ruminate {
     async retrieve(
         query_candidate
     ) {
+
+        if (!CPP_RUNTIME_LOADED)
+            await cpp_bootstrap_promise;
+
         const
             output = [],
             results = await this[RUMINATE_SERVER].query(query_candidate);
 
-
         if (results) {
-            for (const note_data of results) {
+            for (const buffer of results) {
+
+                const note_data = noteDataFromBuffer(buffer);
+
                 const uid = note_data.uid.toString();
+                
                 if (!note_data) continue;
 
                 if (!this[RUMINATE_NOTES].has(uid)) {
                     this[RUMINATE_NOTES].set(uid, new Note(
                         this,
-                        new UID(uid),
+                        note_data.uid,
                         note_data.id,
                         note_data.tags,
                         note_data.body,
@@ -249,12 +275,16 @@ export default class Ruminate {
         return new NoteContainer(...output);
     }
 
-    createNote(
+    async createNote(
         note_id, // string : String identifier of note. Refere to notes on using container addressing. Required
         note_tags = "", // string | array : Array of string ids or Comma seperated list of ids in a string.
         body = "", // string : String identifier of note. Refere to notes on using container addressing
         uid = this.createUID() // string : String identifier of note. Refere to notes on using container addressing
     ) {
+
+
+        if (!CPP_RUNTIME_LOADED)
+            await cpp_bootstrap_promise;
         //Verify arguments.
 
         if (typeof note_id !== "string")
@@ -280,12 +310,14 @@ export default class Ruminate {
             uid,
             note_id,
             note_tags,
-            body,
+            "",
             [],
             Date.now() | 0,
             true, // Auto sync with server
             RUMINATE_NOTES
         )
+
+        note.insert(body);
 
         this[RUMINATE_NOTES].set(uid.toString(), note);
 

@@ -1,6 +1,7 @@
 import UID from "../../common/uid.js";
 import { QueryEngine } from "../common/query/query.js";
 import { matchString, parseContainer, parseId } from "../common/query/query_functions.js";
+import { noteDataToBuffer, noteDataFromBuffer } from "../../common/serialization.js";
 import fs from "fs";
 import path from "path";
 import Container from "../common/container.js";
@@ -183,7 +184,7 @@ function Server(delimeter = "/") {
                 try {
                     await fsp.writeFile(temp, "")
                     file_path = temp;
-                    result = true;
+                    result = true;modified
                 } catch (e) { writeError(e) }
             }
             if (result) {
@@ -199,11 +200,16 @@ function Server(delimeter = "/") {
         }
 
         /* Stores new note or updates existing note with new values */
-        async storeNote(note) {    
+        async storeNote(note_buffer) {    
+
             var stored_note = null;
 
+            const note = noteDataFromBuffer(note_buffer);
+
+            const tag_value = ""
+
             const
-                uid = note.uid.string,
+                uid = note.uid.toString(),
                 modified_time = Date.now();
                 
             stored_note = noteFromUID(uid);
@@ -213,14 +219,16 @@ function Server(delimeter = "/") {
 
             const old_id = stored_note.id;
 
+            stored_note.buffer = note_buffer;
             stored_note.modified = modified_time;
             stored_note.uid = uid;
             stored_note.body = note.body;
             stored_note.id = note.id;
             stored_note.tags = note.tags;
-            stored_note.query_data = `${note.id.split(".").pop()} ${note.tags.join(";")} ${note.body}`;
+            stored_note.query_data = `${note.id.split(".").pop()}  ${tag_value}`;
 
             uid_store.set(uid, note.id);
+            
             getContainer(container.change(old_id, note.id, delimeter).uid).set(uid, stored_note);
 
             await write();
@@ -231,7 +239,7 @@ function Server(delimeter = "/") {
 
         async query(query_string) {
             await read(); //Hack - mack sure store is up to date;
-            return await queryRunner(query_string, container)
+            return (await queryRunner(query_string, container)).map(note => noteDataToBuffer(new UID(note.uid), note.modified, note.id, note.tags, note.body))
         }
 
         // Return a list of all uid's that a modified time greater than [date] given

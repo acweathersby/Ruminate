@@ -12,7 +12,7 @@ export default class UID extends ArrayBuffer {
         )
     }
 
-    constructor(string_val) {
+    constructor(string_val, offset) {
 
         super(16);
 
@@ -22,7 +22,12 @@ export default class UID extends ArrayBuffer {
             const dv2 = new DataView(string_val);
             dv.setBigUint64(0, dv2.getBigUint64(0));
             dv.setBigUint64(8, dv2.getBigUint64(8));
-        } else if (string_val && typeof string_val == "string") {
+        } else if (string_val instanceof ArrayBuffer && typeof offset == "number") {
+            const dv2 = new DataView(string_val, offset);
+            dv.setBigUint64(0, dv2.getBigUint64(0));
+            dv.setBigUint64(8, dv2.getBigUint64(8));
+            
+        }else if(string_val && typeof string_val == "string") {
             string_val
                 .replace(/\-/g, "")
                 .split("")
@@ -44,6 +49,15 @@ export default class UID extends ArrayBuffer {
     frozenClone() { return (new UID(this)).freeze(uid); }
 
     toString() { return this.string; }
+
+    toBuffer(array_buffer, offset){
+        const from = new Uint32Array(this);
+        const to = new Uint32Array(array_buffer, offset, 4);
+        to[0] = from[0];
+        to[1] = from[1];
+        to[2] = from[2];
+        to[3] = from[3];
+    }
 
     set string(e) { /*empty*/ }
 

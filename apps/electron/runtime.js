@@ -1,6 +1,7 @@
 const server = new ruminate_objects.server.json;
 const codemirror = require("codemirror");
 const jsdiff = require("diff");
+const {bufferToNoteData, noteDataFromBuffer}
 
 server.connect("./notes.json");
 

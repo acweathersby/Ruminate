@@ -6,16 +6,16 @@ chai.should();
 
 /*********************** Markdom TESTS *************************************/
 
-import markdom_tests from "./markdom_test.js";
+//import markdom_tests from "./markdom_test.js";
 
-describe("MarkDOM", markdom_tests)
+//describe("MarkDOM", markdom_tests)
 
 
 /*********************** UTILITY TESTS *************************************/
 
-import utility_tests from "./utility_test.js";
+//import utility_tests from "./utility_test.js";
 
-describe("Utilites", utility_tests)
+//describe("Utilites", utility_tests)
 
 /*********************** NOTE TESTS *************************************/
 

@@ -58,13 +58,13 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
                 ruminate.should.have.property(RUMINATE_SERVER, null);
             })
 
-            it("create UID", function() {
+            it("create UID", async function() {
 
                 const uid = ruminate.createUID();
 
                 uid.length.should.equal(16);
 
-                const note = ruminate.createNote("Temp Name", "tagA, tagB, tagC", "Message");
+                const note = await ruminate.createNote("Temp Name", "tagA, tagB, tagC", "Message");
 
                 note.should.have.property("uid");
 
@@ -72,7 +72,7 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
 
                 note.body.length.should.equal(7);
 
-                const note2 = ruminate.createNote("Temp Name", "tagA, tagB, tagC", "Message");
+                const note2 = await ruminate.createNote("Temp Name", "tagA, tagB, tagC", "Message");
 
                 note2.uid.length.should.equal(16);
 
@@ -81,8 +81,8 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
 
             it("store and retrieve - basic", async function() {
 
-                const noteA = ruminate.createNote("Temp Name A", "tagA, tagB, tagC", "Message A");
-                const noteB = ruminate.createNote("Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteA = await ruminate.createNote("Temp Name A", "tagA, tagB, tagC", "Message A");
+                const noteB = await ruminate.createNote("Temp Name B", "tagA, tagB, tagC", "Message B");
                 await ruminate.sync();
                 //await sleep(10);
 
@@ -98,9 +98,9 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
 
             it("store and retrieve - collection", async function() {
 
-                const noteA = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
-                const noteB = ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
-                const noteC = ruminate.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteA = await ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
+                const noteB = await ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteC = await ruminate.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
                 await ruminate.sync();
 
@@ -118,11 +118,11 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
                 notes2[0].body.should.equal(noteC.body);
             })
 
-            it("store and retrieve - search", async function() {
+            it.only("store and retrieve - search", async function() {
 
-                const noteA = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
-                const noteB = ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
-                const noteC = ruminate.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteA = await ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
+                const noteB = await ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
+                const noteC = await ruminate.createNote("temp/temp/Temp Name B", "tagA, tagB, tagC", "Message B");
 
                 await ruminate.sync();
 
@@ -135,9 +135,9 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
 
             it("Renders note referenced inside another note", async function() {
 
-                const noteG = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "inception");
-                const noteA = ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", `inside ((${noteG.uid}))`);
-                const noteB = ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", `referenced note text: ((${noteA.uid}))`);
+                const noteG = await ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "inception");
+                const noteA = await ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", `inside ((${noteG.uid}))`);
+                const noteB = await ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", `referenced note text: ((${noteA.uid}))`);
 
                 await ruminate.sync();
                 //note does not need to be saved in order to take advantage of reference rendering.

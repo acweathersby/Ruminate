@@ -1259,11 +1259,11 @@ function updateGlobalBufferViews() {
 
 
 var STATIC_BASE = 1024,
-    STACK_BASE = 425088,
+    STACK_BASE = 435072,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 5667968,
-    DYNAMIC_BASE = 5667968,
-    DYNAMICTOP_PTR = 425056;
+    STACK_MAX = 5677952,
+    DYNAMIC_BASE = 5677952,
+    DYNAMICTOP_PTR = 435040;
 
 assert(STACK_BASE % 16 === 0, 'stack must start aligned');
 assert(DYNAMIC_BASE % 16 === 0, 'heap must start aligned');
@@ -1729,8 +1729,8 @@ Module['asm'] = function(global, env, providedBuffer) {
   ;
   // import table
   env['table'] = wasmTable = new WebAssembly.Table({
-    'initial': 8033,
-    'maximum': 8033,
+    'initial': 14688,
+    'maximum': 14688,
     'element': 'anyfunc'
   });
   // With the wasm backend __memory_base and __table_base and only needed for
@@ -1756,7 +1756,7 @@ var ASM_CONSTS = [];
 
 
 
-// STATICTOP = STATIC_BASE + 424064;
+// STATICTOP = STATIC_BASE + 434048;
 /* global initializers */  __ATINIT__.push({ func: function() { globalCtors() } });
 
 
@@ -1767,7 +1767,7 @@ var ASM_CONSTS = [];
 
 
 /* no memory initializer */
-var tempDoublePtr = 425072
+var tempDoublePtr = 435056
 assert(tempDoublePtr % 8 == 0);
 
 function copyTempFloat(ptr) { // functions, because inlining this code increases code size too much
@@ -1790,6 +1790,47 @@ function copyTempDouble(ptr) {
 
 // {{PRE_LIBRARY}}
 
+
+  
+  var ___exception_infos={};
+  
+  var ___exception_caught= [];
+  
+  function ___exception_addRef(ptr) {
+      if (!ptr) return;
+      var info = ___exception_infos[ptr];
+      info.refcount++;
+    }
+  
+  function ___exception_deAdjust(adjusted) {
+      if (!adjusted || ___exception_infos[adjusted]) return adjusted;
+      for (var key in ___exception_infos) {
+        var ptr = +key; // the iteration key is a string, and if we throw this, it must be an integer as that is what we look for
+        var adj = ___exception_infos[ptr].adjusted;
+        var len = adj.length;
+        for (var i = 0; i < len; i++) {
+          if (adj[i] === adjusted) {
+            return ptr;
+          }
+        }
+      }
+      return adjusted;
+    }function ___cxa_begin_catch(ptr) {
+      var info = ___exception_infos[ptr];
+      if (info && !info.caught) {
+        info.caught = true;
+        __ZSt18uncaught_exceptionv.uncaught_exceptions--;
+      }
+      if (info) info.rethrown = false;
+      ___exception_caught.push(ptr);
+      ___exception_addRef(___exception_deAdjust(ptr));
+      return ptr;
+    }
+
+  function ___cxa_pure_virtual() {
+      ABORT = true;
+      throw 'Pure virtual function called!';
+    }
 
   function ___cxa_uncaught_exceptions() {
       return __ZSt18uncaught_exceptionv.uncaught_exceptions;
@@ -6736,6 +6777,45 @@ function copyTempDouble(ptr) {
       });
     }
 
+  
+  
+  function requireRegisteredType(rawType, humanName) {
+      var impl = registeredTypes[rawType];
+      if (undefined === impl) {
+          throwBindingError(humanName + " has unknown type " + getTypeName(rawType));
+      }
+      return impl;
+    }function __emval_lookupTypes(argCount, argTypes, argWireTypes) {
+      var a = new Array(argCount);
+      for (var i = 0; i < argCount; ++i) {
+          a[i] = requireRegisteredType(
+              HEAP32[(argTypes >> 2) + i],
+              "parameter " + i);
+      }
+      return a;
+    }
+  
+  function requireHandle(handle) {
+      if (!handle) {
+          throwBindingError('Cannot use deleted val. handle = ' + handle);
+      }
+      return emval_handle_array[handle].value;
+    }function __emval_call(handle, argCount, argTypes, argv) {
+      handle = requireHandle(handle);
+      var types = __emval_lookupTypes(argCount, argTypes);
+  
+      var args = new Array(argCount);
+      for (var i = 0; i < argCount; ++i) {
+          var type = types[i];
+          args[i] = type['readValueFromPointer'](argv);
+          argv += type['argPackAdvance'];
+      }
+  
+      var rv = handle.apply(undefined, args);
+      return __emval_register(rv);
+    }
+
+
   function _abort() {
       Module['abort']();
     }
@@ -6771,6 +6851,10 @@ function copyTempDouble(ptr) {
       }
       self.LLVM_SAVEDSTACKS.push(stackSave());
       return self.LLVM_SAVEDSTACKS.length-1;
+    }
+
+  function _llvm_trap() {
+      abort('trap!');
     }
 
   
@@ -7350,7 +7434,11 @@ var asmLibraryArg = {
   "RegisteredPointer_destructor": RegisteredPointer_destructor,
   "RegisteredPointer_fromWireType": RegisteredPointer_fromWireType,
   "RegisteredPointer_getPointee": RegisteredPointer_getPointee,
+  "___cxa_begin_catch": ___cxa_begin_catch,
+  "___cxa_pure_virtual": ___cxa_pure_virtual,
   "___cxa_uncaught_exceptions": ___cxa_uncaught_exceptions,
+  "___exception_addRef": ___exception_addRef,
+  "___exception_deAdjust": ___exception_deAdjust,
   "___gxx_personality_v0": ___gxx_personality_v0,
   "___lock": ___lock,
   "___map_file": ___map_file,
@@ -7377,7 +7465,9 @@ var asmLibraryArg = {
   "__embind_register_std_wstring": __embind_register_std_wstring,
   "__embind_register_void": __embind_register_void,
   "__emscripten_syscall_munmap": __emscripten_syscall_munmap,
+  "__emval_call": __emval_call,
   "__emval_decref": __emval_decref,
+  "__emval_lookupTypes": __emval_lookupTypes,
   "__emval_register": __emval_register,
   "__isLeapYear": __isLeapYear,
   "_abort": _abort,
@@ -7388,6 +7478,7 @@ var asmLibraryArg = {
   "_getenv": _getenv,
   "_llvm_stackrestore": _llvm_stackrestore,
   "_llvm_stacksave": _llvm_stacksave,
+  "_llvm_trap": _llvm_trap,
   "_pthread_cond_wait": _pthread_cond_wait,
   "_strftime": _strftime,
   "_strftime_l": _strftime_l,
@@ -7429,6 +7520,8 @@ var asmLibraryArg = {
   "registerType": registerType,
   "releaseClassHandle": releaseClassHandle,
   "replacePublicSymbol": replacePublicSymbol,
+  "requireHandle": requireHandle,
+  "requireRegisteredType": requireRegisteredType,
   "runDestructor": runDestructor,
   "runDestructors": runDestructors,
   "setDelayFunction": setDelayFunction,

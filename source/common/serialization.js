@@ -1,11 +1,12 @@
+import UID from "./uid.js";
 
 const UID_BYTE_SIZE = 16;
-const USE_LITTLE_ENDIAN = false;
+const USE_LITTLE_ENDIAN = true;
 
 /** Lays out JS string data into array buffer **/
 function  stringToBuffer(array_buffer, offset, string, UTF16 = false)
 {
-	const local_buffer = new Uint8Buffer(array_buffer, offset, string.length);
+	const length = string.length, local_buffer = new Uint8Array(array_buffer, offset, length);
 
 	if(UTF16){
 
@@ -17,7 +18,7 @@ function  stringToBuffer(array_buffer, offset, string, UTF16 = false)
 /** Converts char string buffer into JS string**/
 function bufferToString(array_buffer, offset, length, UTF16 = false){
 
-	const local_buffer = new Uint8Buffer(array_buffer, offset, length);
+	const local_buffer = new Uint8Array(array_buffer, offset, length);
 
 	let string = "";
 
@@ -34,7 +35,7 @@ function tagMapToTagString(tag_map){
 
 	const list = [];
 
-	for (const t of this[RUMINATE_NOTE_TAGS].entries())
+	for (const t of tag_map.entries())
 		list.push(`${t[1].d?"!":""}${t[0]}${t[1].v?":"+t[1].v:""}`)
 
 	return list.join(",");
@@ -60,15 +61,16 @@ function tagStringToTagMap(tag_string_list) {
 	)));
 }
 
-function bufferFromNoteData(uid, id = "", tags = new Map, body = ""){
+function bufferFromNoteData(uid, modified = Date.now(), id = "", tags = new Map, body = ""){
+
 	const 
-		tag_string = tagsToString(tags),
+		tag_string = tagMapToTagString(tags),
 		body_length = body.length,
 		tag_length = tag_string.length,
-		id_length = id_string.length;
+		id_length = id.length;
 
 	const buffer_size = 
-		UID_BYTE_SIZE +
+		UID_BYTE_SIZE + 8 +
 		id_length + 4 +
 		tag_length + 4 + 
 		body_length + 4;
@@ -79,37 +81,45 @@ function bufferFromNoteData(uid, id = "", tags = new Map, body = ""){
 
 	let offset = UID_BYTE_SIZE;
 
+	//Modified Date
+	dv.setBigInt64(offset, BigInt(modified), USE_LITTLE_ENDIAN);
+	offset += 8;
+
 	//ID
-	buffer.setUint32(offset, id_length, USE_LITTLE_ENDIAN);
+	dv.setUint32(offset, id_length, USE_LITTLE_ENDIAN);
 	stringToBuffer(buffer, offset += 4, id);
 	offset += id_length;
 
 	//TAG
-	buffer.setUint32(offset, tag_length, USE_LITTLE_ENDIAN);
+	dv.setUint32(offset, tag_length, USE_LITTLE_ENDIAN);
 	stringToBuffer(buffer, offset += 4, tag_string);
 	offset += tag_length;
 
 	//BODY
-	buffer.setUint32(offset, body_length, USE_LITTLE_ENDIAN);
-	stringToBuffer(buffer, offset += 4, body);
-	offset += body_length;
+
+	dv.setUint32(offset, body_length, USE_LITTLE_ENDIAN);
+	offset += 4;
+	for(let i = 0; i < body_length; i++)
+		dv.setUint8(offset++, body[i]);
+
+	//stringToBuffer(buffer, offset += 4, body);
 
 	return buffer;
 }
 
 function noteDataFromBuffer(note_array_buffer){
 
-	var tags = new Map, body, uid, id, modified_date, offset = UID_BYTE_SIZE;
+	var tags = new Map, body, uid, id, modified, offset = UID_BYTE_SIZE;
 
 	var dv = new DataView(note_array_buffer);
 
-	uid = new UID(new Uint8Array(note_array_buffer, 0, UID_BYTE_SIZE));
+	uid = new UID(note_array_buffer, 0);
 
 	/***** Modified Date ******/
 
-	modified_date = dv.getUint32(offset);
+	modified = parseInt(dv.getBigInt64(offset, USE_LITTLE_ENDIAN));
 
-	offset += 4;
+	offset += 8;
 
 	/***** ID String ********/
 
@@ -139,14 +149,14 @@ function noteDataFromBuffer(note_array_buffer){
 	/***** Body *******/
 
 	const body_string_length = dv.getUint32(offset, USE_LITTLE_ENDIAN);
-
 	offset += 4;
-
+	
 	if(body_string_length > 0){
 
 		const body_string = bufferToString(note_array_buffer, offset, body_string_length)
-	
-		body = body_string;
+
+		//body = body_string;
+		body = new Uint8Array(note_array_buffer, offset, body_string_length);
 
 		offset += body_string_length;
 	}
@@ -154,12 +164,12 @@ function noteDataFromBuffer(note_array_buffer){
 	return {uid, modified, id, tags, body};
 }
 
-const bufferToNote = noteFromBuffer;
-const noteToBuffer = bufferFromNote;
+const bufferToNoteData = noteDataFromBuffer;
+const noteDataToBuffer = bufferFromNoteData;
 
 export {
-	bufferToNote,
-	noteFromBuffer,
-	noteToBuffer,
-	bufferFromNote
+	bufferToNoteData,
+	noteDataFromBuffer,
+	noteDataToBuffer,
+	bufferFromNoteData
 }
