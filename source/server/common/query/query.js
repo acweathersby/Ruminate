@@ -7,6 +7,15 @@ import filter from "./filter.js";
 
 import { parseId } from "./query_functions.js";
 //import { Worker } from "worker_threads.js";
+import crdt from "./cpp/crdt.wasm.js";
+
+let CRDTString = null;
+
+crdt({   onRuntimeInitialized: function() {
+        CRDTString = this.CTString;
+    }
+})
+
 
 
 export function stringifyQuery(query, { sort = false, filter = false } = {}) {

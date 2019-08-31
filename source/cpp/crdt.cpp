@@ -561,7 +561,7 @@ private:
 				CharOperation peer_candidate = ops.next();
 
 				if (op.isDeleteOperation())
-					// Delete Operations immediatelly follow there origin operation. This ensures that it's effect applies BEFORE any other
+					// Delete Operations immediately follow there origin operation. This ensures that it's effect applies BEFORE any other
 					// Operation, maintaining the relation [A <=deletes= B]. Since this operation must remain idempotent, any number of
 					// delete operations on a single origin operation must be ignored after the first one that is observed.
 				{
@@ -731,6 +731,37 @@ public:
 		return std::wstring(uber_buffer);
 	}
 
+	/*
+		Returns the next character in the buffer or an empty string
+	*/
+	std::wstring getNextChar() const {
+
+		unsigned offset = 0;
+
+		Buffer ops_ = ops.clone();
+
+		CharOperation prev_op;
+
+		for (CharOperation op = ops_.current(); !ops_.atEnd(); op = ops_.next())
+		{
+			if (op.isDeleteOperation())
+			{
+				offset -= (unsigned) op.isOrigin(prev_op);
+			}
+			else
+			{
+				uber_buffer[offset++] = (wchar_t) op.getWChar();
+				break;
+			}
+
+			prev_op = op;
+		}
+
+		uber_buffer[offset] = 0;
+
+		return std::wstring(uber_buffer);
+	}
+
 	void setValue(int x) {}
 
 	#ifdef  JAVASCRIPT_WASM
@@ -858,6 +889,8 @@ public:
 
 		return 0;
 	}
+
+	wsS
 };
 }
 
