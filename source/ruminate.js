@@ -3,7 +3,7 @@ import Note from "./common/note.js";
 import OptionHandler from "./common/option.js";
 import NoteContainer from "./common/container.js";
 import fuzzy from "./common/fuzzy.js";
-import { noteDataToBuffer, noteDataFromBuffer } from "./common/serialization.js";
+import { noteDataToBuffer, noteDataFromBuffer, tagStringToTagMap } from "./common/serialization.js";
 import {
     RUMINATE_NOTE,
     RUMINATE_NOTE_UPDATE,
@@ -17,7 +17,7 @@ import {
     RUMINATE_NOTE_BODY,
     RUMINATE_NOTE_SYNC
 } from "./common/symbols.js";
-import crdt from "./cpp/crdt.asm.js";
+import crdt from "./cpp/crdt.wasm.js";
 
 let CRDTString = null, CPP_RUNTIME_LOADED = false, SITE = 1;
 
@@ -281,7 +281,7 @@ export default class Ruminate {
         body = "", // string : String identifier of note. Refere to notes on using container addressing
         uid = this.createUID() // string : String identifier of note. Refere to notes on using container addressing
     ) {
-
+        
 
         if (!CPP_RUNTIME_LOADED)
             await cpp_bootstrap_promise;
@@ -298,6 +298,8 @@ export default class Ruminate {
         } else if (!Array.isArray(note_tags) || note_tags.reduce((r, v) => (typeof v !== "string" && typeof v !== "number") || r, false)) {
             throw new Error(`ruminate.createNote: [note_tags] argument must be a string of comma separated values or an array of [strings | numbers].Got $ { note_tags.map(e => typeof e) }`);
         }
+
+        note_tags = tagStringToTagMap(note_tags);
 
         if (typeof body !== "string")
             throw new Error("body argument must be a string value");

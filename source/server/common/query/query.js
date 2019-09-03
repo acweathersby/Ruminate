@@ -4,16 +4,21 @@ import query_parser from "../../../compiler/gnql.js";
 import UID from "../../../common/uid.js";
 import sort from "./sort.js";
 import filter from "./filter.js";
-
+import { noteDataToBuffer, noteDataFromBuffer } from "../../../common/serialization.js";
 import { parseId } from "./query_functions.js";
 //import { Worker } from "worker_threads.js";
-import crdt from "./cpp/crdt.wasm.js";
+import crdt from "../../../cpp/crdt.wasm.js";
 
-let CRDTString = null;
+let CRDTString = null, CPP_RUNTIME_LOADED = false, SITE = 1;
 
-crdt({   onRuntimeInitialized: function() {
-        CRDTString = this.CTString;
-    }
+const cpp_bootstrap_promise = new Promise(res => {
+    crdt({
+        onRuntimeInitialized: function() {
+            CRDTString = this.CTString;
+            CPP_RUNTIME_LOADED = true;
+            res();
+        }
+    })
 })
 
 
@@ -83,6 +88,10 @@ export function QueryEngine(
 
     return async function runQuery(query_candidate, container) {
 
+
+        if(!CPP_RUNTIME_LOADED)
+            await cpp_bootstrap_promise;
+
         var results = [];
 
         if (!query_candidate)
@@ -104,7 +113,16 @@ export function QueryEngine(
         if (typeof query_candidate == "object"
             && (query_candidate.container || query_candidate.filter)
         ) {
-            query = query_candidate
+            query = query_candidate;
+
+            let uid = "";
+
+            if(query.container.id && query.container.id.ids && ((uid = query.container.id.ids.join("")), UID.isUID(uid))){
+
+                return [SERVER_getNoteFromUID(uid)];
+            }
+            
+
         } else if (typeof query_candidate == "string") {
             try {
                 query = query_parser(whind(query_candidate + ""));
@@ -116,15 +134,24 @@ export function QueryEngine(
             return [];
         }
 
+
         const uids = container.query(query.container ? query.container.containers : default_container);
 
         for (const uid of uids)
             results.push(...await SERVER_getNotesFromContainer(uid));
 
+
+        results = results.map(r=>{
+            const note = noteDataFromBuffer(r);
+            note.string = new CRDTString(1);
+            const body = new Uint8Array(note.body)
+            note.string.fromBuffer(body);
+            note.buffer = r;
+            return note;
+        })
+
         if (query.container && query.container.id) {
-
             const id = query.container.id;
-
             results = results.filter(note => parseId(id, container.getNoteID(note.id)))
         }
 
@@ -137,6 +164,6 @@ export function QueryEngine(
         if (query.sort)
             results = sort(query.sort, results);
 
-        return results;
+        return results.map(r=>r.buffer);
     }
 }

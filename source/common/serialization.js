@@ -32,9 +32,9 @@ function bufferToString(array_buffer, offset, length, UTF16 = false){
 }
 
 function tagMapToTagString(tag_map){
-
+	
 	const list = [];
-
+	if(tag_map.entries)
 	for (const t of tag_map.entries())
 		list.push(`${t[1].d?"!":""}${t[0]}${t[1].v?":"+t[1].v:""}`)
 
@@ -42,7 +42,8 @@ function tagMapToTagString(tag_map){
 }
 
 /** Converts tag string into key value pairs stored in a Map **/
-function tagStringToTagMap(tag_string_list) {
+export function tagStringToTagMap(tag_string_list) {
+
 	if (!tag_string_list)
 		return new Map;
 

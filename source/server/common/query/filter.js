@@ -1,4 +1,4 @@
-import { matchString, parseId } from "./query_functions.js";
+import { matchString, parseId, matchCRDTString } from "./query_functions.js";
 
 function filterValue(value_op, value) {
 	
@@ -68,7 +68,6 @@ function filterTag(note, tag_op) {
 
 /* Returns a Boolean value indicating whether the note's data matches the query */
 function filterProcessor(filter, note) {
-
     switch (filter.type) {
         case "NOT":
             return ! filterProcessor(filter.left, note)
@@ -77,7 +76,8 @@ function filterProcessor(filter, note) {
         case "OR":
             return filterProcessor(filter.left, note) || filterProcessor(filter.right, note)
         case "MATCH":
-            return matchString(filter.value.ids, note.query_data) >= 0;
+            note.string.reset();
+            return matchCRDTString(filter.value.ids, note.string) >= 0;
         case "TAG":
             return filterTag(note, filter);
             break;

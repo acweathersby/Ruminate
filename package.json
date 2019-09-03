@@ -17,12 +17,13 @@
     "compile.junction": "hydrocarbon compile -u --name query_parser -o ./source/compiler/ -t mjs.js ./source/grammar/junction.hcg",
     "compile.junction.test": "hydrocarbon compile -d -u -m ./source/grammar/junction.hcg",
     "compile.query": "hydrocarbon compile -u --name query_parser -o ./source/compiler/ -t mjs.js ./source/grammar/gnql.hcg",
+    "compile.query.cpp": "hydrocarbon compile -u --name query_parser --cpp -o ./source/cpp/compiler/ -t cpp ./source/grammar/gnql_cpp.hcg",
     "compile.query.test": "hydrocarbon compile -d -u -m ./source/grammar/gnql.hcg",
     "test.watch": "mocha -r esm -w test/test.js",
     "build": "rollup --config ./build/config/config.js",
     "build.watch": "rollup --config ./build/config/config.js --watch",
     "build_test_data": "node ./test/data/data_builder.js",
-    "build_wasm": "./scripts/debian/build_crdt.sh"
+    "build_wasm": "./scripts/debian/build_wasm.sh"
   },
   "dependencies": {
     "@candlefw/charcoal": "latest",

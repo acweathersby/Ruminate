@@ -5,9 +5,21 @@ import { noteDataToBuffer, noteDataFromBuffer } from "../../common/serialization
 import fs from "fs";
 import path from "path";
 import Container from "../common/container.js";
-//import crdt from "../../cpp/crdt.asm.js";
+import crdt from "../../cpp/crdt.wasm.js";
 
+let CRDTString = null,
+    CPP_RUNTIME_LOADED = false,
+    SITE = 1;
 
+const cpp_bootstrap_promise = new Promise(res => {
+    crdt({
+        onRuntimeInitialized: function() {
+            CRDTString = this.CTString;
+            CPP_RUNTIME_LOADED = true;
+            res();
+        }
+    })
+})
 
 const fsp = fs.promises;
 var log = "";
@@ -27,7 +39,6 @@ function Server(delimeter = "/") {
         container = new Container;
 
     function getContainer(uid) {
-
         const id = uid + "";
 
         if (!container_store.has(id))
@@ -45,10 +56,9 @@ function Server(delimeter = "/") {
 
             for (const note_store of container_store.values())
                 for (const note of note_store.values())
+                    out.data.push((new Uint8Array(note)).reduce((r, v) => r.concat([v]), []).map(v => v.toString(16)).join(":"));
 
-                    out.data.push(note);
-
-            READ_BLOCK = true
+            READ_BLOCK = true;
 
             try {
                 await fsp.writeFile(file_path, JSON.stringify(out), "utf8")
@@ -83,6 +93,7 @@ function Server(delimeter = "/") {
         container = new Container;
 
         try {
+            /*
             if (STATUS) {
 
                 if (data) {
@@ -90,15 +101,16 @@ function Server(delimeter = "/") {
                     const json = JSON.parse(data);
 
                     if (json.data)
-                        for (const note of json.data) {
+                        for (const note_data of json.data) {
+                            const buffer = (new Uint8Array(note_data.split(":").map(v => parseInt(v, 16)))).buffer;
+                            const note = noteDataFromBuffer(buffer);
                             if (note.uid) {
-                                getContainer(container.get(note.id).uid).set(note.uid, note);
-
+                                getContainer(container.get(note.id).uid).set(note.uid, buffer);
                                 uid_store.set(note.uid, note.id);
                             }
                         }
                 }
-            }
+            }*/
 
             if (data)
                 STATUS = updateDB(data);
@@ -119,11 +131,15 @@ function Server(delimeter = "/") {
             const json = JSON.parse(json_data_string);
 
             if (json.data)
-                for (const note of json.data)
+                for (const note_data of json.data) {
+                    const buffer = (new Uint8Array(note_data.split(":").map(v => parseInt(v, 16)))).buffer;
+                    const note = noteDataFromBuffer(buffer);
+
                     if (note.uid) {
-                        getContainer(container.get(note.id).uid).set(note.uid, note);
+                        getContainer(container.get(note.id).uid).set(note.uid, buffer);
                         uid_store.set(note.uid, note.id);
                     }
+                }
             return true;
         } catch (e) {
             writeError(e);
@@ -148,9 +164,9 @@ function Server(delimeter = "/") {
             getNoteFromUID: note_uid => noteFromUID(note_uid)
         },
         false
-    );  
+    );
 
-    let CPP_RUNTIME_LOADED = true;//false
+    let CPP_RUNTIME_LOADED = true; //false
 
     //const crdt_watcher = new Promise(res=>crdt({onRuntimeInitialized: function() {CPP_RUNTIME_LOADED = true; res()}}))
 
@@ -170,7 +186,7 @@ function Server(delimeter = "/") {
         async connect(json_file_path) {
 
             //Await C++ Runtime
-            if(!CPP_RUNTIME_LOADED)
+            if (!CPP_RUNTIME_LOADED)
                 await crdt_watcher;
 
             let result = false;
@@ -184,7 +200,8 @@ function Server(delimeter = "/") {
                 try {
                     await fsp.writeFile(temp, "")
                     file_path = temp;
-                    result = true;modified
+                    result = true;
+                    modified
                 } catch (e) { writeError(e) }
             }
             if (result) {
@@ -200,61 +217,72 @@ function Server(delimeter = "/") {
         }
 
         /* Stores new note or updates existing note with new values */
-        async storeNote(note_buffer) {    
+        async storeNote(note_buffer) {
+            if (!CPP_RUNTIME_LOADED)
+                await cpp_bootstrap_promise;
 
             var stored_note = null;
 
-            const note = noteDataFromBuffer(note_buffer);
-
-            const tag_value = ""
+            const tag_value = "";
 
             const
-                uid = note.uid.toString(),
+                uid = (new UID(note_buffer, 0)).toString(),
                 modified_time = Date.now();
-                
+
             stored_note = noteFromUID(uid);
 
-            if (!stored_note)
-                stored_note = { id: note.id }
+            //merge crdts
+            const note = noteDataFromBuffer(note_buffer);
 
-            const old_id = stored_note.id;
+            let old_id = note.id;
 
-            stored_note.buffer = note_buffer;
-            stored_note.modified = modified_time;
-            stored_note.uid = uid;
-            stored_note.body = note.body;
-            stored_note.id = note.id;
-            stored_note.tags = note.tags;
-            stored_note.query_data = `${note.id.split(".").pop()}  ${tag_value}`;
+            if (stored_note) {
+                const stored_note_data = noteDataFromBuffer(stored_note);
+                const note_crdt = new CRDTString(0);
+                note_crdt.fromBuffer(note.body);
+                const s_note_crdt = new CRDTString(1);
+                s_note_crdt.fromBuffer(stored_note_data.body);
+                note_crdt.merge(s_note_crdt);
+                note_crdt.toBuffer(uint8data =>
+                    note_buffer = noteDataToBuffer(note.uid, Date.now(), note.id, note.tags, uint8data)
+                )
+
+                note_crdt.destroy();
+                s_note_crdt.destroy();
+            }
 
             uid_store.set(uid, note.id);
-            
-            getContainer(container.change(old_id, note.id, delimeter).uid).set(uid, stored_note);
+
+            //var data = noteDataToBuffer(stored_note)
+            getContainer(container.change(old_id, note.id, delimeter).uid).set(uid, note_buffer);
 
             await write();
+
             return true;
         }
 
         removeNote(uid) {}
 
         async query(query_string) {
-            await read(); //Hack - mack sure store is up to date;
-            return (await queryRunner(query_string, container)).map(note => noteDataToBuffer(new UID(note.uid), note.modified, note.id, note.tags, note.body))
+
+            await read(); //Hack - make sure store is up to date;
+            
+            return (await queryRunner(query_string, container));
         }
 
         // Return a list of all uid's that a modified time greater than [date] given
-        async getUpdatedUIDs(date){
-            
+        async getUpdatedUIDs(date) {
+
             await read(); //Hack - mack sure store is up to date;
 
             const d = (new Date(date).valueOf());
 
             const out = [];
 
-            for(const store of container_store.values()){
+            for (const store of container_store.values()) {
 
-                for(const note of store.values()){
-                    if(note.modified > d)
+                for (const note of store.values()) {
+                    if (note.modified > d)
                         out.push(note.uid.toString());
                 }
             }

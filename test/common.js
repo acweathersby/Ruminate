@@ -4,7 +4,6 @@ const fsp = fs.promises;
 
 export async function fillTestData(ruminate, file = "w&p") {
     var data = "";
-
     switch (file.toLowerCase()) {
         case "uscb pop 2018":
         case "pop2018":
@@ -26,8 +25,10 @@ export async function fillTestData(ruminate, file = "w&p") {
 
     for (const entry of entries) {
         count++;
-        await ruminate.createNote(entry.id, entry.meta, entry.body);
+        await ruminate.createNote(entry.id, entry.meta.join(","), entry.body);
     }
+    console.log(1)
+
 
     ruminate.sync()
 }

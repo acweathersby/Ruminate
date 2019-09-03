@@ -12,4 +12,4 @@ emcc ./source/cpp/crdt.cpp \
 	-s MALLOC=dlmalloc \
 	-s MODULARIZE=1 \
 	-s EXPORT_ES6=1 \
-	-o ./source/cpp/crdt.asm.js
+	-o ./source/cpp/crdt.wasm.js

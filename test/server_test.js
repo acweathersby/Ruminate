@@ -118,7 +118,7 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
                 notes2[0].body.should.equal(noteC.body);
             })
 
-            it.only("store and retrieve - search", async function() {
+            it("store and retrieve - search", async function() {
 
                 const noteA = await ruminate.createNote("temp/Temp Name A", "tagA, tagB, tagC", "Message A");
                 const noteB = await ruminate.createNote("temp/Temp Name B", "tagA, tagB, tagC", "Message B");
@@ -126,7 +126,7 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
 
                 await ruminate.sync();
 
-                const notes = await ruminate.retrieve("temp/*  ? Name B && Message B");
+                const notes = await ruminate.retrieve("temp/*/Name *  ? Message B");
 
                 notes.length.should.equal(2);
 
@@ -207,9 +207,9 @@ export default function ruminate_test_suite(RuminateConstructor, ServerConstruct
             })
         })
 
-        describe("Advanced", function() {
-            this.slow(2000);
-            this.timeout(5000);
+        describe.only("Advanced", function() {
+            this.slow(200000);
+            this.timeout(500000);
 
             let total = 0;
 

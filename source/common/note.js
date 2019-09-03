@@ -48,15 +48,16 @@ function ProcessTags(tag_string_list) {
 
 export default class Note {
 	constructor(ruminate, uid, id, tags, body, refs, modified, NEED_SYNC = false) {
-		
+
 		const cr_string = ruminate.crdtString;
 
 		if(body && body.length > 0){
 			if(typeof body == "string"){
 				cr_string.insert(body);
 			}
-			else
+			else{
 				cr_string.fromBuffer(body);
+			}
 		}
 
 		this[RUMINATE_REFERENCE] = ruminate;
@@ -129,12 +130,12 @@ export default class Note {
 	[RUMINATE_NOTE_PREPARE_FOR_SERVER]() {
 
 		if (this[RUMINATE_NOTE_NEED_UPDATE]) {
-			const list = [];
+//			const list = [];
 
-			for (const t of this[RUMINATE_NOTE_TAGS].entries())
-				list.push(`${t[1].d?"!":""}${t[0]}${t[1].v?":"+t[1].v:""}`)
+//			for (const t of this[RUMINATE_NOTE_TAGS].entries())
+//				list.push(`${t[1].d?"!":""}${t[0]}${t[1].v?":"+t[1].v:""}`)
 
-			this[RUMINATE_NOTE_BODY].tags = list;
+//			this[RUMINATE_NOTE_BODY].tags = list;
 			this[RUMINATE_NOTE_NEED_UPDATE] = false;
 		}
 
@@ -307,8 +308,7 @@ export default class Note {
 			var strings = [],
 				start = 0,
 				body = this.body;
-
-			for (const junction of reducer(whind(note.body))) {
+			for (const junction of reducer(whind(note.cr_string.value))) {
 
 				strings.push(body.slice(start, junction.start))
 
