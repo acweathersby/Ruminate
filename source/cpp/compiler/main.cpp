@@ -12,16 +12,14 @@ using namespace HC_TEMP;
 
 int main(int param_len, char *  params[]){
 	
-	std::cout << std::endl << "test" << std::endl;
-
-	wstring str(L"as/div/test/");
+	wstring str(L"as/div/test/test?ds");
 
 	Token tk(str);
 	tk.IGNORE_WHITE_SPACE = false;
 	tk.reset();
 	//*
 	try{
-		void * node = parse(
+		auto buffer = parse<HC_TEMP::Allocator>(
 			tk,
 			symbol_lu,
 			state_lookup,
@@ -30,9 +28,9 @@ int main(int param_len, char *  params[]){
 			error_actions
 		);
 
-		std::cout  << node << std::endl;
+		auto node = (buffer.getRootObject());
 
-		std::wcout << (* (HC_NODES::QueryBodyNode *) node) << endl;
+		std::wcout << (node) << endl;
 	}catch(int e){
 		std::cout << e <<std::endl;
 	}

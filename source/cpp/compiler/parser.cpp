@@ -73,7 +73,77 @@ int getToken(Token& tk, const SymbolLookup& sym_lu) {
 	}
 };
 
-void * parse(
+/*
+	Provides a buffer to hold output data from parser.
+	Allows the instantaneous freeing of all parse result data
+	provided that all objects were allocated through this mechanism. 
+*/
+template <class T>
+class ParseBuffer(){
+	void * buffer = nullptr;
+
+	unsigned allocation_pointer = 0;
+
+	ParseBuffer(size_t size){
+		if(size == 0)			
+			buffer = nullptr;
+		else
+			buffer = malloc(buffer);
+	}
+
+	~ParseBuffer(){
+		delete buffer;
+	};
+
+	T& operator * 
+
+	Buffer
+	alloc 
+	void free()
+
+}
+
+enum class ParseErrorCode : int
+{	
+	InvalidToken,
+	ErrorStateReached,
+	InvalidGotoState,
+	UnexpectedEndOfOutput
+};
+
+/** 
+	Sets up buffer and runs checks before running the parser.
+	Handles parser exceptions. Deconstructs buffer and isses a
+	void buffer if necessary. 
+**/
+template <class T>
+ParseBuffer<T>& parse(
+    Token& tk,
+    const SymbolLookup& sym_lu,
+    int * state_table[],
+    int * goto_lu[],
+    const StateAction * state_actions,
+    const ErrorAction * error_actions
+){
+	try{
+		ParseBuffer<T> * buffer = new ParseBuffer<T>(4096);
+	}catch(ParseErrorCode error_code){
+		switch(error_code){
+			case ParseErrorCode::InvalidToken:
+			break;
+			case ParseErrorCode::ErrorStateReached:
+			break;
+			case ParseErrorCode::InvalidGotoState:
+			break;
+			case ParseErrorCode::UnexpectedEndOfOutput:
+			break;
+		}
+	}
+}
+
+
+ParseBuffer<T>& parseRunner(
+	ParseBuffer<T>& buffer, 
     Token& tk,
     const SymbolLookup& sym_lu,
     int * state_table[],
@@ -82,6 +152,7 @@ void * parse(
     const ErrorAction * error_actions
 )
 {
+
 	void * output[100];
 
 	unsigned active_states[100];
@@ -105,10 +176,8 @@ void * parse(
 
 		cout << endl << "==========================================" << endl;
 
-		if (token_index < 0) {
-			throw 101;
-		}
-
+		if (token_index < 0) throw ParseErrorCode::InvalidToken;
+		
 		wcout << L"Token Text " << tk << L" ti " << token_index <<  L" Offset " << tk.offset << endl ;
 		//cout << "State Pointe " << state_pointer << endl;
 		cout << "Active State " <<  active_states[state_pointer] << endl;
@@ -173,7 +242,7 @@ void * parse(
 
 		switch (action & 3) {
 		case 0:
-			throw 104;
+			throw ParseErrorCode::ErrorStateReached;
 			break;
 		case 1: //ACCEPT
 			goto complete;
@@ -194,7 +263,7 @@ void * parse(
 			int goto_state = goto_lu[active_states[state_pointer]][(action >> 10)];
 
 			if (goto_state < 0)
-				throw 102;
+				throw ParseErrorCode::InvalidGotoState;
 
 			cout << "REduce " << ((action & 0x3FC) >> 1) << " "  << goto_state << endl;
 
@@ -206,10 +275,10 @@ void * parse(
 	}
 
 	if (tk.END)
-		throw 103;
+		throw ParseErrorCode::UnexpectedEndOfOutput;
 
 complete:
 
-	return output[0];
+	return buffer;
 };
 }

@@ -4,207 +4,433 @@
 #include <vector>
 #include <cstring>
 #include "./tokenizer.h"
+#include "./node_utils.h"
 
 namespace HC_NODES {
-	using namespace HC_Tokenizer;
-	using namespace std;
+using namespace HC_Tokenizer;
+using namespace std;
 
-	struct ContainerIdentifier;
+struct Node;
+struct ContainerIdentifier;
+
+typedef vector<ContainerIdentifier *> ContainerList;
+typedef vector<Node *> SortList;
+
+enum class NodeType : char {
+	Undefined,
+	And,
+	Or,
+	Not,
+	Created,
+	Modified,
+	Size,
+	Tag,
+	ID,
+	Sentence,
+	ContainerID,
+	FilterClause,
+	ContainerClause,
+	SortClause,
+	QueryBody
+};
+
+
+struct Node {
+
+	NodeType type = NodeType::Undefined;
+
+	friend wostream& operator<<(wostream& os, const Node& dt) {
+		return os << "Node" << (char)dt.type;
+	}
+};
+
+struct Sentence : public Node {
+	wstring * string;
+
+	Sentence(wstring * str) : Node(), string(str) { type = NodeType::Sentence;}
+
+	friend wostream& operator<<(wostream& os, const Sentence& dt) {
+		return os << "{sentence: \"" << (*dt.string) << "\"}";
+	}
+};
+
+struct Identifier : public Sentence {
+	Identifier(wstring * str) : Sentence(str) {type = NodeType::ID;}
+	friend wostream& operator<<(wostream& os, const Identifier& dt) {
+		return os << "{id: \"" << (*dt.string) << "\"}";
+	}
+};
+
+struct ContainerIdentifier : public Sentence {
+
+	ContainerIdentifier(wstring * str) : Sentence(str) {type = NodeType::ContainerID;}
+
+	friend wostream& operator<<(wostream& os, const ContainerIdentifier& dt) {
+		return os << "{ctr-id: \"" << (*dt.string) << "\"}";
+	}
+};
+
+struct BinaryExpression : public Node {
+	Node * left;
+	Node * right;
+	BinaryExpression(Node * l, Node * r) : Node(), left(l), right(r) {}
+};
+
+struct NotExpression : public Node { Node * expr; NotExpression(Node * e) : Node(), expr(e) {type = NodeType::Not;}};
+struct AndExpression : public BinaryExpression {	AndExpression(Node * l, Node * r) : BinaryExpression(l, r) {type = NodeType::And;}};
+struct OrExpression : public BinaryExpression {	OrExpression(Node * l, Node * r) : BinaryExpression(l, r) {type = NodeType::Or;}};
+
+struct Comparison {
 	
-	typedef vector<ContainerIdentifier *> ContainerList;
-
-	struct Node{
-
-		unsigned type = 0;
-
-		friend wostream& operator<<(wostream& os, const Node& dt){
-			return os << "Node" << dt.type;
-		}
+	enum Type {
+		ID,
+		Value, 
+		MoreThan,
+		LessThan,
+		Range,
+		Date
 	};
 
-	struct ContainerIdentifier : public Node{
-		wstring * string;
+	Type type;
+	Identifier * id;
+	double valueA = 0.0;
+	double valueB = 0.0;
 
-		ContainerIdentifier(wstring * str) : Node(), string(str) {
-			type = 88;
-		}
+	Comparison(Type t, Identifier * i, double a = 0.0, double b = 0.0)
+		: type(t)
+		, id(i)
+		, valueA(a)
+		, valueB(b)
+		{}
+};
 
-		friend wostream& operator<<(wostream& os, const ContainerIdentifier& dt){
-			return os << "{id: \"" << (*dt.string) << "\"}";
-		}
-	};
+struct CreatedStatement : public Node{
+	Comparison * compare;
+	bool order = 0;
+	CreatedStatement(Comparison * c, bool o) : Node(), compare(c), order(o){}
+};
 
-	struct ContainerClause : public Node{
-		
-		ContainerList& list;
+struct ModifiedStatement : public Node{
+	Comparison * compare;
+	bool order = 0;
+	ModifiedStatement(Comparison * c, bool o) : Node(), compare(c), order(o){}
+};
 
-		ContainerClause(ContainerList& lst) : Node(), list(lst) {
-			type = 44;
-		}
+struct SizeStatement : public Node{
+	Comparison * compare;
+	bool order = 0;
+	SizeStatement(Comparison * c, bool o) : Node(), compare(c), order(o){}
+};
 
-		friend wostream& operator<<(wostream& os, const ContainerClause& dt){
-			ContainerList& list = dt.list;
-			os<< "{";
-
-			for(auto itr = list.cbegin(); itr != list.cend(); itr++){
-				os << "[" << (**itr) << "]";
-			}
-
-			return os << "}";
-		}
-	};
-
-	struct QueryBodyNode : public Node{
-		
-		ContainerClause * container;
-
-		QueryBodyNode(ContainerClause * ctr) : Node() , container(ctr) {
-			type = 22;
-		}
-
-		friend wostream& operator<<(wostream& os, const QueryBodyNode& dt) {
-			return os << "{ctr:"<< (*dt.container) <<"} ";
-		}
-	};
+struct TagStatement : public Node{
+	Comparison * compare;
+	bool order = 0;
+	TagStatement(Comparison * c, bool o) : Node(), compare(c), order(o){}
+};
 
 
+struct SortClause : public Node {
 
-	/****************************/
+	SortList* list;
 
-	void * QueryBody(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output){
-
-		cout << "===== QueryBody ===== " << bitfield << " jiving" << endl;
-
-		return new QueryBodyNode((ContainerClause *)output[output_offset]);
+	SortClause(SortList* lst) : Node(), list(lst) {
+		type = NodeType::SortClause;
 	}
 
-	void * ContainerClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
+	friend wostream& operator<<(wostream& os, const SortClause& dt) {
+		return os << "sort";
+	}
+};
+
+struct FilterClause : public Node {
+
+	Node * expr;
+
+	FilterClause(Node * e) : Node(), expr(e) {
+		type = NodeType::FilterClause;
+	}
+
+	friend wostream& operator<<(wostream& os, const FilterClause& dt) {
+		return os << "filter";
+	}
+};
+
+struct ContainerClause : public Node {
+
+	ContainerList* list;
+	Identifier* id;
+
+	ContainerClause(ContainerList* lst, Identifier* id) : Node(), list(lst), id(id) {
+		type = NodeType::ContainerClause;
+	}
+
+	friend wostream& operator<<(wostream& os, const ContainerClause& dt) {
+		
+		ContainerList& list = *dt.list;
+
+		os << "{";
+
+		if (dt.id) {
+			os << *dt.id;
+		}
+
+		for (auto itr = list.cbegin(); itr != list.cend(); itr++) {
+			os << "[" << (**itr) << "]";
+		}
+
+		return os << "}";
+	}
+};
+
+struct QueryBodyNode : public Node {
+
+	ContainerClause * container;
+	FilterClause * filter;
+	SortClause * sort;
+
+	QueryBodyNode(
+	    ContainerClause * ctr,
+	    FilterClause * fltr,
+	    SortClause * srt
+	) 	: Node()
+		, container(ctr)
+		, filter(fltr)
+		, sort(srt)
+	{
+		type = NodeType::QueryBody;
+	}
+
+	friend wostream& operator<<(wostream& os, const QueryBodyNode& dt) {
+		os << dt.container << endl;
+		os << dt.filter << endl;
+		os << dt.sort << endl;
+		return os << "{ctr:" << (*dt.container) << "} ";
+	}
+};
+
+
+/****************************/
+template<class Allocator>
+void * QueryBody(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+	OptionalNodes<struct ContainerClause *, struct FilterClause *, struct SortClause *> options(bitfield, output_offset, output);
+
+	cout << options.a << " " << options.b << " " << options.c << endl;
+
+	return new(*allocator) QueryBodyNode(options.a, options.b, options.c);
+}
+
+/**** CLAUSES ****/
+template<class Allocator>
+void * ContainerClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+	OptionalNodes<int, ContainerList *, struct Identifier *> options(bitfield, output_offset, output);
+
+	return new(*allocator) struct ContainerClause(options.b, options.c);
+}
+
+template<class Allocator>
+void * FilterClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+	OptionalNodes<int, Node *> options(bitfield, output_offset, output);
+
+	return new(*allocator) struct FilterClause(options.b);
+}
+
+template<class Allocator>
+void * SortClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+	OptionalNodes<int, SortList *> options(bitfield, output_offset, output);
+
+	return new(*allocator) struct SortClause(options.b);
+}
+
+
+template<class Allocator>
+void * ContainerIdentifierList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+	ContainerList * ctr = NULL;
+
+
+
+	if (reduce_size == 1) {
+		ctr = new(*allocator) ContainerList;
+		ctr->push_back((ContainerIdentifier *)output[output_offset]);
+	} else {
+		ctr = (ContainerList *) output[output_offset];
+		ctr->push_back((ContainerIdentifier *)output[output_offset + 1]);
+	}
+
+
+
+	return ctr;
+}
+
+template<class Allocator>
+void * SortStatementList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	SortList * ctr = NULL;
+
+	if (reduce_size == 1) {
+		ctr = new(*allocator) SortList;
+		ctr->push_back((Node *)output[output_offset]);
+	} else {
+		ctr = (SortList *) output[output_offset];
+		ctr->push_back((Node *)output[output_offset + 2]);
+	}
+
+	return ctr;
+}
+
+template<class Allocator>
+void * ContainerIdentifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return output[output_offset];
+}
+
+
+template<class Allocator>
+void * AndNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return new(*allocator) AndExpression((Node *) output[output_offset], (Node *) output[output_offset + 1]);
+}
+template<class Allocator>
+void * OrNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return new(*allocator) OrExpression((Node *) output[output_offset], (Node *) output[output_offset + 1]);
+}
+template<class Allocator>
+void * NotNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return new(*allocator) NotExpression((Node *) output[output_offset]);
+}
+
+template<class Allocator>
+void * WrappedExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return output[output_offset];
+}
+
+template<class Allocator>
+void * CreatedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	
-		return new struct ContainerClause(*(ContainerList *) output[output_offset]);
-	}
-	void * ContainerIdentifierList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		ContainerList * ctr = NULL;
+	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
-		if(reduce_size == 1){
-			ctr = new ContainerList;
-			ctr->push_back((ContainerIdentifier *)output[output_offset]);
-		}else{
-			ctr = (ContainerList *) output[output_offset];
-			ctr->push_back((ContainerIdentifier *)output[output_offset+1]);
-		}
+	return new(*allocator) struct CreatedStatement(options.b, options.c);
+}
 
-		cout << "--- > size " << ctr->size() << " reduce_size " << reduce_size<< endl;
+template<class Allocator>
+void * ModifiedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	
+	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
-		return ctr;
-	}
-	void * ContainerIdentifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		return new struct ContainerIdentifier((wstring *)output[output_offset]);
-	}
-	void * FilterClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "FilterClause ===================================" << endl;
-		return new int[2555];
-	}
-	void * AndNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "AndNode ===================================" << endl;
-		return new int[2555];
-	}
-	void * OrNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "OrNode ===================================" << endl;
-		return new int[2555];
-	}
-	void * NotNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "NotNode ===================================" << endl;
-		return new int[2555];
-	}
-	void * WrappedExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "WrappedExpression ===================================" << endl;
-		return new int[2555];
-	}
-	void * SortClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "SortClause ===================================" << endl;
-		return new int[2555];
-	}
-	void * SortStatementList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "SortStatementList ===================================" << endl;
-		return new int[2555];
-	}
-	void * CreatedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "CreatedStatement ===================================" << endl;
-		return new int[2555];
-	}
-	void * ModifiedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "ModifiedStatement ===================================" << endl;
-		return new int[2555];
-	}
-	void * SizeStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "SizeStatement ===================================" << endl;
-		return new int[2555];
-	}
-	void * TagStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "TagStatement ===================================" << endl;
-		return new int[2555];
-	}
-	void * ComparisonExpressionEquals(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "ComparisonExpressionEquals ===================================" << endl;
-		return new int[2555];
-	}
-	void * ComparisonExpressionMore(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "ComparisonExpressionMore ===================================" << endl;
-		return new int[2555];
-	}
-	void * ComparisonExpressionLess(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "ComparisonExpressionLess ===================================" << endl;
-		return new int[2555];
-	}
-	void * LAST(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "LAST ===================================" << endl;
-		return new int[2555];
-	}
-	void * RangeExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "RangeExpression ===================================" << endl;
-		return new int[2555];
-	}
-	void * DateExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "DateExpression ===================================" << endl;
-		return new int[2555];
-	}
-	void * OrderDescending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "OrderDescending ===================================" << endl;
-		return new int[2555];
-	}
-	void * OrderAscending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		cout << "OrderAscending ===================================" << endl;
-		return new int[2555];
-	}
-	void * Identifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		const wstring& string = tk.string;
+	return new(*allocator) struct ModifiedStatement(options.b, options.c);
+}
+template<class Allocator>
+void * SizeStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	
+	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
-		unsigned 
-			start = (unsigned long long) output[output_offset],
-			end = tk.offset;
+	return new(*allocator) struct SizeStatement(options.b, options.c);
+}
 
-		cout << start <<"-> <-"<< end << endl;
-		
-		wstring * str = new wstring(string.substr(start, end-start));
+template<class Allocator>
+void * TagStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	
+	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
-		return str;
-	}
-	void * Sentence(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		return output[ output_offset + 1 ];
-	}
-	void * StringData(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		return output[ output_offset];
-	}
-	void * StringDataVal(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		return output[ output_offset ];
-	}
-	void * EscapedValue(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		return new int[2555];
-	}
-	void * SYMBOL(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {		
-		return output[output_offset];
-	}
-	void * NUMBER(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output) {
-		return new int[2555];
-	}
+	return new(*allocator) struct TagStatement(options.b, options.c);
+}
+
+template<class Allocator>
+void * ComparisonExpressionEquals(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return new(*allocator) Comparison(Comparison::Value, nullptr, (((double *) output)[output_offset+1]));
+}
+
+template<class Allocator>
+void * ComparisonExpressionMore(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return new(*allocator) Comparison(Comparison::MoreThan, nullptr, (((double *) output)[output_offset+1]));
+}
+
+template<class Allocator>
+void * ComparisonExpressionLess(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return new(*allocator) Comparison(Comparison::LessThan, nullptr, (((double *) output)[output_offset+1]));
+}
+
+template<class Allocator>
+void * RangeExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	OptionalNodes<int, double, double> options(bitfield, output_offset, output);
+	return new(*allocator) Comparison(Comparison::Range, nullptr, options.b, options.c);
+}
+
+template<class Allocator>
+void * DateExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	OptionalNodes<int, double, double> options(bitfield, output_offset, output);
+	return new(*allocator) Comparison(Comparison::Range, nullptr, options.b, options.c);
+}
+
+template<class Allocator>
+void * OrderDescending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return (void *) 0;
+}
+
+template<class Allocator>
+void * OrderAscending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return (void *) 1;
+}
+
+template<class Allocator>
+void * Identifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	const wstring& string = tk.string;
+
+	unsigned
+	start = (unsigned long long) output[output_offset],
+	end = tk.offset;
+
+	cout << start << "-> <-" << end << endl;
+
+	wstring * str = new(*allocator) wstring(string.substr(start, end - start));
+
+	wcout << "--------------------------------------------" << *str << endl;
+
+	return new(*allocator) struct Identifier(str);
+}
+
+template<class Allocator>
+void * Sentence(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	const wstring& string = tk.string;
+
+	unsigned
+	start = (unsigned long long) output[output_offset],
+	end = tk.offset;
+
+	cout << start << "-> <-" << end << endl;
+
+	wstring * str = new(*allocator) wstring(string.substr(start, end - start));
+
+	return new(*allocator) struct Sentence(str);
+}
+
+template<class Allocator>
+void * StringData(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return output[ output_offset];
+}
+template<class Allocator>
+void * StringDataVal(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return output[ output_offset ];
+}
+template<class Allocator>
+void * EscapedValue(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return nullptr; //new(*allocator) int[2555];
+}
+template<class Allocator>
+void * SYMBOL(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return output[output_offset];
+}
+template<class Allocator>
+void * NUMBER(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	
+	((double *)output)[output_offset] = stod(tk.text());
+
+	return output[output_offset];
+}
+
+template<class Allocator>
+void * LAST(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+	return output[output_offset + reduce_size - 1];
+}
 }
