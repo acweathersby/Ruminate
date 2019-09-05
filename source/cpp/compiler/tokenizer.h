@@ -354,10 +354,6 @@ namespace HC_Tokenizer{
 		Token(wstring& s, bool PEEKING = false) : string(s){
 			
 			string_length = string.length();
-
-
-
-				cout << "test t " << PEEKING << endl;
 			
 			if(!PEEKING) next();
 		}

@@ -129,6 +129,7 @@ struct TagStatement : public Node{
 };
 
 
+
 struct SortClause : public Node {
 
 	SortList* list;
@@ -208,46 +209,43 @@ struct QueryBodyNode : public Node {
 	}
 };
 
-
-/****************************/
 template<class Allocator>
-void * QueryBody(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+struct NodeFunctions
+{
+	
+/****************************/
+
+static void * QueryBody(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
 	OptionalNodes<struct ContainerClause *, struct FilterClause *, struct SortClause *> options(bitfield, output_offset, output);
 
-	cout << options.a << " " << options.b << " " << options.c << endl;
 
 	return new(*allocator) QueryBodyNode(options.a, options.b, options.c);
 }
 
 /**** CLAUSES ****/
-template<class Allocator>
-void * ContainerClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * ContainerClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
 	OptionalNodes<int, ContainerList *, struct Identifier *> options(bitfield, output_offset, output);
 
 	return new(*allocator) struct ContainerClause(options.b, options.c);
 }
 
-template<class Allocator>
-void * FilterClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * FilterClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
 	OptionalNodes<int, Node *> options(bitfield, output_offset, output);
 
 	return new(*allocator) struct FilterClause(options.b);
 }
 
-template<class Allocator>
-void * SortClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * SortClause(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
 	OptionalNodes<int, SortList *> options(bitfield, output_offset, output);
 
 	return new(*allocator) struct SortClause(options.b);
 }
 
-
-template<class Allocator>
-void * ContainerIdentifierList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * ContainerIdentifierList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
 	ContainerList * ctr = NULL;
 
@@ -255,10 +253,10 @@ void * ContainerIdentifierList(Token& tk, unsigned reduce_size, unsigned bitfiel
 
 	if (reduce_size == 1) {
 		ctr = new(*allocator) ContainerList;
-		ctr->push_back((ContainerIdentifier *)output[output_offset]);
+		ctr->push_back((struct ContainerIdentifier *)output[output_offset]);
 	} else {
 		ctr = (ContainerList *) output[output_offset];
-		ctr->push_back((ContainerIdentifier *)output[output_offset + 1]);
+		ctr->push_back((struct ContainerIdentifier *)output[output_offset + 1]);
 	}
 
 
@@ -266,8 +264,7 @@ void * ContainerIdentifierList(Token& tk, unsigned reduce_size, unsigned bitfiel
 	return ctr;
 }
 
-template<class Allocator>
-void * SortStatementList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * SortStatementList(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	SortList * ctr = NULL;
 
 	if (reduce_size == 1) {
@@ -281,156 +278,136 @@ void * SortStatementList(Token& tk, unsigned reduce_size, unsigned bitfield, int
 	return ctr;
 }
 
-template<class Allocator>
-void * ContainerIdentifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * ContainerIdentifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return output[output_offset];
 }
 
-
-template<class Allocator>
-void * AndNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * AndNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return new(*allocator) AndExpression((Node *) output[output_offset], (Node *) output[output_offset + 1]);
 }
-template<class Allocator>
-void * OrNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * OrNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return new(*allocator) OrExpression((Node *) output[output_offset], (Node *) output[output_offset + 1]);
 }
-template<class Allocator>
-void * NotNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+static void * NotNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return new(*allocator) NotExpression((Node *) output[output_offset]);
 }
 
-template<class Allocator>
-void * WrappedExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * WrappedExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return output[output_offset];
 }
 
-template<class Allocator>
-void * CreatedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+static void * CreatedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	
 	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
 	return new(*allocator) struct CreatedStatement(options.b, options.c);
 }
 
-template<class Allocator>
-void * ModifiedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+static void * ModifiedStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	
 	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
 	return new(*allocator) struct ModifiedStatement(options.b, options.c);
 }
-template<class Allocator>
-void * SizeStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+static void * SizeStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	
 	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
 	return new(*allocator) struct SizeStatement(options.b, options.c);
 }
 
-template<class Allocator>
-void * TagStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+static void * TagStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	
 	OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
 
 	return new(*allocator) struct TagStatement(options.b, options.c);
 }
 
-template<class Allocator>
-void * ComparisonExpressionEquals(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+static void * ComparisonExpressionEquals(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return new(*allocator) Comparison(Comparison::Value, nullptr, (((double *) output)[output_offset+1]));
 }
 
-template<class Allocator>
-void * ComparisonExpressionMore(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+static void * ComparisonExpressionMore(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return new(*allocator) Comparison(Comparison::MoreThan, nullptr, (((double *) output)[output_offset+1]));
 }
 
-template<class Allocator>
-void * ComparisonExpressionLess(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * ComparisonExpressionLess(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return new(*allocator) Comparison(Comparison::LessThan, nullptr, (((double *) output)[output_offset+1]));
 }
 
-template<class Allocator>
-void * RangeExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * RangeExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	OptionalNodes<int, double, double> options(bitfield, output_offset, output);
 	return new(*allocator) Comparison(Comparison::Range, nullptr, options.b, options.c);
 }
 
-template<class Allocator>
-void * DateExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * DateExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	OptionalNodes<int, double, double> options(bitfield, output_offset, output);
 	return new(*allocator) Comparison(Comparison::Range, nullptr, options.b, options.c);
 }
 
-template<class Allocator>
-void * OrderDescending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * OrderDescending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return (void *) 0;
 }
 
-template<class Allocator>
-void * OrderAscending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * OrderAscending(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return (void *) 1;
 }
 
-template<class Allocator>
-void * Identifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * Identifier(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	const wstring& string = tk.string;
 
 	unsigned
-	start = (unsigned long long) output[output_offset],
-	end = tk.offset;
-
-	cout << start << "-> <-" << end << endl;
+	
+		start = (unsigned long long) output[output_offset],
+		
+		end = tk.offset;
 
 	wstring * str = new(*allocator) wstring(string.substr(start, end - start));
-
-	wcout << "--------------------------------------------" << *str << endl;
 
 	return new(*allocator) struct Identifier(str);
 }
 
-template<class Allocator>
-void * Sentence(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * Sentence(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	const wstring& string = tk.string;
 
 	unsigned
 	start = (unsigned long long) output[output_offset],
 	end = tk.offset;
 
-	cout << start << "-> <-" << end << endl;
 
 	wstring * str = new(*allocator) wstring(string.substr(start, end - start));
 
 	return new(*allocator) struct Sentence(str);
 }
 
-template<class Allocator>
-void * StringData(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * StringData(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return output[ output_offset];
 }
-template<class Allocator>
-void * StringDataVal(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * StringDataVal(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return output[ output_offset ];
 }
-template<class Allocator>
-void * EscapedValue(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * EscapedValue(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return nullptr; //new(*allocator) int[2555];
 }
-template<class Allocator>
-void * SYMBOL(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * SYMBOL(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return output[output_offset];
 }
-template<class Allocator>
-void * NUMBER(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * NUMBER(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	
 	((double *)output)[output_offset] = stod(tk.text());
 
 	return output[output_offset];
 }
 
-template<class Allocator>
-void * LAST(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+static void * LAST(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 	return output[output_offset + reduce_size - 1];
 }
-}
+};
+};
