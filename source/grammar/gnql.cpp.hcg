@@ -25,9 +25,7 @@
 
 <> filter_clause → 
     ( \? :? │ τf :? │ τfilter :? │ τFilter │ τFILTER :? )  
-        and_expression?                                                 ↦c ^FilterClause
-
-<> statement → and_expression           
+        and_expression?                                                 ↦c ^FilterClause        
 
 <> and_expression → or_expression
     │ or_expression && and_expression                                   ↦c ^AndNode
@@ -47,7 +45,7 @@
     │ τnot wrapped_expression                                           ↦ ^NotNode
     │ \!   wrapped_expression                                           ↦ ^NotNode
 
-<> wrapped_expression → \( statement \)                                 ↦c ^WrappedExpression
+<> wrapped_expression → \( and_expression \)                            ↦c ^WrappedExpression
     │ sentence                                                          
     │ identifier                                                        
     │ statement 
@@ -83,18 +81,18 @@
     
 <> comparison_expression → 
 
-      (τis │ τequals │ = │ τthat τis)  number                       ↦r ^ComparisonExpressionEquals
-    │ (τis │ τequals │ = │ τthat τis)  identifier                   ↦r ^ComparisonExpressionEquals
+      (τis │ τequals │ = │ τthat τis)  number                       ↦r ^ComparisonExpressionEqualsVal
+    │ (τis │ τequals │ = │ τthat τis)  identifier                   ↦r ^ComparisonExpressionEqualsId
     │ (τis τgreater τthan? │ > │ τgreater) number                   ↦r ^ComparisonExpressionMore
     │ (τis τless τthan? │ < │ τlesser) number                       ↦r ^ComparisonExpressionLess
     │ τis? range_expression                                         ↦r ^LAST
     │ τis? date_expression                                          ↦r ^LAST 
 
 <> range_expression → (τfrom) number 
-    ( (τto │ - │ τTO │ τTo │ τthrough ) number)?                    ↦r ^RangeExpression
+    ( (τto │ - │ τTO │ τTo │ τthrough ) number ↦r ^LAST )?          ↦r ^RangeExpression
 
 <> date_expression → (τon │ τdate) (string_data │ number) 
-    ( (τto │ -│ τTO │ τTo ) (string_data │ number) )?                ↦c ^DateExpression
+    ( (τto │ -│ τTO │ τTo ) (string_data │ number) ↦r ^LAST  )?     ↦c ^DateExpression
 
 <>order → (τDES │ τdes │ τdescending │ τDESCENDING │ τdown │ >)     ↦c ^OrderDescending
     │ (τASC │ τasc │ τascending │ τASCENDING │ τup │ <)             ↦c ^OrderAscending

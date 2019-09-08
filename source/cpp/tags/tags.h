@@ -3,7 +3,11 @@
 #include <vector>
 #include <cstring>
 
-namespace ruminate {
-	typedef TAG std::tuple<std::wstring, std::wstring>;
-	typedef TAGS vector<TAG>;
+namespace RUMINATE
+{
+	namespace TAG
+	{
+		typedef std::tuple<std::wstring, std::wstring> Tag;
+		typedef std::vector<Tag> Tags;
+	}
 }

@@ -110,7 +110,7 @@
 
 <> string_data → string_symbols string_data_val?                     ↦r ^StringData
 
-<> wild_card → \*
+<> wild_card → \*                                                   ↦r ^StringDataVal
 
 <> string_data_val → 
     │ string_data_val string_symbols                                ↦r ^StringDataVal

@@ -3,7 +3,6 @@
 #include <iostream>
 #include "./tokenizer.h"
 #include "./gnql_cpp.h"
-#include "./gnql_cpp.cpp"
 #include "./nodes.h"
 #include "./parser.h"
 
@@ -11,20 +10,22 @@ using HC_Tokenizer::Token;
 using HC_Parser::parse;
 using namespace HC_TEMP;
 
-typedef ParseBuffer<HC_NODES::QueryBodyNode> Allocator;
+typedef ParseBuffer<RUMINATE_QUERY_NODES::QueryBodyNode> Allocator;
 
-int main(int param_len, char *  params[]) {
+int mainOLD(int param_len, char *  params[])
+{
 
-	wstring str(L"as/div/test/test?ds");
+	wstring str(L"as/div/test/test?#tree=2");
 
 	Token tk(str);
 	tk.IGNORE_WHITE_SPACE = false;
 	tk.reset();
 	//*
 	try {
-		auto buffer = parse<Allocator,HC_TEMP::Data<Allocator,HC_NODES::NodeFunctions<Allocator>>>(tk);
 
-		auto node = (buffer.getRootObject());
+		auto buffer = parse<Allocator,HC_TEMP::Data<Allocator,RUMINATE_QUERY_NODES::NodeFunctions<Allocator>>>(tk);
+
+		auto node = buffer.getRootObject();
 
 		std::wcout << (node) << endl;
 

@@ -1,40 +1,50 @@
+#include <iostream>
+#include "./container/container.h"
+#include "./note/note.h"
+#include "./uid/uid.h"
+#include "./query/query.h"
+#include "./database/base.h"
 #include "./string/crdt.h"
 
-#ifdef JAVASCRIPT_WASM
+using namespace crdt;
+using namespace std;
+using namespace RUMINATE;
+using namespace RUMINATE::NOTE;
+using namespace RUMINATE::CONTAINER;
+using namespace RUMINATE::DB;
+using namespace RUMINATE::TAG;
+using namespace RUMINATE::QUERY;
 
-	#include <emscripten/val.h>
-	#include <emscripten/bind.h>
-	#include <emscripten.h>
+typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
+typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
+typedef Note<JSCRDTString> CRDTNote;
 
-	namespace javascript {
+int main(int c, char ** args)
+{
+	//Create a few notes and place their uids in the container catch.
 
-		using namespace crdt;
-		using namespace emscripten;
+	UID id1;
+	UID id2;
+	CRDTNote NoteA(id1);
+	CRDTNote NoteB(id2);
 
-		typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
-		typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
+	NoteA.id = L"/test/me/now/a";
+	NoteB.id = L"/test/me/now/b";
 
-		JSCRDTString *myTempPtr;
-		// Binding code
-		EMSCRIPTEN_BINDINGS(CDTString) 
-		{
-			class_<JSCRDTString>("CTString")
-			.constructor<int>()
-			.function("merge", &JSCRDTString::merge)
-			.function("split", &JSCRDTString::split, allow_raw_pointers())
-			.function("insert", &JSCRDTString::insert)
-			.function("delete", &JSCRDTString::remove)
-			.function("destroy", &JSCRDTString::destroy)
-			.function("getReferenceAtOffset", &JSCRDTString::offsetToRef) 
-			.function("getOffsetFromReference", &JSCRDTString::refToOffset)
-			.function("getNextChar", &JSCRDTString::getNextChar)
-			.function("reset", &JSCRDTString::reset)
-			.function("toBuffer", &JSCRDTString::toBuffer)
-			.function("fromBuffer", &JSCRDTString::fromBuffera)
-			.property("byteSize", &JSCRDTString::getByteSize, &JSCRDTString::setByteSize)
-			.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)
-			.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)
-			;
-		}
-	}
-#endif
+	ContainerLU<CRDTNote> container;
+	NoteDB<CRDTNote> db;
+
+	db.addNote(&NoteA);
+	db.addNote(&NoteB);
+
+	cout << sizeof(UID) << endl;
+	cout << sizeof(CRDTNote) << endl;
+	cout << sizeof(ContainerLU<CRDTNote>) << endl;
+	cout << container.containers.size() << endl;
+
+	container.addNote(NoteA);
+	container.addNote(NoteB);
+
+	unsigned count;
+	runQuery(L"/test/me/*", container, db, count);
+}

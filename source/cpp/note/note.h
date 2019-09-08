@@ -1,42 +1,68 @@
+#pragma once
+
+#include <cstring>
 #include "../uid/uid.h"
 #include "../tags/tags.h"
 
-namespace ruminate {
 
-	template <class Body>
-	class Note {
+namespace RUMINATE
+{
 
-		Tags * tags = NULL;
+	namespace NOTE
+	{
+		using namespace TAG;
+		using namespace std;
 
-		Body * body = NULL;
+		struct ContainerID {
 
-		wstring * id = NULL;
-		
-		UID uid;
-		
-		time_t modified_time;
+			wstring id;
 
-		bool SERIALIZED = false;
+			vector<wstring> ids;
 
-		Note(UID _uid, Tags * t, Body * b) 
-			:
-			uid(_uid),
-			body(b),
-			tags(t)
-			{}	
+			char size = 0;
 
-		Note(unsigned char * data){}
+			wstring operator [] (int i) {
+				return ids[i];
+			}
+		};
 
-		~Note(){
-			if(!SERIALIZED){
-				delete body;
-				delete tags;
+		template <class Body>
+		class Note
+		{
+
+		public:
+			UID uid;
+
+			wstring id;
+
+			Body * body = NULL;
+
+			Tags * tags;
+
+			time_t modified_time;
+
+			bool SERIALIZED = false;
+
+			Note(UID _uid, Tags * t = nullptr, Body * b = nullptr)
+				:
+				uid(_uid),
+				body(b),
+				tags(t)
+			{}
+
+			Note(unsigned char * data) {}
+
+			~Note() {
+				if(!SERIALIZED) {
+					delete body;
+					delete tags;
+				}
+
+				body = NULL;
+				tags = NULL;
 			}
 
-			body = NULL;
-			tags = NULL;
-		}
-
-		serialize(){};
+			void serialize() {};
+		};
 	}
 }

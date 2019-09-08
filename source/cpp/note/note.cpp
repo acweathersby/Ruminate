@@ -1,8 +1,3 @@
+#include "./note.h"
 
-#include "../uid/uid.h"
-
-namespace ruminate {
-	class note {
-		UID
-	}
-}
+using namespace RUMINATE::NOTE;
