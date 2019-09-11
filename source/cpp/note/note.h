@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <vector>
 #include "../uid/uid.h"
 #include "../tags/tags.h"
 
@@ -11,20 +12,8 @@ namespace RUMINATE
 	namespace NOTE
 	{
 		using namespace TAG;
-		using namespace std;
-
-		struct ContainerID {
-
-			wstring id;
-
-			vector<wstring> ids;
-
-			char size = 0;
-
-			wstring operator [] (int i) {
-				return ids[i];
-			}
-		};
+		using std::wstring;
+		using std::vector;
 
 		template <class Body>
 		class Note
@@ -63,6 +52,17 @@ namespace RUMINATE
 			}
 
 			void serialize() {};
+
+			const wstring id_name() const {
+				unsigned id_start = 0, i = 0;
+
+				while(i < id.size()) {
+					i++;
+					if(id[i] == L'/') id_start = i+1;
+				}
+
+				return id.substr(id_start);
+			}
 		};
 	}
 }

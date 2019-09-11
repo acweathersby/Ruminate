@@ -12,7 +12,7 @@
     </TabInfo>
     <TabInfo>
       <wxString Value="/usr/include/c++/7/bits/stl_vector.h" Name="FileName"/>
-      <int Value="214" Name="FirstVisibleLine"/>
+      <int Value="217" Name="FirstVisibleLine"/>
       <int Value="215" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
@@ -47,8 +47,8 @@
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/anthony/work/active/apps/ruminate/source/cpp/note/note.h" Name="FileName"/>
-      <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="23" Name="CurrentLine"/>
+      <int Value="25" Name="FirstVisibleLine"/>
+      <int Value="57" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>

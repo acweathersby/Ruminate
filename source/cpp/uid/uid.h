@@ -12,21 +12,24 @@ namespace RUMINATE
 
 	struct UID {
 
-		time_t created_time;
+		unsigned long long created_time;
 
 		unsigned char magic = 0b10011001;
 
 		unsigned random = 0;
 
 		UID() : random(rand()) {
-			time(&created_time);
+			time_t t;
+			time(&t);
+			created_time = t;
+			std::cout << "time: " << created_time << std::endl;
 		}
 
 		friend bool operator == (const UID& a, const UID& b) {
 			return a.created_time == b.created_time && b.random == a.random;
 		}
 
-		friend std::ostream& operator << (std::ostream& os, UID& uid) {
+		friend std::ostream& operator << (std::ostream& os, const UID& uid) {
 			return os << uid.created_time << "-" << (unsigned)uid.magic << "-" << uid.random;
 		}
 	};

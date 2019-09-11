@@ -23,6 +23,7 @@
     <VirtualDirectory Name="Query">
       <File Name="../../source/cpp/query/query.h"/>
       <File Name="../../source/cpp/query/query.cpp"/>
+      <File Name="../../source/cpp/query/container.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="Container">
       <File Name="../../source/cpp/container/container.h"/>

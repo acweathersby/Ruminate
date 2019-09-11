@@ -1,13 +1,15 @@
 #pragma once
 #include <iostream>
 #include <cstring>
-#include <map>
 #include <unordered_map>
-
-using namespace std;
 
 namespace HC_Tokenizer
 {
+	using std::wstring;
+	using std::unordered_map;
+	using std::wostream;
+	using std::cout;
+	using std::endl;
 
 	class SymbolMap : public unordered_map<wchar_t, void *>
 	{
@@ -547,6 +549,7 @@ end:
 
 			while(NORMAL_PARSE) {
 
+
 				base = offset;
 
 				length = 1;
@@ -587,7 +590,7 @@ end:
 							);
 							type = TYPE::IDENTIFIER;
 							length = offset - base;
-							break;
+
 							break;
 						case JUMP_TYPE::STRING:
 							if(!marker.PARSE_STRING) {
@@ -605,7 +608,7 @@ end:
 							while
 							(
 							    ++offset < string_length
-							    && (L' ' != string[offset])
+							    && (code == string[offset])
 							);
 							type = TYPE::WHITE_SPACE;
 							length = offset - base;
@@ -630,7 +633,6 @@ end:
 							offset += length;
 							chr = 0;
 							break;
-							break;
 						case JUMP_TYPE::SYMBOL:
 							break;
 						case JUMP_TYPE::OPERATOR:
@@ -651,6 +653,7 @@ end:
 				} else break;
 
 				if(IGNORE_WHITE_SPACE && ((unsigned)type & ((unsigned)TYPE::WHITE_SPACE | (unsigned)TYPE::NEW_LINE))) {
+
 					if(offset < string_length) {
 						type = TYPE::SYMBOL;
 						continue;
@@ -659,9 +662,11 @@ end:
 
 				break;
 			}
+
 			marker.type = type;
 			marker.offset = base;
-marker.length = (CHARACTERS_ONLY) ? (length == 0) ? 0 : 1 : length;
+			marker.length = (CHARACTERS_ONLY)
+                ? (length == 0) ? 0 : 1 : length;
 			marker.chr = chr  + base - root;
 			marker.line = line;
 

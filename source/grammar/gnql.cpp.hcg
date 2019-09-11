@@ -19,12 +19,12 @@
 <> container_identifier_list →  container_identifier_list container_identifier  ↦c ^ContainerIdentifierList
     │ container_identifier                                                      ↦c ^ContainerIdentifierList         
 
-<> container_identifier → identifier /                                         ↦c ^ContainerIdentifier
+<> container_identifier → identifier \/                                         ↦c ^ContainerIdentifier
 
 ## Filter Clause ############################################################################################
 
 <> filter_clause → 
-    ( \? :? │ τf :? │ τfilter :? │ τFilter │ τFILTER :? )  
+    ( \? :? │ τf :? │ τfilter :? │ τFilter :? │ τFILTER :? )  
         and_expression?                                                 ↦c ^FilterClause        
 
 <> and_expression → or_expression

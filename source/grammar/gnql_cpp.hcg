@@ -26,8 +26,7 @@
 <> filter_clause → 
     ( \? :? │ τf :? │ τfilter :? │ τFilter │ τFILTER :? )  
         and_expression?                                                 ↦c ^FilterClause
-
-<> statement → and_expression           
+        
 
 <> and_expression → or_expression
     │ or_expression && and_expression                                   ↦c ^AndNode
@@ -47,7 +46,7 @@
     │ τnot wrapped_expression                                           ↦r ^NotNode
     │ \!   wrapped_expression                                           ↦r ^NotNode
 
-<> wrapped_expression → \( statement \)                                 ↦c ^WrappedExpression
+<> wrapped_expression → \( and_expression \)                                 ↦c ^WrappedExpression
     │ sentence                                                          
     │ identifier                                                        
     │ statement 
@@ -93,8 +92,8 @@
 <> range_expression → (τfrom) number 
     ( (τto │ - │ τTO │ τTo │ τthrough ) number)?                    ↦r ^RangeExpression
 
-<> date_expression → (τon │ τdate) (string_data │ number) 
-    ( (τto │ -│ τTO │ τTo ) (string_data │ number) )?                ↦c ^DateExpression
+<> date_expression → (τon │ τdate) ((string_data │ number) ↦r ^DATE)
+    ( (τto │ -│ τTO │ τTo ) ((string_data │ number) ↦r ^DATE) ↦r ^LAST)?  ↦c ^DateExpression
 
 <>order → (τDES │ τdes │ τdescending │ τDESCENDING │ τdown │ >)     ↦c ^OrderDescending
     │ (τASC │ τasc │ τascending │ τASCENDING │ τup │ <)             ↦c ^OrderAscending

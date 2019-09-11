@@ -7,13 +7,13 @@
 #include "./string/crdt.h"
 
 using namespace crdt;
-using namespace std;
 using namespace RUMINATE;
 using namespace RUMINATE::NOTE;
 using namespace RUMINATE::CONTAINER;
 using namespace RUMINATE::DB;
 using namespace RUMINATE::TAG;
 using namespace RUMINATE::QUERY;
+using namespace std;
 
 typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
 typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
@@ -46,5 +46,8 @@ int main(int c, char ** args)
 	container.addNote(NoteB);
 
 	unsigned count;
-	runQuery(L"/test/me/*", container, db, count);
+	auto b = runQuery(L"/test/me/now/a? \"#dog\" AND #tree", container, db, count);
+	cout << count << endl;
+	wcout << b[0]->id << endl;
+	//wcout << b[1]->id << endl;
 }

@@ -60,7 +60,7 @@ export function QueryEngine(
 
     const default_container = [{ ids: [""] }];
 
-    /** ((new_note)(js_crawler.function))
+    /** ((new_note))[sync, js_crawler.function]
 
     This function handles queries using thread primitives to split query 
     results over multiple threads to ensure maximum throughput.

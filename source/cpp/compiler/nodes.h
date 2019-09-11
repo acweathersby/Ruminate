@@ -10,13 +10,27 @@
 namespace RUMINATE_QUERY_NODES
 {
 	using namespace HC_Tokenizer;
-	using namespace std;
+
+	using std::wstring;
+	using std::vector;
+	using std::unordered_map;
+	using std::wcout;
+	using std::cout;
+	using std::endl;
 
 	struct Node;
 	struct ContainerIdentifier;
 	typedef vector<const wstring *> IdentifierList;
 	typedef vector<ContainerIdentifier *> ContainerList;
 	typedef vector<Node *> SortList;
+
+
+	wostream& operator << (wostream& os, IdentifierList& id_list)
+	{
+		for(auto iter = id_list.begin(); iter != id_list.end(); iter++)
+			os << **iter;
+		return os;
+	}
 
 	enum class NodeType : char
 	{
@@ -46,10 +60,15 @@ namespace RUMINATE_QUERY_NODES
 
 		NodeType type = NodeType::Undefined;
 
-		friend wostream& operator<<(wostream& os, const Node& dt) {
-			return os << "Node" << (char)dt.type;
-		}
+		virtual wostream& toStream(wostream& os) const {
+			return os << "NODE";
+		};
 	};
+
+	inline wostream& operator << (wostream& os, Node& node)
+	{
+		return node.toStream(os);
+	}
 
 	struct Sentence : public Node {
 		wstring * string;
@@ -65,8 +84,8 @@ namespace RUMINATE_QUERY_NODES
 		IdentifierList & list;
 		Identifier(IdentifierList * l) : Node(), list(*l) {type = NodeType::ID;}
 
-		friend wostream& operator<<(wostream& os, const Identifier& dt) {
-			return os << "{id: \"" << "ID" << "\"}";
+		virtual wostream& toStream(wostream& os) const {
+			return	os << "{id: \"" << list << "\"}";
 		}
 	};
 
@@ -74,8 +93,12 @@ namespace RUMINATE_QUERY_NODES
 
 		ContainerIdentifier(IdentifierList * l): Identifier(l) {type = NodeType::ContainerID;}
 
-		friend wostream& operator<<(wostream& os, const ContainerIdentifier& dt) {
-			return os << "{ctnr-id: \"" << "ID" << "\"}";
+		ContainerIdentifier(Identifier& id) : Identifier(&id.list) {
+			type = NodeType::ContainerID;
+		}
+
+		virtual wostream& toStream(wostream& os) const {
+			return	os << "{ctnr-id: \"" << list << "\"}";
 		}
 
 		bool IS_WILD_CARD() {
@@ -87,10 +110,18 @@ namespace RUMINATE_QUERY_NODES
 		Node * left;
 		Node * right;
 		BinaryExpression(Node * l, Node * r) : Node(), left(l), right(r) {}
+		virtual wostream& toStream(wostream& os) const {
+			return	os << "{BINARY l:" << *left << ", r:" << *right << "}";
+		}
 	};
 
 	struct NotExpression : public Node { Node * expr; NotExpression(Node * e) : Node(), expr(e) {type = NodeType::Not;}};
-	struct AndExpression : public BinaryExpression {	AndExpression(Node * l, Node * r) : BinaryExpression(l, r) {type = NodeType::And;}};
+	struct AndExpression : public BinaryExpression {
+		AndExpression(Node * l, Node * r) : BinaryExpression(l, r) {type = NodeType::And;}
+		virtual wostream& toStream(wostream& os) const {
+			return	os << "{AND l:" << *left << ", r:" << *right << "}";
+		}
+	};
 	struct OrExpression : public BinaryExpression {	OrExpression(Node * l, Node * r) : BinaryExpression(l, r) {type = NodeType::Or;}};
 
 	struct Comparison {
@@ -115,6 +146,10 @@ namespace RUMINATE_QUERY_NODES
 			, valueA(a)
 			, valueB(b)
 		{}
+
+		friend wostream& operator << (wostream& os, const Comparison& c) {
+			return	os << "{ Comparison }";
+		}
 	};
 
 	struct CreatedStatement : public Node {
@@ -139,6 +174,10 @@ namespace RUMINATE_QUERY_NODES
 		Comparison * compare;
 		bool order = 0;
 		TagStatement(Comparison * c, bool o) : Node(), compare(c), order(o) {type = NodeType::TagStatement;}
+		virtual wostream& toStream(wostream& os) const {
+			return	os << "{TAG " << *compare << "}";
+		}
+
 	};
 
 	struct SortClause : public Node {
@@ -163,8 +202,9 @@ namespace RUMINATE_QUERY_NODES
 		}
 
 		friend wostream& operator<<(wostream& os, const FilterClause& dt) {
+			cout << (long long) dt.expr << endl;
 			if(dt.expr)
-				return os << (unsigned)dt.expr->type;
+				return os << *dt.expr;
 			return os;
 		}
 	};
@@ -260,6 +300,7 @@ namespace RUMINATE_QUERY_NODES
 
 			OptionalNodes<int, Node *> options(bitfield, output_offset, output);
 
+
 			return new(*allocator) struct FilterClause(options.b);
 		}
 
@@ -274,17 +315,13 @@ namespace RUMINATE_QUERY_NODES
 
 			ContainerList * ctr = NULL;
 
-
-
 			if (reduce_size == 1) {
 				ctr = new(*allocator) ContainerList;
-				ctr->push_back((struct ContainerIdentifier *)output[output_offset]);
+				ctr->push_back(new(output[output_offset]) struct ContainerIdentifier(* (struct Identifier*) output[output_offset]));
 			} else {
 				ctr = (ContainerList *) output[output_offset];
 				ctr->push_back((struct ContainerIdentifier *)output[output_offset + 1]);
 			}
-
-
 
 			return ctr;
 		}
@@ -308,10 +345,10 @@ namespace RUMINATE_QUERY_NODES
 		}
 
 		static void * AndNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
-			return new(*allocator) AndExpression((Node *) output[output_offset], (Node *) output[output_offset + 1]);
+			return new(*allocator) AndExpression((Node *) output[output_offset], (Node *) output[output_offset + 2]);
 		}
 		static void * OrNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
-			return new(*allocator) OrExpression((Node *) output[output_offset], (Node *) output[output_offset + 1]);
+			return new(*allocator) OrExpression((Node *) output[output_offset], (Node *) output[output_offset + 2]);
 		}
 
 		static void * NotNode(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
@@ -319,7 +356,7 @@ namespace RUMINATE_QUERY_NODES
 		}
 
 		static void * WrappedExpression(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
-			return output[output_offset];
+			return output[output_offset+1];
 		}
 
 

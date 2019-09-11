@@ -3,6 +3,7 @@
 #include  "./tokenizer.h"
 #include  "./parse_buffer.h"
 #include <stdlib.h>
+#include <unordered_map>
 
 #ifndef CRACKER_MASTER_OF_SIMBASTERS
 
@@ -10,6 +11,12 @@
 
 namespace HC_Parser
 {
+	using std::unordered_map;
+	using std::wostream;
+	using std::wstring;
+	using std::endl;
+	using std::wcout;
+	using std::cout;
 
 	using HC_Tokenizer::Token;
 	using HC_Tokenizer::TYPE;
@@ -82,6 +89,7 @@ namespace HC_Parser
 			} else {
 				//Error Recovery
 				if (token_index == (int)TOKEN_STATE::KEYWORD) {
+
 					token_index = getLookUpValue(tk.text(), sym_lu);
 					continue;
 				}

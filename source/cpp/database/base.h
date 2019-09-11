@@ -22,7 +22,7 @@ namespace RUMINATE
 				notes.insert( {note->uid, note});
 			}
 
-			Note* getNote(UID& uid) {
+			Note* getNote(const UID& uid) const {
 				auto iter = notes.find(uid);
 
 				if(iter != notes.end())

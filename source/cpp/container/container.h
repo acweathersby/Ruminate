@@ -11,7 +11,11 @@ namespace RUMINATE
 {
 	namespace CONTAINER
 	{
-		using namespace std;
+		using std::wstring;
+		using std::vector;
+		using std::unordered_map;
+		using std::cout;
+		using std::endl;
 
 		typedef vector<UID> UIDList;
 
@@ -44,7 +48,6 @@ namespace RUMINATE
 
 				ContainerLU<Note> * sub = nullptr;
 
-
 				auto iter = containers.find(str);
 
 				if(iter != containers.end()) {
@@ -71,8 +74,11 @@ namespace RUMINATE
 
 			void fillUIDBuffer(UID * buffer) const {
 				unsigned offset = 0;
-				for(auto iter = uids.begin(); iter != uids.end(); iter++)
+				for(auto iter = uids.begin(); iter != uids.end(); iter++) {
+					cout << offset << "sdf" <<  endl;
+					cout << *iter << endl;
 					buffer[offset++] = *iter;
+				}
 			}
 
 			void addContainer(const ContainerLU<Note>& container) {
