@@ -243,7 +243,7 @@ namespace crdt
 
 		unsigned op_marker = 0;
 
-		unsigned size = 8192;
+		unsigned size = 1008192;
 
 		unsigned count = 0; // Number of operations stored
 
@@ -256,13 +256,14 @@ namespace crdt
 		OPBuffer() {}
 
 		OPBuffer(unsigned size) {
-			data = new char[size];
+			data = (char *)std::malloc(size);
+			std::cout << "Data pointer:" << (unsigned *)data << std::endl;
 		}
 
 		~OPBuffer() {
-
-			if (!CLONED)
-				delete[] data;
+			std::cout << (unsigned *)data << std::endl;
+			//if (!CLONED && data != NULL)
+			//	free(data);
 		}
 
 		void copy(OPBuffer& copy_to_buffer) const {
@@ -276,8 +277,8 @@ namespace crdt
 			copy_to_buffer.count = count;
 
 			if (copy_to_buffer.size != size) {
-				delete[] copy_to_buffer.data;
-				copy_to_buffer.data = new char[size];
+				if(copy_to_buffer.data != nullptr) free(copy_to_buffer.data);
+				copy_to_buffer.data = (char *)std::malloc(size);
 			}
 
 			std::memcpy(copy_to_buffer.data, data, size);
@@ -356,14 +357,14 @@ namespace crdt
 
 			std::cout << "expanding" << size << std::endl;
 
-			char * n_buffer = new char[size << 1];
+			char * n_buffer = (char *)std::malloc(size << 1);//new char[size << 1];
 
 			if (n_buffer == NULL)
 				return false;
 
 			std::memcpy(n_buffer, data, byte_length);
 
-			delete[] data;
+			if(data != nullptr) free(data);
 
 			data = n_buffer;
 
@@ -458,13 +459,15 @@ namespace crdt
 
 		unsigned sites = 0;
 
+		int offset = 80000;
+
 		idsite site = 0;
 
 	public:
 
 
 		OPString(unsigned site)
-			: site(site), sites(site + 1), ops(8192) {
+			: site(site), sites(site + 1), ops(1008192) {
 			CharOperation op;
 			op.setValue(' ');
 			op.setIDSite(site);
@@ -484,7 +487,8 @@ namespace crdt
 
 			CharOperation prev_op;
 
-			for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next()) {
+			for (CharOperation op = ops
+			                        .current(); !ops.atEnd(); op = ops.next()) {
 				if (op.isDeleteOperation()) {
 					offset -= (unsigned) op.isOrigin(prev_op);
 				} else {
@@ -623,6 +627,33 @@ namespace crdt
 			       << ",\"ops\":" << string.ops << "}";
 		}
 
+		wchar_t operator [] (unsigned index) {
+			std::cout << "Testing" <<std::endl;
+
+			if(index < offset) {
+				offset = -1;
+				ops.reset();
+			}
+
+			CharOperation prev_op;
+
+			for (CharOperation op = ops.current(); !ops.atEnd(); op = ops.next()) {
+				if (op.isDeleteOperation()) {
+					offset -= (unsigned) op.isOrigin(prev_op);
+				} else {
+
+					if(offset == index)
+						return op.getWChar();
+
+					offset++;
+				}
+
+				prev_op = op;
+			}
+
+			return (wchar_t) 0;
+		}
+
 
 		//JS PROPERTIES
 		/*
@@ -741,44 +772,3 @@ namespace crdt
 		}
 	};
 }
-
-
-#ifdef  JAVASCRIPT_WASM
-
-#include <emscripten.h>
-#include <emscripten/bind.h>
-
-namespace javascript
-{
-
-	using namespace crdt;
-	using namespace emscripten;
-
-	typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
-	typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
-
-	JSCRDTString *myTempPtr;
-	// Binding code
-	EMSCRIPTEN_BINDINGS(CDTString)
-	{
-
-		class_<JSCRDTString>("CTString")
-		.constructor<int>()
-		.function("merge", &JSCRDTString::merge)
-		.function("split", &JSCRDTString::split, allow_raw_pointers())
-		.function("insert", &JSCRDTString::insert)
-		.function("delete", &JSCRDTString::remove)
-		.function("destroy", &JSCRDTString::destroy)
-		.function("getReferenceAtOffset", &JSCRDTString::offsetToRef)
-		.function("getOffsetFromReference", &JSCRDTString::refToOffset)
-		.function("toBuffer", &JSCRDTString::toBuffer)
-		.function("fromBuffer", &JSCRDTString::fromBuffer)
-		.property("byteSize", &JSCRDTString::getByteSize, &JSCRDTString::setByteSize)
-		.property("inspect", &JSCRDTString::getInspect, &JSCRDTString::setInspect)											// CLASS FUNCTION
-		.property("value", &JSCRDTString::getValue, &JSCRDTString::setValue)			// CLASS FUNCTION
-		//.property("x", &MyClass::getX, &MyClass::setX)							// PUBLIC PROPERTY USING getters and setters
-		//.class_function("getStringFromInstance", &MyClass::getStringFromInstance) // STATIC FUNCTION
-		;
-	}
-}
-#endif

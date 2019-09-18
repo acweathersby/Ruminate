@@ -11,6 +11,7 @@
 #include "../container/container.h"
 #include "../database/base.h"
 #include "./container.h"
+#include "./filter.h"
 
 namespace RUMINATE
 {
@@ -61,14 +62,23 @@ namespace RUMINATE
 
 						filterContainer<Note>(*(node->container), containers, db, total, node_count_size, out_B);
 					}
-				}
 
-				if(node->filter) {
+					if(node->filter) {
 
-				}
+						active_B = out_B;
 
-				if(node->sort) {
+						filterNotes<Note>(*(node->filter), active_B, out_B, total);
 
+
+
+
+
+
+					}
+
+					if(node->sort) {
+
+					}
 				}
 			} catch (int e) {
 				std::cout << e << std::endl;

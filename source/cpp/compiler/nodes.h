@@ -24,7 +24,6 @@ namespace RUMINATE_QUERY_NODES
 	typedef vector<ContainerIdentifier *> ContainerList;
 	typedef vector<Node *> SortList;
 
-
 	wostream& operator << (wostream& os, IdentifierList& id_list)
 	{
 		for(auto iter = id_list.begin(); iter != id_list.end(); iter++)

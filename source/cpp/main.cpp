@@ -31,6 +31,9 @@ int main(int c, char ** args)
 	NoteA.id = L"/test/me/now/a";
 	NoteB.id = L"/test/me/now/b";
 
+	NoteA.body.insert(0,L"This is some test text.");
+	NoteB.body.insert(0,L"This is also some test text.");
+
 	ContainerLU<CRDTNote> container;
 	NoteDB<CRDTNote> db;
 
@@ -46,8 +49,7 @@ int main(int c, char ** args)
 	container.addNote(NoteB);
 
 	unsigned count;
-	auto b = runQuery(L"/test/me/now/a? \"#dog\" AND #tree", container, db, count);
+	auto b = runQuery(L"/test/me/now/a? tree", container, db, count);
 	cout << count << endl;
 	wcout << b[0]->id << endl;
-	//wcout << b[1]->id << endl;
 }

@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Anthony
-Date                   :=10/09/19
+Date                   :=17/09/19
 CodeLitePath           :=/home/anthony/.codelite
 LinkerName             :=/usr/bin/clang++
 SharedObjectLinkerName :=/usr/bin/clang++ -shared -fPIC
@@ -60,7 +60,7 @@ AS       := /usr/bin/llvm-as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/up_up_source_cpp_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_js_entry.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_gnql_cpp.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parser.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parse_buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_query_query.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_note_note.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/up_up_source_cpp_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_js_entry.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_gnql_cpp.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parser.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parse_buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_query_query.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_note_note.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix) 
 
 
 
@@ -146,14 +146,6 @@ $(IntermediateDirectory)/up_up_source_cpp_note_note.cpp$(DependSuffix): ../../so
 
 $(IntermediateDirectory)/up_up_source_cpp_note_note.cpp$(PreprocessSuffix): ../../source/cpp/note/note.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/up_up_source_cpp_note_note.cpp$(PreprocessSuffix) ../../source/cpp/note/note.cpp
-
-$(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(ObjectSuffix): ../../source/cpp/string/crdt.cpp $(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/anthony/work/active/apps/ruminate/source/cpp/string/crdt.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(DependSuffix): ../../source/cpp/string/crdt.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(DependSuffix) -MM ../../source/cpp/string/crdt.cpp
-
-$(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(PreprocessSuffix): ../../source/cpp/string/crdt.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/up_up_source_cpp_string_crdt.cpp$(PreprocessSuffix) ../../source/cpp/string/crdt.cpp
 
 $(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix): ../../source/cpp/database/base.cpp $(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/anthony/work/active/apps/ruminate/source/cpp/database/base.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix) $(IncludePath)

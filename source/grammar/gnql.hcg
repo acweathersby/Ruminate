@@ -85,7 +85,7 @@
 <> modified_statement → 
 
     (τmodifier │ τMODIFIED) comparison_expression? order?            ↦c=>modifiednode
-
+Scanner
 <> size_statement → 
 
     (τsize │ τSIZE) comparison_expression order?                    ↦c=>sizenode
@@ -105,7 +105,7 @@
 
 <> range_expression → (τfrom) θnum 
     ( (τto │ - │ τTO │ τTo │ τthrough ) θnum ↦r { $sym2 })?         ↦r { { type: "RANGE", val : [$sym2, $sym3].map(parseFloat).sort((a,b)=>a<b ? -1:1) } }
-
+    
 <> date_expression → (τon │ τdate) (string_data │ θnum) 
     ( (τto │ -│ τTO │ τTo ) (string_data │ θnum) ↦r { $sym2 })?     ↦r { { type: "DATE",  val : [$sym2,$sym3].map(d=>new Date(d).valueOf()).sort((a,b)=>a<b ? -1:1) }}
 

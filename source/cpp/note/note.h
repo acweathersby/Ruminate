@@ -24,32 +24,23 @@ namespace RUMINATE
 
 			wstring id;
 
-			Body * body = NULL;
+			Body body;
 
-			Tags * tags;
+			Tags tags;
 
 			time_t modified_time;
 
 			bool SERIALIZED = false;
 
-			Note(UID _uid, Tags * t = nullptr, Body * b = nullptr)
+			Note(UID _uid, unsigned site = 0)
 				:
-				uid(_uid),
-				body(b),
-				tags(t)
+				body(site),
+				uid(_uid)
 			{}
 
 			Note(unsigned char * data) {}
 
-			~Note() {
-				if(!SERIALIZED) {
-					delete body;
-					delete tags;
-				}
-
-				body = NULL;
-				tags = NULL;
-			}
+			~Note() {}
 
 			void serialize() {};
 

@@ -13,7 +13,7 @@
   ../../source/cpp/./query/../tags/tags.h \
   ../../source/cpp/./query/../database/base.h \
   ../../source/cpp/./query/./container.h \
-  ../../source/cpp/./string/crdt.h
+  ../../source/cpp/./query/./filter.h ../../source/cpp/./string/crdt.h
 
 ../../source/cpp/./container/container.h:
 
@@ -42,5 +42,7 @@
 ../../source/cpp/./query/../database/base.h:
 
 ../../source/cpp/./query/./container.h:
+
+../../source/cpp/./query/./filter.h:
 
 ../../source/cpp/./string/crdt.h:

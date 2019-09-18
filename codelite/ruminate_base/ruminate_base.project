@@ -24,6 +24,7 @@
       <File Name="../../source/cpp/query/query.h"/>
       <File Name="../../source/cpp/query/query.cpp"/>
       <File Name="../../source/cpp/query/container.h"/>
+      <File Name="../../source/cpp/query/filter.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="Container">
       <File Name="../../source/cpp/container/container.h"/>
@@ -33,7 +34,6 @@
       <File Name="../../source/cpp/note/note.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="String">
-      <File Name="../../source/cpp/string/crdt.cpp"/>
       <File Name="../../source/cpp/string/crdt.h"/>
       <File Name="../../source/cpp/string/opid.h"/>
     </VirtualDirectory>

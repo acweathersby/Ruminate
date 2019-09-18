@@ -37,7 +37,6 @@ namespace RUMINATE
 
 				const wstring& str = *id.list[i];
 
-
 				if (str == L"*") {
 					if (i == id.list.size())
 						return true;
