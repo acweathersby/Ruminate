@@ -170,9 +170,10 @@ namespace RUMINATE_QUERY_NODES
 	};
 
 	struct TagStatement : public Node {
+		Identifier * id;
 		Comparison * compare;
 		bool order = 0;
-		TagStatement(Comparison * c, bool o) : Node(), compare(c), order(o) {type = NodeType::TagStatement;}
+		TagStatement(Identifier * i, Comparison * c, bool o) : Node(), id(i), compare(c), order(o) {type = NodeType::TagStatement;}
 		virtual wostream& toStream(wostream& os) const {
 			return	os << "{TAG " << *compare << "}";
 		}
@@ -376,7 +377,7 @@ namespace RUMINATE_QUERY_NODES
 
 		static void * SizeStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
-			OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
+			OptionalNodes<int,Comparison *, bool> options(bitfield, output_offset, output);
 
 			return new(*allocator) struct SizeStatement(options.b, options.c);
 		}
@@ -384,9 +385,9 @@ namespace RUMINATE_QUERY_NODES
 
 		static void * TagStatement(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
-			OptionalNodes<int, Comparison *, bool> options(bitfield, output_offset, output);
+			OptionalNodes<int, struct Identifier *, Comparison *, bool> options(bitfield, output_offset, output);
 
-			return new(*allocator) struct TagStatement(options.b, options.c);
+			return new(*allocator) struct TagStatement(options.b, options.c, options.d);
 		}
 
 

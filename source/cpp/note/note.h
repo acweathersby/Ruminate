@@ -20,13 +20,13 @@ namespace RUMINATE
 		{
 
 		public:
-			UID uid;
-
-			wstring id;
+			TagContainer tags;
 
 			Body body;
 
-			Tags tags;
+			UID uid;
+
+			wstring id;
 
 			time_t modified_time;
 

@@ -5,770 +5,785 @@
 
 
 
-namespace crdt
+namespace RUMINATE
 {
-
-	typedef unsigned short opvalue;
-	typedef unsigned char idsite;
-	typedef unsigned int idclock;
-	typedef unsigned int idindex;
-
-	static wchar_t uber_buffer[100000];
-
-	struct OP_ID {
-		idclock clock = 0;
-		idsite site = 0;
-
-		bool compareVectorClock(const OP_ID& other) const {
-			return other.site == site && other.clock == clock;
-		}
-
-		int compareClock(const OP_ID& other) const {
-			return other.site < site ?  -1 : other.site > site ? 1 : other.clock < clock ? -1 : other.clock > clock ? 1 :  0;
-		}
-
-		friend std::ostream& operator << (std::ostream& os, const OP_ID& i) {
-			return os << "{\"site\":" << (unsigned short)i.site << ",\"clock\":" << i.clock << "}";
-		}
-
-		friend bool operator == (const OP_ID& a, const OP_ID& b) {
-			return a.clock == b.clock && a.site == b.site;
-		}
-
-		friend bool operator != (const OP_ID& a, const OP_ID& b) {
-			return !( b == a);
-		}
-
-		bool follows(const OP_ID& id) const {
-			return id.site == site && id.clock == clock - 1;
-		}
-		unsigned getSite() const {
-			return site;
-		}
-		unsigned getClock() const {
-			return clock;
-		}
-		void setSite(idsite s) {site = s;}
-		void setClock(idclock t) {clock = t;}
-	};
+	namespace STRING
+	{
 
 
-	struct ASCII {
 
-		char val;
+		typedef unsigned short opvalue;
+		typedef unsigned char idsite;
+		typedef unsigned int idclock;
+		typedef unsigned int idindex;
+
+		static wchar_t uber_buffer[100000];
+
+		struct OP_ID {
+			idclock clock = 0;
+			idsite site = 0;
+
+			bool compareVectorClock(const OP_ID& other) const {
+				return other.site == site && other.clock == clock;
+			}
+
+			int compareClock(const OP_ID& other) const {
+				return other.site < site ?  -1 : other.site > site ? 1 : other.clock < clock ? -1 : other.clock > clock ? 1 :  0;
+			}
+
+			friend std::ostream& operator << (std::ostream& os, const OP_ID& i) {
+				return os << "{\"site\":" << (unsigned short)i.site << ",\"clock\":" << i.clock << "}";
+			}
+
+			friend bool operator == (const OP_ID& a, const OP_ID& b) {
+				return a.clock == b.clock && a.site == b.site;
+			}
+
+			friend bool operator != (const OP_ID& a, const OP_ID& b) {
+				return !( b == a);
+			}
+
+			bool follows(const OP_ID& id) const {
+				return id.site == site && id.clock == clock - 1;
+			}
+			unsigned getSite() const {
+				return site;
+			}
+			unsigned getClock() const {
+				return clock;
+			}
+			void setSite(idsite s) {site = s;}
+			void setClock(idclock t) {clock = t;}
+		};
 
 
-		void setFromWChar(wchar_t c) {
-			val = c & 0xFF;
-		}
+		struct ASCII {
 
-		void setFromChar(char c) {
-			val = c;
-		}
-		unsigned byteSize() const {
-			return 1;
-		}
+			char val;
 
 
-		wchar_t getWChar() const {
-			return (wchar_t) val;
-		}
+			void setFromWChar(wchar_t c) {
+				val = c & 0xFF;
+			}
 
-		char getChar() const {
-			return val;
-		}
+			void setFromChar(char c) {
+				val = c;
+			}
+			unsigned byteSize() const {
+				return 1;
+			}
 
-		bool isDelete() const {
-			return 0 == val;
-		}
 
-		static const unsigned max_size() {
-			return 1;
-		}
+			wchar_t getWChar() const {
+				return (wchar_t) val;
+			}
 
-		unsigned unsignedValue() const {
-			return  (unsigned) val;
-		}
-	};
+			char getChar() const {
+				return val;
+			}
 
-	template  <class Encoding>
-	struct OPChar {
+			bool isDelete() const {
+				return 0 == val;
+			}
 
-		Encoding data;
+			static const unsigned max_size() {
+				return 1;
+			}
 
-		void setFromWChar(wchar_t c) {
-			data.setFromWChar(c);
-		}
+			unsigned unsignedValue() const {
+				return  (unsigned) val;
+			}
+		};
 
-		void setFromChar(char c) {
-			data.setFromChar(c);
-		}
+		template  <class Encoding>
+		struct OPChar {
 
-		wchar_t getWChar() const {
-			return data.getWChar();
-		}
+			Encoding data;
 
-		char getChar() const {
-			return data.getChar();
-		}
+			void setFromWChar(wchar_t c) {
+				data.setFromWChar(c);
+			}
 
-		bool isDeleteOperation() const {
-			return 0 == data.unsignedValue();
-		}
+			void setFromChar(char c) {
+				data.setFromChar(c);
+			}
 
-		unsigned byteSize() const {
-			return data.byteSize();
-		}
+			wchar_t getWChar() const {
+				return data.getWChar();
+			}
 
-		static const unsigned max_size() {
-			return sizeof(Encoding);
-		}
-	};
+			char getChar() const {
+				return data.getChar();
+			}
 
-	template  <class MetaStamp, class Operator>
-	struct CharOp {
+			bool isDeleteOperation() const {
+				return 0 == data.unsignedValue();
+			}
 
-		MetaStamp id = MetaStamp();
-		MetaStamp origin = MetaStamp();
-		Operator data = Operator();
+			unsigned byteSize() const {
+				return data.byteSize();
+			}
 
-		CharOp() {}
+			static const unsigned max_size() {
+				return sizeof(Encoding);
+			}
+		};
 
-		CharOp(unsigned ref) {
-			unsigned clock = ref >> 4;
-			unsigned site = ref & 0xF;
+		template  <class MetaStamp, class Operator>
+		struct CharOp {
 
-			id.site = site;
-			id.clock = clock;
-		}
+			MetaStamp id = MetaStamp();
+			MetaStamp origin = MetaStamp();
+			Operator data = Operator();
 
-		static const unsigned max_size() {
-			return sizeof(MetaStamp) * 2 + sizeof(Operator);
-		}
+			CharOp() {}
 
-		unsigned toUnsigned() const {
-			return (unsigned) ((id.site & 0xF) | id.clock << 4);
-		}
+			CharOp(unsigned ref) {
+				unsigned clock = ref >> 4;
+				unsigned site = ref & 0xF;
 
-		bool isDeleteOperation() const {
-			return data.isDeleteOperation();
-		}
+				id.site = site;
+				id.clock = clock;
+			}
 
-		unsigned byteSize() const {
-			return data.byteSize() + sizeof(MetaStamp) * 2;
-		}
+			static const unsigned max_size() {
+				return sizeof(MetaStamp) * 2 + sizeof(Operator);
+			}
 
-		void setValue(wchar_t val) {
-			data.setFromWChar(val);
-		}
+			unsigned toUnsigned() const {
+				return (unsigned) ((id.site & 0xF) | id.clock << 4);
+			}
 
-		wchar_t getValue() const {
-			return data.getWChar();
-		}
+			bool isDeleteOperation() const {
+				return data.isDeleteOperation();
+			}
 
-		wchar_t getWChar() const {
-			return data.getWChar();
-		}
+			unsigned byteSize() const {
+				return data.byteSize() + sizeof(MetaStamp) * 2;
+			}
 
-		void setIDSite(const unsigned v) {
-			id.site = v;
-		}
+			void setValue(wchar_t val) {
+				data.setFromWChar(val);
+			}
 
-		void setIDClock(const unsigned v) {
-			id.clock = v;
-		}
+			wchar_t getValue() const {
+				return data.getWChar();
+			}
 
-		void setOriginSite(const unsigned v) {
-			origin.site = v;
-		}
+			wchar_t getWChar() const {
+				return data.getWChar();
+			}
 
-		void setOriginClock(const unsigned v) {
-			origin.clock = v;
-		}
+			void setIDSite(const unsigned v) {
+				id.site = v;
+			}
 
-		unsigned char getIDSite() const {
-			return id.site;
-		}
+			void setIDClock(const unsigned v) {
+				id.clock = v;
+			}
 
-		unsigned getIDClock() const {
-			return id.clock;
-		}
+			void setOriginSite(const unsigned v) {
+				origin.site = v;
+			}
 
-		unsigned char getOriginSite() const {
-			return origin.site;
-		}
+			void setOriginClock(const unsigned v) {
+				origin.clock = v;
+			}
 
-		unsigned getOriginClock() const {
-			return origin.clock;
-		}
+			unsigned char getIDSite() const {
+				return id.site;
+			}
 
-		bool isOrigin(const CharOp<MetaStamp, Operator>& op) const {
-			return (op.getIDClock() == getOriginClock() && op.getIDSite() == getOriginSite());
-		}
+			unsigned getIDClock() const {
+				return id.clock;
+			}
 
-		bool isSame(const CharOp<MetaStamp, Operator>& op) const {
-			return ((int)op.getIDClock() - (int)getIDClock() + (int)op.getIDSite() - (int)getIDSite()) == 0;
-		}
+			unsigned char getOriginSite() const {
+				return origin.site;
+			}
 
-		friend std::ostream& operator << (std::ostream& os, const CharOp<MetaStamp, Operator>& op) {
-			if (op.isDeleteOperation())
-				return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"DEL\"}";
-			return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"" << (char) op.getValue() << "\"}";
-			return os;
-		}
+			unsigned getOriginClock() const {
+				return origin.clock;
+			}
 
-		/***** Compares the ids site and clock value *****/
-		friend bool operator == (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
-			return a.isSame(b);
-		}
+			bool isOrigin(const CharOp<MetaStamp, Operator>& op) const {
+				return (op.getIDClock() == getOriginClock() && op.getIDSite() == getOriginSite());
+			}
 
-		/***** Compares the ids site and clock value *****/
-		friend bool operator < (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
-			return  a.getIDClock() < b.getIDClock() || (a.getIDClock() == b.getIDClock() && a.getIDSite() < b.getIDSite());
-		}
+			bool isSame(const CharOp<MetaStamp, Operator>& op) const {
+				return ((int)op.getIDClock() - (int)getIDClock() + (int)op.getIDSite() - (int)getIDSite()) == 0;
+			}
 
-		/***** Compares the ids site and clock value *****/
-		friend bool operator > (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
-			return  a.getIDClock() > b.getIDClock() || (a.getIDClock() == b.getIDClock() && a.getIDSite() > b.getIDSite());
-		}
+			friend std::ostream& operator << (std::ostream& os, const CharOp<MetaStamp, Operator>& op) {
+				if (op.isDeleteOperation())
+					return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"DEL\"}";
+				return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"" << (char) op.getValue() << "\"}";
+				return os;
+			}
+
+			/***** Compares the ids site and clock value *****/
+			friend bool operator == (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
+				return a.isSame(b);
+			}
+
+			/***** Compares the ids site and clock value *****/
+			friend bool operator < (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
+				return  a.getIDClock() < b.getIDClock() || (a.getIDClock() == b.getIDClock() && a.getIDSite() < b.getIDSite());
+			}
+
+			/***** Compares the ids site and clock value *****/
+			friend bool operator > (const CharOp<MetaStamp, Operator>& a, const CharOp<MetaStamp, Operator>& b) {
+				return  a.getIDClock() > b.getIDClock() || (a.getIDClock() == b.getIDClock() && a.getIDSite() > b.getIDSite());
+			}
 
 
 //		CharOp<MetaStamp, Operator>& operator= (char& c ){ return  * ( CharOp<MetaStamp, Operator> * ) &c;}
-	};
+		};
 
-	template  <class Operator>
-	struct OPBuffer {
+		template  <class Operator>
+		struct OPBuffer {
 
-		unsigned byte_length = 0;
+			unsigned byte_length = 0;
 
-		unsigned op_marker = 0;
+			unsigned op_marker = 0;
 
-		unsigned size = 1008192;
+			unsigned size = 0;
 
-		unsigned count = 0; // Number of operations stored
+			unsigned count = 0; // Number of operations stored
 
-		char * data = NULL;
+			char * data = NULL;
 
-		bool CLONED = false;
+			bool CLONED = false;
 
-		Operator last;
+			Operator last;
 
-		OPBuffer() {}
+			OPBuffer() {}
 
-		OPBuffer(unsigned size) {
-			data = (char *)std::malloc(size);
-			std::cout << "Data pointer:" << (unsigned *)data << std::endl;
-		}
-
-		~OPBuffer() {
-			std::cout << (unsigned *)data << std::endl;
-			//if (!CLONED && data != NULL)
-			//	free(data);
-		}
-
-		void copy(OPBuffer& copy_to_buffer) const {
-
-			if (copy_to_buffer.data == data || copy_to_buffer.CLONED) {
-				return; // Do not overwite data!
+			OPBuffer(unsigned s) : size(8192) {
+				data = (char *) std::malloc(size);
+				//free((void *)data);
+				std::cout << "Data pointer:" << (unsigned long long)data << std::endl;
 			}
 
-			copy_to_buffer.byte_length = byte_length;
-			copy_to_buffer.op_marker = op_marker;
-			copy_to_buffer.count = count;
+			~OPBuffer() {
+				if (!CLONED && data != NULL) {
 
-			if (copy_to_buffer.size != size) {
-				if(copy_to_buffer.data != nullptr) free(copy_to_buffer.data);
-				copy_to_buffer.data = (char *)std::malloc(size);
+					std::cout << "Data pointer!!:" << (unsigned long long)data << std::endl;
+					free((void *)data);
+					data = NULL;
+				}
 			}
 
-			std::memcpy(copy_to_buffer.data, data, size);
-
-			copy_to_buffer.size = size;
-
-			return;
-		}
-
-		OPBuffer(const OPBuffer& buffer) {
-			byte_length = buffer.byte_length;
-			op_marker = buffer.op_marker;
-			size = buffer.size;
-			data = buffer.data;
-			count = buffer.count;
-			last = buffer.last;
-		}
-
-		OPBuffer clone() const {
-
-			OPBuffer copy;
-
-			copy.byte_length = byte_length;
-			copy.op_marker = op_marker;
-			copy.size = size;
-			copy.count = count;
-			copy.last = last;
-			copy.data =  data;
-			copy.CLONED = true;
-
-			return copy;
-		}
-
-		bool maxSizeReached(unsigned allocation_amount) const {
-			return byte_length + allocation_amount >= size;
-		}
-
-		inline bool atEnd() const {
-			//std::cout << "At end? "<< ((op_marker >= byte_length) ? "TRUE" : "FALSE") <<" count: " << count << " current size: " << size << " marker:" << op_marker << "byte_length: " << byte_length << std::endl;
-			return op_marker >= byte_length;
-		}
-
-		inline bool atBeginning() const {
-			return op_marker <= 0;
-		}
-
-		Operator current() const {
-			return * ((Operator *) &data[op_marker]);
-		}
-
-		Operator next() {
-
-			Operator curr = current();
-
-			if (atEnd()) {
-				return last;
+			OPBuffer(const OPBuffer& buffer) {
+				buffer.copy(*this);
 			}
 
-			op_marker += curr.byteSize();
+			void copy(OPBuffer& copy_to_buffer) const {
 
-			last = curr;
-
-			return current();
-		}
-
-		/* Resets the op_marker to 0, pointer to the first Operator in the buffer. */
-
-		OPBuffer& reset () {
-			op_marker = 0;
-			return * this;
-		}
-
-
-		/* Doubles the size of the buffer or returns false if not enough memory can be allocated. */
-		bool expand() {
-
-			std::cout << "expanding" << size << std::endl;
-
-			char * n_buffer = (char *)std::malloc(size << 1);//new char[size << 1];
-
-			if (n_buffer == NULL)
-				return false;
-
-			std::memcpy(n_buffer, data, byte_length);
-
-			if(data != nullptr) free(data);
-
-			data = n_buffer;
-
-			return true;
-		}
-
-		/*
-			Inserts given Operator into buffer at the current op_marker.
-			Operators following Operator are shifted up the buffer by current().byteSize()
-		*/
-		bool insert(Operator& op) {
-
-			if (maxSizeReached(op.byteSize()) && !expand())
-				return false; //Unable to allocate enough space to expand buffer.
-
-			char * a = &data[op_marker];
-
-			unsigned op_size = op.byteSize();
-			//*
-			if (!atEnd()) {
-				std::memmove(
-				    &data[op_marker + op_size],
-				    a,
-				    byte_length - op_marker
-				);
-			}
-			//*/
-
-			count++;
-
-			std::memcpy(a, &op, op_size);
-
-			byte_length += op_size;
-
-			return true;
-		}
-
-		/*
-			Removes Operator into buffer at the current op_marker.
-			Operators following Operator are shifted down the buffer by current().byteSize()
-		*/
-		bool remove() {
-
-			unsigned op_size = current().byteSize();
-
-			if (maxSizeReached(op_size) && !expand())
-				return false; //Unable to allocate enough space to expand buffer.
-
-			char * a = &data[op_marker];
-			char * b = &data[op_marker + op_size];
-
-			std::memmove(a, b, byte_length - op_marker - size);
-
-			count--;
-
-			byte_length -= op_size;
-
-			return true;
-		}
-
-		friend std::ostream& operator << (std::ostream& os, const OPBuffer& op) {
-			os << "[";
-
-			if (op.count > 0) {
-
-				OPBuffer c = op.clone();
-
-				c.reset();
-
-				os << c.current();
-
-				if (op.count > 1)
-					do {
-						os << "," << c.next();
-					} while (!c.atEnd());
-			}
-
-			return os << "]";
-		}
-	};
-
-
-	template <class CharOperation, class Buffer>
-	class OPString
-	{
-
-	private:
-
-		Buffer ops;
-
-		unsigned clock = 0;
-
-		unsigned sites = 0;
-
-		int offset = 80000;
-
-		idsite site = 0;
-
-	public:
-
-
-		OPString(unsigned site)
-			: site(site), sites(site + 1), ops(1008192) {
-			CharOperation op;
-			op.setValue(' ');
-			op.setIDSite(site);
-			op.setIDClock(clock);
-			op.setOriginSite(site);
-			op.setOriginClock(clock++);
-			ops.insert(op);
-		}
-
-		~OPString() {}
-
-	private:
-
-		CharOperation findOpAtIndex(unsigned index) {
-
-			int offset = -1;
-
-			CharOperation prev_op;
-
-			for (CharOperation op = ops
-			                        .current(); !ops.atEnd(); op = ops.next()) {
-				if (op.isDeleteOperation()) {
-					offset -= (unsigned) op.isOrigin(prev_op);
-				} else {
-					offset++;
+				if (copy_to_buffer.data == data || copy_to_buffer.CLONED) {
+					return; // Do not overwite data!
 				}
 
-				if (offset >= index)
-					break;
+				copy_to_buffer.byte_length = byte_length;
+				copy_to_buffer.op_marker = op_marker;
+				copy_to_buffer.count = count;
 
-				prev_op = op;
+				if (copy_to_buffer.size != size) {
+					if(copy_to_buffer.data != nullptr) free(copy_to_buffer.data);
+					copy_to_buffer.data = (char *)std::malloc(size);
+					copy_to_buffer.size = size;
+				}
+
+				std::memcpy(copy_to_buffer.data, data, size);
+
+				return;
 			}
 
-			return ops.current();
-		}
+			OPBuffer clone() const {
+
+				OPBuffer copy;
+
+				copy.byte_length = byte_length;
+				copy.op_marker = op_marker;
+				copy.size = size;
+
+				copy.count = count;
+
+				copy.last = last;
+
+				copy.data =  data;
+
+				copy.CLONED = true;
+				return copy;
+			}
+
+			bool maxSizeReached(unsigned allocation_amount) const {
+				return byte_length + allocation_amount >= size;
+			}
+
+			inline bool atEnd() const {
+				//std::cout << "At end? "<< ((op_marker >= byte_length) ? "TRUE" : "FALSE") <<" count: " << count << " current size: " << size << " marker:" << op_marker << "byte_length: " << byte_length << std::endl;
+				return op_marker >= byte_length;
+			}
+
+			inline bool atBeginning() const {
+				return op_marker <= 0;
+			}
+
+			Operator current() const {
+				return * ((Operator *) &data[op_marker]);
+			}
+
+			Operator next() {
+
+				Operator curr = current();
+
+				if (atEnd()) {
+					return last;
+				}
+
+				op_marker += curr.byteSize();
+
+				last = curr;
+
+				return current();
+			}
+
+			/* Resets the op_marker to 0, pointer to the first Operator in the buffer. */
+
+			OPBuffer& reset () {
+				op_marker = 0;
+				return * this;
+			}
 
 
-		unsigned insertOp(CharOperation& op, unsigned short_circuit = 0) {
+			/* Doubles the size of the buffer or returns false if not enough memory can be allocated. */
+			bool expand() {
 
-			//If the op is new (root of the tree) insert
-			for (CharOperation origin_candidate = ops.reset().current(); !ops.atEnd(); origin_candidate = ops.next()) {
+				std::cout << "expanding" << size << std::endl;
 
-				if (op.isOrigin(origin_candidate)) {
+				char * n_buffer = (char *)std::malloc(size << 1);//new char[size << 1];
 
-					CharOperation peer_candidate = ops.next();
+				if (n_buffer == NULL)
+					return false;
 
-					if (op.isDeleteOperation())
-						// Delete Operations immediatelly follow there origin operation. This ensures that it's effect applies BEFORE any other
-						// Operation, maintaining the relation [A <=deletes= B]. Since this operation must remain idempotent, any number of
-						// delete operations on a single origin operation must be ignored after the first one that is observed.
-					{
-						if (peer_candidate.isDeleteOperation() && peer_candidate.isOrigin(origin_candidate))
-							//For simplicity's sake, just ignore any delete operation for a givin origin following an initial one.
-							return false;
+				std::memcpy(n_buffer, data, byte_length);
+
+				if(data != nullptr) free(data);
+
+				data = n_buffer;
+
+				return true;
+			}
+
+			/*
+				Inserts given Operator into buffer at the current op_marker.
+				Operators following Operator are shifted up the buffer by current().byteSize()
+			*/
+			bool insert(Operator& op) {
+
+				if (maxSizeReached(op.byteSize()) && !expand())
+					return false; //Unable to allocate enough space to expand buffer.
+
+				char * a = &data[op_marker];
+
+				unsigned op_size = op.byteSize();
+				//*
+				if (!atEnd()) {
+					std::memmove(
+					    &data[op_marker + op_size],
+					    a,
+					    byte_length - op_marker
+					);
+				}
+				//*/
+
+				count++;
+
+				std::memcpy(a, &op, op_size);
+
+				byte_length += op_size;
+
+				return true;
+			}
+
+			/*
+				Removes Operator into buffer at the current op_marker.
+				Operators following Operator are shifted down the buffer by current().byteSize()
+			*/
+			bool remove() {
+
+				unsigned op_size = current().byteSize();
+
+				if (maxSizeReached(op_size) && !expand())
+					return false; //Unable to allocate enough space to expand buffer.
+
+				char * a = &data[op_marker];
+				char * b = &data[op_marker + op_size];
+
+				std::memmove(a, b, byte_length - op_marker - size);
+
+				count--;
+
+				byte_length -= op_size;
+
+				return true;
+			}
+
+			friend std::ostream& operator << (std::ostream& os, const OPBuffer& op) {
+				os << "[";
+
+				if (op.count > 0) {
+
+					OPBuffer c = op.clone();
+
+					c.reset();
+
+					os << c.current();
+
+					if (op.count > 1)
+						do {
+							os << "," << c.next();
+						} while (!c.atEnd());
+				}
+
+				return os << "]";
+			}
+		};
+
+
+		template <class CharOperation, class Buffer>
+		class OPString
+		{
+
+		private:
+
+			Buffer ops;
+
+			unsigned clock = 0;
+
+			unsigned sites = 0;
+
+			int offset = 80000;
+
+			idsite site = 0;
+
+			int length = 0;
+
+		public:
+
+			OPString(unsigned s)
+				:   ops(8192),sites(s + 1),site(s) {
+				CharOperation op;
+				op.setValue(' ');
+				op.setIDSite(s);
+				op.setIDClock(clock);
+				op.setOriginSite(s);
+				op.setOriginClock(clock++);
+				ops.insert(op);
+			}
+
+			~OPString() {}
+
+			unsigned size() {
+				return length;
+			}
+
+		private:
+
+			CharOperation findOpAtIndex(unsigned index) {
+
+				int offset = -1;
+
+				CharOperation prev_op;
+
+				for (CharOperation op = ops
+				                        .current(); !ops.atEnd(); op = ops.next()) {
+					if (op.isDeleteOperation()) {
+						offset -= (unsigned) op.isOrigin(prev_op);
 					} else {
-						while (!ops.atEnd()) {
-							if
-							(
-							    peer_candidate == op
-							    ||
-							    (
-							        peer_candidate.getIDSite() == op.getIDSite()
-							        && peer_candidate.getIDClock() >= op.getIDClock()
-							    )
-							)
-								// Prevent duplicate operations from being inserted.
-							{
+						offset++;
+					}
+
+					if (offset >= index)
+						break;
+
+					prev_op = op;
+				}
+
+				return ops.current();
+			}
+
+
+			unsigned insertOp(CharOperation& op, unsigned short_circuit = 0) {
+
+				//If the op is new (root of the tree) insert
+				for (CharOperation origin_candidate = ops.reset().current(); !ops.atEnd(); origin_candidate = ops.next()) {
+
+					if (op.isOrigin(origin_candidate)) {
+
+						CharOperation peer_candidate = ops.next();
+
+						if (op.isDeleteOperation())
+							// Delete Operations immediatelly follow there origin operation. This ensures that it's effect applies BEFORE any other
+							// Operation, maintaining the relation [A <=deletes= B]. Since this operation must remain idempotent, any number of
+							// delete operations on a single origin operation must be ignored after the first one that is observed.
+						{
+							if (peer_candidate.isDeleteOperation() && peer_candidate.isOrigin(origin_candidate))
+								//For simplicity's sake, just ignore any delete operation for a givin origin following an initial one.
 								return false;
+						} else {
+							while (!ops.atEnd()) {
+								if
+								(
+								    peer_candidate == op
+								    ||
+								    (
+								        peer_candidate.getIDSite() == op.getIDSite()
+								        && peer_candidate.getIDClock() >= op.getIDClock()
+								    )
+								)
+									// Prevent duplicate operations from being inserted.
+								{
+									return false;
+								}
+
+
+								if
+								(
+								    peer_candidate < op && !peer_candidate.isDeleteOperation()
+								) {
+									break;
+								}
+
+								peer_candidate = ops.next();
 							}
-
-
-							if
-							(
-							    peer_candidate < op && !peer_candidate.isDeleteOperation()
-							) {
-								break;
-							}
-
-							peer_candidate = ops.next();
 						}
+
+						if (!ops.insert(op)) {
+							std::cout << "Unable to insert " << op.id << ". Cannot Allocate enough memory to expand ops." << std::endl;
+							return false;
+						}
+
+						return true;
 					}
-
-					if (!ops.insert(op)) {
-						std::cout << "Unable to insert " << op.id << ". Cannot Allocate enough memory to expand ops." << std::endl;
-						return false;
-					}
-
-					return true;
-				}
-			}
-
-			//if here no origin candidate has been found.
-			std::cout << "Unable to locate position of op: " << op << std::endl;
-
-			//complete
-			return false;
-		}
-
-	public:
-
-		bool remove(unsigned index, unsigned length) {
-
-			unsigned i = 0;
-
-			for (; i < length; i++) {
-				CharOperation source_op = findOpAtIndex(index--);
-				CharOperation op;
-
-				if (source_op.isDeleteOperation())
-					std::cout << "DELETE" << std::endl;
-
-				op.setValue(0);
-
-				op.setIDSite(site);
-				op.setIDClock(clock++);
-				op.setOriginSite(source_op.getIDSite());
-				op.setOriginClock(source_op.getIDClock());
-
-				if (!insertOp(op)) return false;
-
-				source_op = op;
-			}
-
-			return true;
-		}
-
-		bool insert(unsigned index, const std::wstring& str) {
-
-			unsigned i = 0;
-
-			CharOperation source_op = findOpAtIndex(index);
-
-			unsigned str_len = str.length();
-
-			for (; i < str_len; i++) {
-
-				CharOperation op;
-
-				op.setValue(str[i]);
-
-				op.setIDSite(site);
-				op.setIDClock(clock++);
-				op.setOriginSite(source_op.getIDSite());
-				op.setOriginClock(source_op.getIDClock());
-
-				if (!insertOp(op)) return false;
-
-				source_op = op;
-			}
-
-			return true;
-		}
-
-		friend std::ostream& operator << (std::ostream& os, const OPString<CharOperation, Buffer>& string) {
-			return os << "{\"site\":" << (unsigned) string.site
-			       << ",\"clock\":" << string.clock
-			       << ",\"ops\":" << string.ops << "}";
-		}
-
-		wchar_t operator [] (unsigned index) {
-			std::cout << "Testing" <<std::endl;
-
-			if(index < offset) {
-				offset = -1;
-				ops.reset();
-			}
-
-			CharOperation prev_op;
-
-			for (CharOperation op = ops.current(); !ops.atEnd(); op = ops.next()) {
-				if (op.isDeleteOperation()) {
-					offset -= (unsigned) op.isOrigin(prev_op);
-				} else {
-
-					if(offset == index)
-						return op.getWChar();
-
-					offset++;
 				}
 
-				prev_op = op;
-			}
+				//if here no origin candidate has been found.
+				std::cout << "Unable to locate position of op: " << op << std::endl;
 
-			return (wchar_t) 0;
-		}
-
-
-		//JS PROPERTIES
-		/*
-			Returns a string of the consumable value.
-		*/
-		std::wstring getValue() const {
-
-			unsigned offset = 0;
-
-			Buffer ops_ = ops.clone();
-
-			CharOperation prev_op;
-
-			for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
-				if (op.isDeleteOperation()) {
-					offset -= (unsigned) op.isOrigin(prev_op);
-				} else {
-					uber_buffer[offset++] = (wchar_t) op.getWChar();
-				}
-
-				prev_op = op;
-			}
-
-			uber_buffer[offset] = 0;
-
-			return std::wstring(uber_buffer);
-		}
-
-		void setValue(int x) {}
-
-
-		// Returns a string value that is a JSON formated representation of the String's internal state.
-		std::string getInspect() const {
-
-			std::ostringstream ostring;
-
-			ostring << *this;
-
-			return ostring.str();
-		}
-
-		void setInspect(int x) {}
-
-		void destroy() {
-			delete this;
-		}
-
-		OPString<CharOperation, Buffer>& split()  {
-
-			OPString<CharOperation, Buffer>& string = * new OPString<CharOperation, Buffer>(sites++);
-
-			ops.copy(string.ops);
-
-			string.clock = clock;
-
-			return string;
-		}
-
-		bool merge(OPString<CharOperation, Buffer>& other) {
-
-			if (other.site == site || &other == this)
+				//complete
 				return false;
-
-			bool result = false;
-
-			Buffer ops_  = other.ops.clone();
-
-			for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
-				if (insertOp(op))
-					result = true;
 			}
 
-			if (other.clock > clock)
-				clock = other.clock;
+		public:
 
-			return result;
-		}
+			bool remove(unsigned index, unsigned length) {
 
-		/* ((/ruminate/docs/c++/objects/crdt/offsetToRef))[sync, comment]
-			#Offset to Reference
+				unsigned i = 0;
 
-			Givin an integer offset returns an encode integer for the Address of the token at the offset.
-		*/
-		unsigned offsetToRef(unsigned offset) {
-			const CharOperation& op = findOpAtIndex(offset);
+				for (; i < length; i++) {
+					CharOperation source_op = findOpAtIndex(index--);
+					CharOperation op;
 
-			return op.toUnsigned();
-		}
+					if (source_op.isDeleteOperation())
+						std::cout << "DELETE" << std::endl;
 
-		/* ((/ruminate/docs/c++/objects/crdt/refToOffset))[sync, comment]
-			#refToOffset
+					op.setValue(0);
 
-		 	Givin an encoded integer Address returns the offset of the token within the derived string.
-		*/
-		unsigned refToOffset(unsigned ref) {
+					op.setIDSite(site);
+					op.setIDClock(clock++);
+					op.setOriginSite(source_op.getIDSite());
+					op.setOriginClock(source_op.getIDClock());
 
-			unsigned offset = 0;
+					if (!insertOp(op)) return false;
 
-			CharOperation comp_op(ref);
+					length--;
 
-			CharOperation prev_op;
-
-			for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next()) {
-				if (op.isDeleteOperation()) {
-					offset -= (unsigned) op.isOrigin(prev_op);
-				} else if(ref == op) {
-					return offset;
-				} else {
-					uber_buffer[offset++] = (wchar_t) op.getWChar();
+					source_op = op;
 				}
 
-				prev_op = op;
+				return true;
 			}
 
-			return 0;
-		}
-	};
+			bool insert(unsigned index, const std::wstring& str) {
+
+				unsigned i = 0;
+
+				CharOperation source_op = findOpAtIndex(index);
+
+				unsigned str_len = str.length();
+
+				for (; i < str_len; i++) {
+
+					CharOperation op;
+
+					op.setValue(str[i]);
+
+					op.setIDSite(site);
+					op.setIDClock(clock++);
+					op.setOriginSite(source_op.getIDSite());
+					op.setOriginClock(source_op.getIDClock());
+
+					if (!insertOp(op)) return false;
+
+					length++;
+
+					source_op = op;
+				}
+
+				return true;
+			}
+
+			friend std::ostream& operator << (std::ostream& os, const OPString<CharOperation, Buffer>& string) {
+				return os << "{\"site\":" << (unsigned) string.site
+				       << ",\"clock\":" << string.clock
+				       << ",\"ops\":" << string.ops << "}";
+			}
+
+
+			wchar_t operator [] (unsigned index) {
+
+				if(index < offset) {
+					offset = -1;
+					ops.reset();
+				}
+
+				CharOperation prev_op;
+
+				for (CharOperation op = ops.current(); !ops.atEnd(); op = ops.next()) {
+					if (op.isDeleteOperation()) {
+						offset -= (unsigned) op.isOrigin(prev_op);
+					} else {
+
+						if(offset == index)
+							return op.getWChar();
+
+						offset++;
+					}
+
+					prev_op = op;
+				}
+
+				return (wchar_t) 0;
+			}
+
+
+			//JS PROPERTIES
+			/*
+				Returns a string of the consumable value.
+			*/
+			std::wstring getValue() const {
+
+				unsigned offset = 0;
+
+				Buffer ops_ = ops.clone();
+
+				CharOperation prev_op;
+
+				for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
+					if (op.isDeleteOperation()) {
+						offset -= (unsigned) op.isOrigin(prev_op);
+					} else {
+						uber_buffer[offset++] = (wchar_t) op.getWChar();
+					}
+
+					prev_op = op;
+				}
+
+				uber_buffer[offset] = 0;
+
+				return std::wstring(uber_buffer);
+			}
+
+			void setValue(int x) {}
+
+
+			// Returns a string value that is a JSON formated representation of the String's internal state.
+			std::string getInspect() const {
+
+				std::ostringstream ostring;
+
+				ostring << *this;
+
+				return ostring.str();
+			}
+
+			void setInspect(int x) {}
+
+			void destroy() {
+				delete this;
+			}
+
+			OPString<CharOperation, Buffer>& split()  {
+
+				OPString<CharOperation, Buffer>& string = * new OPString<CharOperation, Buffer>(sites++);
+
+				ops.copy(string.ops);
+
+				string.clock = clock;
+
+				return string;
+			}
+
+			bool merge(OPString<CharOperation, Buffer>& other) {
+
+				if (other.site == site || &other == this)
+					return false;
+
+				bool result = false;
+
+				Buffer ops_  = other.ops.clone();
+
+				for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
+					if (insertOp(op))
+						result = true;
+				}
+
+				if (other.clock > clock)
+					clock = other.clock;
+
+				return result;
+			}
+
+			/* ((/ruminate/docs/c++/objects/crdt/offsetToRef))[sync, comment]
+				#Offset to Reference
+
+				Givin an integer offset returns an encode integer for the Address of the token at the offset.
+			*/
+			unsigned offsetToRef(unsigned offset) {
+				const CharOperation& op = findOpAtIndex(offset);
+
+				return op.toUnsigned();
+			}
+
+			/* ((/ruminate/docs/c++/objects/crdt/refToOffset))[sync, comment]
+				#refToOffset
+
+			 	Givin an encoded integer Address returns the offset of the token within the derived string.
+			*/
+			unsigned refToOffset(unsigned ref) {
+
+				unsigned offset = 0;
+
+				CharOperation comp_op(ref);
+
+				CharOperation prev_op;
+
+				for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next()) {
+					if (op.isDeleteOperation()) {
+						offset -= (unsigned) op.isOrigin(prev_op);
+					} else if(ref == op) {
+						return offset;
+					} else {
+						uber_buffer[offset++] = (wchar_t) op.getWChar();
+					}
+
+					prev_op = op;
+				}
+
+				return 0;
+			}
+		};
+	}
 }

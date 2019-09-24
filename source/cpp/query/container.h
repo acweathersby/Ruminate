@@ -34,7 +34,6 @@ namespace RUMINATE
 
 			for (int i = 0; i < id.list.size(); i++) {
 
-
 				const wstring& str = *id.list[i];
 
 				if (str == L"*") {

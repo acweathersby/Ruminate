@@ -36,9 +36,12 @@
     <VirtualDirectory Name="String">
       <File Name="../../source/cpp/string/crdt.h"/>
       <File Name="../../source/cpp/string/opid.h"/>
+      <File Name="../../source/cpp/string/search.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="Tags">
       <File Name="../../source/cpp/tags/tags.h"/>
+      <File Name="../../source/cpp/tags/tags.cpp"/>
+      <File Name="../../source/cpp/tags/tag.cpp"/>
     </VirtualDirectory>
     <VirtualDirectory Name="UID">
       <File Name="../../source/cpp/uid/uid.h"/>

@@ -6,8 +6,8 @@
 #include "./database/base.h"
 #include "./string/crdt.h"
 
-using namespace crdt;
 using namespace RUMINATE;
+using namespace RUMINATE::STRING;
 using namespace RUMINATE::NOTE;
 using namespace RUMINATE::CONTAINER;
 using namespace RUMINATE::DB;
@@ -31,8 +31,10 @@ int main(int c, char ** args)
 	NoteA.id = L"/test/me/now/a";
 	NoteB.id = L"/test/me/now/b";
 
-	NoteA.body.insert(0,L"This is some test text.");
-	NoteB.body.insert(0,L"This is also some test text.");
+	NoteA.tags.addTag(L"tree",L"ice");
+
+	NoteA.body.insert(0,L"This is some test text. tree");
+	NoteB.body.insert(0,L"This  is also some test text.");
 
 	ContainerLU<CRDTNote> container;
 	NoteDB<CRDTNote> db;
@@ -49,7 +51,7 @@ int main(int c, char ** args)
 	container.addNote(NoteB);
 
 	unsigned count;
-	auto b = runQuery(L"/test/me/now/a? tree", container, db, count);
-	cout << count << endl;
+	auto b = runQuery<CRDTNote, JSCRDTString>(L"/test/me/now/?#tree=ice", container, db, count);
+	cout << count << "count" << endl;
 	wcout << b[0]->id << endl;
 }

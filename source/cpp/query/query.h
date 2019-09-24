@@ -29,7 +29,7 @@ namespace RUMINATE
 
 		typedef ParseBuffer<RUMINATE_QUERY_NODES::QueryBodyNode> Allocator;
 
-		template <class Note>
+		template <class Note, class NoteString>
 		Note ** runQuery(const wstring& string, const ContainerLU<Note>& containers, const NoteDB<Note>& db, unsigned& total, const unsigned node_count_size = 512)
 		{
 
@@ -67,11 +67,7 @@ namespace RUMINATE
 
 						active_B = out_B;
 
-						filterNotes<Note>(*(node->filter), active_B, out_B, total);
-
-
-
-
+						filterNotes<Note, NoteString>(*(node->filter), active_B, out_B, total);
 
 
 					}
