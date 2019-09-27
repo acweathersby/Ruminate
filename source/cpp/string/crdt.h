@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include <sstream>
-
+#include <fstream>
 
 
 namespace RUMINATE
@@ -261,14 +261,10 @@ namespace RUMINATE
 
 			OPBuffer(unsigned s) : size(8192) {
 				data = (char *) std::malloc(size);
-				//free((void *)data);
-				std::cout << "Data pointer:" << (unsigned long long)data << std::endl;
 			}
 
 			~OPBuffer() {
 				if (!CLONED && data != NULL) {
-
-					std::cout << "Data pointer!!:" << (unsigned long long)data << std::endl;
 					free((void *)data);
 					data = NULL;
 				}
@@ -366,6 +362,8 @@ namespace RUMINATE
 
 				if (n_buffer == NULL)
 					return false;
+
+				size = size << 1;
 
 				std::memcpy(n_buffer, data, byte_length);
 
@@ -639,6 +637,36 @@ namespace RUMINATE
 				return os << "{\"site\":" << (unsigned) string.site
 				       << ",\"clock\":" << string.clock
 				       << ",\"ops\":" << string.ops << "}";
+			}
+
+			friend OPString<CharOperation, Buffer>& operator << (OPString<CharOperation, Buffer>& os, std::ifstream& stream) {
+				unsigned index = 0;
+
+
+				CharOperation source_op = os.findOpAtIndex(0);
+
+				while(stream.good()) {
+
+					char buffer[64];
+
+					stream.read(buffer, 64);
+
+					unsigned data_size = stream.gcount();
+
+					for(int i = 0; i < data_size; i++) {
+						CharOperation op;
+						op.setValue((wchar_t) buffer[i]);
+						op.setIDSite(os.site);
+						op.setIDClock(os.clock++);
+						op.setOriginSite(source_op.getIDSite());
+						op.setOriginClock(source_op.getIDClock());
+						os.insertOp(op);
+						os.length++;
+						source_op = op;
+					}
+				}
+
+				return os;
 			}
 
 

@@ -32,7 +32,7 @@ namespace RUMINATE
 
 			bool SERIALIZED = false;
 
-			Note(UID _uid, unsigned site = 0)
+			Note(UID _uid = UID(), unsigned site = 0)
 				:
 				body(site),
 				uid(_uid)

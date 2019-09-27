@@ -1,7 +1,7 @@
-#include "./string/crdt.h"
+
 
 #ifdef JAVASCRIPT_WASM
-
+#include "./string/crdt.h"
 #include <emscripten/val.h>
 #include <emscripten/bind.h>
 #include <emscripten.h>

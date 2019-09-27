@@ -13,10 +13,10 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Anthony
-Date                   :=22/09/19
+Date                   :=26/09/19
 CodeLitePath           :=/home/anthony/.codelite
-LinkerName             :=/usr/bin/clang++
-SharedObjectLinkerName :=/usr/bin/clang++ -shared -fPIC
+LinkerName             :=clang++
+SharedObjectLinkerName :=clang++ -shared -fPIC
 ObjectSuffix           :=.o
 DependSuffix           :=.o.d
 PreprocessSuffix       :=.i
@@ -35,7 +35,7 @@ PreprocessOnlySwitch   :=-E
 ObjectsFileList        :="ruminate_base.txt"
 PCHCompileFlags        :=
 MakeDirCommand         :=mkdir -p
-LinkOptions            :=  
+LinkOptions            :=  -lc++ -lc++abi
 IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). 
 IncludePCH             := 
 RcIncludePath          := 
@@ -47,20 +47,20 @@ LibPath                := $(LibraryPathSwitch).
 ## Common variables
 ## AR, CXX, CC, AS, CXXFLAGS and CFLAGS can be overriden using an environment variables
 ##
-AR       := /usr/bin/llvm-ar rcu
-CXX      := /usr/bin/clang++
-CC       := /usr/bin/clang
-CXXFLAGS :=  -g -O0 -Wall -std=c++17 -fdeclspec  $(Preprocessors)
-CFLAGS   :=  -g -O0 -Wall $(Preprocessors)
+AR       := llvm-ar rcu
+CXX      := clang++
+CC       := clang
+CXXFLAGS := -g -O0 -Wall -std=c++17 -stdlib=libc++ -fdeclspec   $(Preprocessors)
+CFLAGS   := -g -O0 -Wall  $(Preprocessors)
 ASFLAGS  := 
-AS       := /usr/bin/llvm-as
+AS       := llvm-as
 
 
 ##
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/up_up_source_cpp_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_js_entry.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_gnql_cpp.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parser.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parse_buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_query_query.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_note_note.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_tags_tags.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_tags_tag.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix) \
+Objects0=$(IntermediateDirectory)/up_up_source_cpp_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_js_entry.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_gnql_cpp.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parser.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_compiler_parse_buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_query_query.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_note_note.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_tags_tags.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_tags_tag.cpp$(ObjectSuffix) $(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(ObjectSuffix) \
 	
 
 
@@ -164,13 +164,13 @@ $(IntermediateDirectory)/up_up_source_cpp_tags_tag.cpp$(DependSuffix): ../../sou
 $(IntermediateDirectory)/up_up_source_cpp_tags_tag.cpp$(PreprocessSuffix): ../../source/cpp/tags/tag.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/up_up_source_cpp_tags_tag.cpp$(PreprocessSuffix) ../../source/cpp/tags/tag.cpp
 
-$(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix): ../../source/cpp/database/base.cpp $(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/anthony/work/active/apps/ruminate/source/cpp/database/base.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(DependSuffix): ../../source/cpp/database/base.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(DependSuffix) -MM ../../source/cpp/database/base.cpp
+$(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(ObjectSuffix): ../../source/cpp/database/file_db.cpp $(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/anthony/work/active/apps/ruminate/source/cpp/database/file_db.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(DependSuffix): ../../source/cpp/database/file_db.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(DependSuffix) -MM ../../source/cpp/database/file_db.cpp
 
-$(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(PreprocessSuffix): ../../source/cpp/database/base.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/up_up_source_cpp_database_base.cpp$(PreprocessSuffix) ../../source/cpp/database/base.cpp
+$(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(PreprocessSuffix): ../../source/cpp/database/file_db.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/up_up_source_cpp_database_file_db.cpp$(PreprocessSuffix) ../../source/cpp/database/file_db.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

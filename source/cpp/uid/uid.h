@@ -22,7 +22,6 @@ namespace RUMINATE
 			time_t t;
 			time(&t);
 			created_time = t;
-			std::cout << "time: " << created_time << std::endl;
 		}
 
 		friend bool operator == (const UID& a, const UID& b) {

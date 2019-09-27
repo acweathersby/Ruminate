@@ -3,6 +3,10 @@
 #include <cstring>
 #include <unordered_map>
 
+#ifdef assert
+#undef assert
+#endif
+
 namespace HC_Tokenizer
 {
 	using std::wstring;

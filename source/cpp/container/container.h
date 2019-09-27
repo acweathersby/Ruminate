@@ -7,6 +7,8 @@
 
 /** Classes for dealing with Notes based on there id (container location) */
 
+#define Delimiter (L'/')
+
 namespace RUMINATE
 {
 	namespace CONTAINER
@@ -18,8 +20,6 @@ namespace RUMINATE
 		using std::endl;
 
 		typedef vector<UID> UIDList;
-
-		const wchar_t Delimiter = L'/';
 
 		template<class Note>
 		struct ContainerLU {
