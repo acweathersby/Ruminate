@@ -1,11 +1,13 @@
 #pragma once
 #include "./base.h"
+#include <string>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 
-#define RUMINATE_FILE_EXTENSION ".rnote"
+#define RUMINATE_FILE_EXTENSION L".rnote"
 
 /*
  *  File DB is NOT a concurrent DB system.
@@ -19,24 +21,38 @@
  *
  */
 
+
 namespace RUMINATE
 {
 	namespace fs = std::filesystem;
 	namespace DB
 	{
+
+		wstring non_rnote_extensions = L".txt";
+
+		bool acceptedNonRnoteExtensions(const wstring ext, const wstring& extension_list)
+		{
+			return extension_list.find(ext) != std::wstring::npos;
+		}
+
+
 		template<class Note>
 		class file_db : public NoteDB<Note>
 		{
 		private:
+			std::unordered_map<UID, Note *> notes;
 			ContainerLU<Note> ctr; //Root Container entry.
+			wstring folder;
 
 		public:
 
 			/*
 			 * Folder is the file system folder to mount the DB to.
 			 */
-			file_db(std::string folder) : NoteDB<Note>() {
+			file_db(std::wstring f) : NoteDB<Note>() , folder(f) {
 				fs::recursive_directory_iterator iter(folder);
+
+				unsigned folder_size = folder.size();
 
 				//Iterate through all obects in folder and -
 				// push file information to cache.
@@ -49,7 +65,7 @@ namespace RUMINATE
 						//Load directory information into store.
 
 						//Strip path of the any leading . characters
-						auto path = p.path().wstring().substr(folder.size());
+						auto path = p.path().wstring().substr(folder_size);
 
 						//Use string indexing to precache the container.
 						ctr[path];
@@ -58,50 +74,94 @@ namespace RUMINATE
 					}
 
 					if(p.is_regular_file()) {
-						if(p.path().extension() == RUMINATE_FILE_EXTENSION) {
 
-						} else {
-							//Read file into new note.
+						std::ifstream file;
+						file.open(p.path());
 
-							std::ifstream file;
+						if(file.is_open()) {
 
-							file.open(p.path());
+							if(p.path().extension() == RUMINATE_FILE_EXTENSION) {
 
-							if(file.is_open()) {
 								Note * note = new Note();
 
-								note->id = p.path().stem().wstring();
-
-								note->body << file;
-
-								file.close();
+								(*note) << file;
 
 								addNote(*note);
 
-//								std::wcout << (*note).body.getValue() << endl;
+							} else if(acceptedNonRnoteExtensions(p.path().extension().wstring(), non_rnote_extensions)) {
 
+								Note * note = new Note();
+
+								note->id = p.path().parent_path().wstring().substr(folder_size) +  L"/" + p.path().stem().wstring();
+
+								note->tags.fromBracketedStream(file);
+
+								note->body.fromFileStream(file);
+
+								addNote(*note);
 							}
 						}
+						file.close();
 					}
 				}
 			}
 
 			virtual ~file_db() {};
 
-			virtual bool addNote(Note&) {
-				return false;
+			void saveNotes() {
+				for(auto& n : notes) {
+					Note& note = *(n.second);
+					wstring path = note.id;
+					path = folder + path + wstring(RUMINATE_FILE_EXTENSION);
+
+					std::ofstream file;
+					file.open(path);
+
+					if(file.is_open()) {
+						file << note;
+					}
+					file.close();
+				}
 			}
 
-			virtual Note& getNote(const UID& uid) {
-				return * (Note *)(void *) nullptr;
+			virtual bool addNote(Note& note) {
+				std::wcout << note.uid.toJSONString() << "  " << note.id << std::endl;
+				notes.insert( {note.uid, &note});
+				//add note to containers
+				ctr.addNote(note);
+				return true;
 			}
 
-			virtual ContainerLU<Note>& getContainerTree() {
-				return * (ContainerLU<Note> *)(void *) nullptr;
+			virtual Note * getNote(const UID& uid) const {
+				auto iter = notes.find(uid);
+
+				if(iter != notes.end()) {
+					std::wcout << uid.toJSONString() << "  " << iter->second->id << std::endl;
+					return (iter->second);
+				}
+
+				return (new Note()); // <<<< MEMORY LEAK <<<<<<<
+			}
+
+			virtual const ContainerLU<Note>& getContainerTree() const {
+				return ctr;
 			};
 
+			virtual void close() {
+				for(auto& n : notes) {
+					Note& note = *(n.second);
+					wstring path = note.id;
+					path = folder + path + wstring(RUMINATE_FILE_EXTENSION);
+
+					std::ofstream file;
+					file.open(path);
+
+					if(file.is_open())
+						file << note;
+
+					file.close();
+				}
+			};
 		};
-
 	}
-
 }

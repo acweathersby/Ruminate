@@ -2,7 +2,6 @@
 #include <iostream>
 #include <cstring>
 #include <sstream>
-#include <fstream>
 
 
 namespace RUMINATE
@@ -20,47 +19,60 @@ namespace RUMINATE
 		static wchar_t uber_buffer[100000];
 
 		struct OP_ID {
-			idclock clock = 0;
-			idsite site = 0;
-
+		private:
+			static const unsigned SITE_MASK = 0xF8000000;
+			static const unsigned CLOCK_MASK = ~SITE_MASK;
+			unsigned data = 0;
+		public:
 			bool compareVectorClock(const OP_ID& other) const {
-				return other.site == site && other.clock == clock;
+				return other.site() == site() && other.clock() == clock();
 			}
 
 			int compareClock(const OP_ID& other) const {
-				return other.site < site ?  -1 : other.site > site ? 1 : other.clock < clock ? -1 : other.clock > clock ? 1 :  0;
+				return other.site() < site() ?  -1 : other.site() > site() ? 1 : other.clock() < clock() ? -1 : other.clock() > clock() ? 1 : 0;
 			}
 
 			friend std::ostream& operator << (std::ostream& os, const OP_ID& i) {
-				return os << "{\"site\":" << (unsigned short)i.site << ",\"clock\":" << i.clock << "}";
+				return os << "{\"site\":" << (unsigned short)i.site() << ",\"clock\":" << i.clock() << "}";
 			}
 
 			friend bool operator == (const OP_ID& a, const OP_ID& b) {
-				return a.clock == b.clock && a.site == b.site;
+				return a.data == b.data;
 			}
 
 			friend bool operator != (const OP_ID& a, const OP_ID& b) {
-				return !( b == a);
+				return !(b == a);
 			}
 
 			bool follows(const OP_ID& id) const {
-				return id.site == site && id.clock == clock - 1;
+				return ((data - id.data) == 1) ? true : false;
 			}
+
+			unsigned site() const {
+				return getSite();
+			}
+
 			unsigned getSite() const {
-				return site;
+				return data >> 27;
 			}
+
+			unsigned clock() const {
+				return getClock();
+			}
+
 			unsigned getClock() const {
-				return clock;
+				return data & CLOCK_MASK;
 			}
-			void setSite(idsite s) {site = s;}
-			void setClock(idclock t) {clock = t;}
+
+			void setSite(idsite s) {data = ((data & ~SITE_MASK) | (s << 27));}
+
+			void setClock(idclock t) {data = ((data & ~CLOCK_MASK) | (t & CLOCK_MASK));}
 		};
 
 
 		struct ASCII {
 
 			char val;
-
 
 			void setFromWChar(wchar_t c) {
 				val = c & 0xFF;
@@ -83,7 +95,7 @@ namespace RUMINATE
 			}
 
 			bool isDelete() const {
-				return 0 == val;
+				return (0 == val) ? true : false;
 			}
 
 			static const unsigned max_size() {
@@ -139,11 +151,8 @@ namespace RUMINATE
 			CharOp() {}
 
 			CharOp(unsigned ref) {
-				unsigned clock = ref >> 4;
-				unsigned site = ref & 0xF;
-
-				id.site = site;
-				id.clock = clock;
+				id.setSite(ref >> 4);
+				id.setClock(ref & 0xF);
 			}
 
 			static const unsigned max_size() {
@@ -151,7 +160,7 @@ namespace RUMINATE
 			}
 
 			unsigned toUnsigned() const {
-				return (unsigned) ((id.site & 0xF) | id.clock << 4);
+				return (unsigned) ((id.site() & 0xF) | id.clock() << 4);
 			}
 
 			bool isDeleteOperation() const {
@@ -175,35 +184,35 @@ namespace RUMINATE
 			}
 
 			void setIDSite(const unsigned v) {
-				id.site = v;
+				id.setSite(v);
 			}
 
 			void setIDClock(const unsigned v) {
-				id.clock = v;
+				id.setClock(v);
 			}
 
 			void setOriginSite(const unsigned v) {
-				origin.site = v;
+				origin.setSite(v);
 			}
 
 			void setOriginClock(const unsigned v) {
-				origin.clock = v;
+				origin.setClock(v);
 			}
 
 			unsigned char getIDSite() const {
-				return id.site;
+				return id.site();
 			}
 
 			unsigned getIDClock() const {
-				return id.clock;
+				return id.clock();
 			}
 
 			unsigned char getOriginSite() const {
-				return origin.site;
+				return origin.site();
 			}
 
 			unsigned getOriginClock() const {
-				return origin.clock;
+				return origin.clock();
 			}
 
 			bool isOrigin(const CharOp<MetaStamp, Operator>& op) const {
@@ -354,16 +363,17 @@ namespace RUMINATE
 
 
 			/* Doubles the size of the buffer or returns false if not enough memory can be allocated. */
-			bool expand() {
+			bool expand(unsigned s) {
 
-				std::cout << "expanding" << size << std::endl;
+				if(s == size && data != NULL)
+					return true;
 
-				char * n_buffer = (char *)std::malloc(size << 1);//new char[size << 1];
+				char * n_buffer = (char *)std::malloc(s);//new char[size << 1];
 
 				if (n_buffer == NULL)
 					return false;
 
-				size = size << 1;
+				size = s;
 
 				std::memcpy(n_buffer, data, byte_length);
 
@@ -380,7 +390,7 @@ namespace RUMINATE
 			*/
 			bool insert(Operator& op) {
 
-				if (maxSizeReached(op.byteSize()) && !expand())
+				if (maxSizeReached(op.byteSize()) && !expand(size << 1))
 					return false; //Unable to allocate enough space to expand buffer.
 
 				char * a = &data[op_marker];
@@ -406,14 +416,14 @@ namespace RUMINATE
 			}
 
 			/*
-				Removes Operator into buffer at the current op_marker.
+				Removes Operator in buffer at the current op_marker.
 				Operators following Operator are shifted down the buffer by current().byteSize()
 			*/
 			bool remove() {
 
 				unsigned op_size = current().byteSize();
 
-				if (maxSizeReached(op_size) && !expand())
+				if (maxSizeReached(op_size) && !expand(size << 1))
 					return false; //Unable to allocate enough space to expand buffer.
 
 				char * a = &data[op_marker];
@@ -428,7 +438,13 @@ namespace RUMINATE
 				return true;
 			}
 
-			friend std::ostream& operator << (std::ostream& os, const OPBuffer& op) {
+			friend std::ostream& operator << (std::ostream& stream, const OPBuffer& ops) {
+				return (stream
+				        .write((char *)&ops.byte_length, sizeof(ops.byte_length))
+				        .write((char *)&ops.count, sizeof(ops.count))
+				        .write((char *)&ops.size, sizeof(ops.size))
+				        .write(ops.data, ops.byte_length));
+				/*
 				os << "[";
 
 				if (op.count > 0) {
@@ -446,6 +462,17 @@ namespace RUMINATE
 				}
 
 				return os << "]";
+				*/
+			}
+
+			friend OPBuffer& operator << (OPBuffer& ops, std::istream& stream) {
+				stream.read((char *)&ops.byte_length, sizeof(ops.byte_length));
+				stream.read((char *)&ops.count, sizeof(ops.count));
+				unsigned s;
+				stream.read((char *)&s, sizeof(s));
+				ops.expand(s);
+				stream.read(ops.data, ops.byte_length-8);
+				return ops;
 			}
 		};
 
@@ -470,7 +497,7 @@ namespace RUMINATE
 
 		public:
 
-			OPString(unsigned s)
+			OPString(unsigned s = 0)
 				:   ops(8192),sites(s + 1),site(s) {
 				CharOperation op;
 				op.setValue(' ');
@@ -633,42 +660,51 @@ namespace RUMINATE
 				return true;
 			}
 
-			friend std::ostream& operator << (std::ostream& os, const OPString<CharOperation, Buffer>& string) {
-				return os << "{\"site\":" << (unsigned) string.site
-				       << ",\"clock\":" << string.clock
-				       << ",\"ops\":" << string.ops << "}";
+			friend std::ostream& operator << (std::ostream& stream, const OPString<CharOperation, Buffer>& string) {
+				return stream
+				       .write((char *)&string.site, sizeof(string.site))
+				       .write((char *)&string.sites, sizeof(string.sites))
+				       .write((char *)&string.clock, sizeof(string.clock))
+				       .write((char *)&string.length, sizeof(string.length))
+				       << string.ops
+				       ;
 			}
 
-			friend OPString<CharOperation, Buffer>& operator << (OPString<CharOperation, Buffer>& os, std::ifstream& stream) {
-				unsigned index = 0;
+			friend OPString<CharOperation, Buffer>& operator << (OPString<CharOperation, Buffer>& string, std::istream& stream) {
+				stream.read((char *)&string.site, sizeof(string.site));
+				stream.read((char *)&string.sites, sizeof(string.sites));
+				stream.read((char *)&string.clock, sizeof(string.clock));
+				stream.read((char *)&string.length, sizeof(string.length));
+				string.ops << stream;
+				return string;
+			}
 
-
-				CharOperation source_op = os.findOpAtIndex(0);
+			void fromFileStream (std::ifstream& stream) {
+				CharOperation source_op = findOpAtIndex(0);
 
 				while(stream.good()) {
 
-					char buffer[64];
+					char buffer[8];
 
-					stream.read(buffer, 64);
+					stream.read(buffer, 8);
 
 					unsigned data_size = stream.gcount();
-
+					//*
 					for(int i = 0; i < data_size; i++) {
 						CharOperation op;
 						op.setValue((wchar_t) buffer[i]);
-						op.setIDSite(os.site);
-						op.setIDClock(os.clock++);
+						op.setIDSite(site);
+						op.setIDClock(clock++);
 						op.setOriginSite(source_op.getIDSite());
 						op.setOriginClock(source_op.getIDClock());
-						os.insertOp(op);
-						os.length++;
+						insertOp(op);
+						length++;
 						source_op = op;
 					}
+					//*/
 				}
 
-				return os;
 			}
-
 
 			wchar_t operator [] (unsigned index) {
 

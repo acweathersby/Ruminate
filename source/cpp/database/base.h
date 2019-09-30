@@ -30,9 +30,11 @@ namespace RUMINATE
 
 			virtual bool addNote(Note&) = 0;
 
-			virtual Note& getNote(const UID& uid) = 0;
+			virtual Note * getNote(const UID& uid) const = 0;
 
-			virtual ContainerLU<Note>& getContainerTree() = 0;
+			virtual const ContainerLU<Note>& getContainerTree() const = 0;
+
+			virtual void close() = 0;
 		};
 	}
 }

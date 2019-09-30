@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <unordered_map>
 
-#ifndef CRACKER_MASTER_OF_SIMBASTERS
-
-#define CRACKER_MASTER_OF_SIMBASTERS
-
 namespace HC_Parser
 {
 	using std::unordered_map;
@@ -235,5 +231,3 @@ complete:
 		return Allocator(0);
 	}
 }
-
-#endif

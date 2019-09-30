@@ -228,8 +228,10 @@ namespace RUMINATE_QUERY_NODES
 				os << *dt.id;
 			}
 
-			for (auto itr = list.cbegin(); itr != list.cend(); itr++) {
-				os << "[" << (**itr) << "]";
+			if(dt.list) {
+				for (auto itr = list.cbegin(); itr != list.cend(); itr++) {
+					os << "[" << (**itr) << "]";
+				}
 			}
 
 			return os << "}";

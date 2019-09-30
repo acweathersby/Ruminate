@@ -37,7 +37,8 @@ namespace RUMINATE
 				const wstring& str = *id.list[i];
 
 				if (str == L"*") {
-					if (i == id.list.size())
+					cout << "TEST ME  "<< id.list.size() << " " << i << endl;
+					if (i == (id.list.size()-1))
 						return true;
 
 					FOLLOWING_WILD_CARD = true;
@@ -65,6 +66,11 @@ namespace RUMINATE
 		template<class Note>
 		int recurseContainerMatcher(const ContainerClause& container_query, const ContainerLU<Note>& container, unsigned& total, unsigned max_uids, UID * uids, unsigned container_offset = 0, unsigned FOLLOWING_WILD_CARD = 0)
 		{
+			if(!container_query.list) {
+				container.fillUIDBuffer(&uids[total]);
+				total += container.uidSize();
+				return 1;
+			}
 
 			auto ctr = (* (container_query.list))[container_offset];
 

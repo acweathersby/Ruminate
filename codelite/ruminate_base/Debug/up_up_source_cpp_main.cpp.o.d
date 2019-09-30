@@ -4,6 +4,9 @@
   ../../source/cpp/./container/../note/note.h \
   ../../source/cpp/./container/../note/../uid/uid.h \
   ../../source/cpp/./container/../note/../tags/tags.h \
+  ../../source/cpp/./container/../note/../tags/./tag_value.h \
+  ../../source/cpp/./container/../note/../tags/../utils/stream.h \
+  ../../source/cpp/./container/../note/../utils/stream.h \
   ../../source/cpp/./note/note.h ../../source/cpp/./uid/uid.h \
   ../../source/cpp/./query/query.h \
   ../../source/cpp/./query/../compiler/tokenizer.h \
@@ -36,6 +39,12 @@
 ../../source/cpp/./container/../note/../uid/uid.h:
 
 ../../source/cpp/./container/../note/../tags/tags.h:
+
+../../source/cpp/./container/../note/../tags/./tag_value.h:
+
+../../source/cpp/./container/../note/../tags/../utils/stream.h:
+
+../../source/cpp/./container/../note/../utils/stream.h:
 
 ../../source/cpp/./note/note.h:
 

@@ -3,33 +3,61 @@
 #include <cstdlib>
 #include <time.h>
 #include <iostream>
+#include <cstring>
+#include <random>
 
 namespace RUMINATE
 {
+
+	static unsigned root = 0;
+	static char RUMINATE_MAGIC_NUMBER[5] = "RUMI";
 	/**
-		For Ruminate objects needing a unique identifier.
+	For Ruminate objects needing a unique identifier.
 	**/
+
+	using std::wstring;
+
+	static std::random_device rd;
+	static std::mt19937 mt(rd());
+	static std::uniform_real_distribution<float> dist(0, 0xFFFFFFF0);
 
 	struct UID {
 
-		unsigned long long created_time;
+		unsigned magic = *(unsigned *)(&RUMINATE_MAGIC_NUMBER);
 
-		unsigned char magic = 0b10011001;
+		unsigned long long created_time;
 
 		unsigned random = 0;
 
-		UID() : random(rand()) {
+		UID() {
 			time_t t;
 			time(&t);
+			srand(time(0));
 			created_time = t;
+			random = dist(mt);
 		}
 
 		friend bool operator == (const UID& a, const UID& b) {
 			return a.created_time == b.created_time && b.random == a.random;
 		}
 
-		friend std::ostream& operator << (std::ostream& os, const UID& uid) {
-			return os << uid.created_time << "-" << (unsigned)uid.magic << "-" << uid.random;
+		friend std::ostream& operator << (std::ostream& stream, const UID& uid) {
+			stream.write((char *)(&(uid)), sizeof(uid));
+			return stream;
+		}
+
+		friend UID& operator << (UID& uid, std::istream& stream) {
+			stream.read((char *)(&(uid)), sizeof(uid));
+			return uid;
+		}
+
+		wstring toJSONString() const {
+			wstring string(L"{\"type\":\"RUMI-UID\", \"created_time\":");
+			string += std::to_wstring(created_time);
+			string += wstring(L", \"random\":");
+			string += std::to_wstring(random);
+			string += wstring(L"}");
+			return string;
 		}
 	};
 

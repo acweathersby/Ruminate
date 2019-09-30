@@ -42,15 +42,18 @@
       <File Name="../../source/cpp/tags/tags.h"/>
       <File Name="../../source/cpp/tags/tags.cpp"/>
       <File Name="../../source/cpp/tags/tag.cpp"/>
+      <File Name="../../source/cpp/tags/tag_value.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="UID">
       <File Name="../../source/cpp/uid/uid.h"/>
     </VirtualDirectory>
-    <File Name="../../source/cpp/js_entry.cpp"/>
     <VirtualDirectory Name="Database">
       <File Name="../../source/cpp/database/base.h"/>
       <File Name="../../source/cpp/database/file_db.h"/>
       <File Name="../../source/cpp/database/file_db.cpp"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="Utils">
+      <File Name="../../source/cpp/utils/stream.h"/>
     </VirtualDirectory>
   </VirtualDirectory>
   <Settings Type="Executable">

@@ -23,6 +23,7 @@ namespace RUMINATE
 
 		template<class Note>
 		struct ContainerLU {
+
 			wstring id;
 
 			unordered_map<wstring, ContainerLU<Note>*> containers;
@@ -111,5 +112,9 @@ namespace RUMINATE
 				uids.push_back(uid);
 			}
 		};
+
+
+
+
 	}
 }

@@ -41,39 +41,42 @@ namespace RUMINATE
 				if(compare) {
 					auto& tag = *t;
 
-					switch(compare->type) {
-						case Comparison::ID : {
-								cout << "TESTSTSTSTSTS " << endl;
-								wstring tag_string = tag.getText();
-								auto& list = compare->id->list;
+					wstring& tag_string = tag.id;
 
-								for (int i = 0; i < list.size(); i++)
-									if(!fuzzySearchMatchFirst<wstring, wchar_t>(tag_string, *list[i]))
-										return false;
+					auto& list = compare->id->list;
 
-								return true;
-							};
-							break;
-						case Comparison::Value : {
+					for (int i = 0; i < list.size(); i++)
+						if(!fuzzySearchMatchFirst<wstring, wchar_t>(tag_string, *list[i]))
+							return false;
 
-							}
-							break;
-						case Comparison::MoreThan : {
+					if(compare->type == Comparison::ID)
+						return true;
 
-							}
-							break;
-						case Comparison::LessThan : {
+					auto& v = tag.val;
 
-							}
-							break;
-						case Comparison::Range : {
+					if(v.isDouble()) {
+						switch(compare->type) {
+							case Comparison::Value : {
+									return compare->valueA == v;
+								}
+								break;
+							case Comparison::MoreThan : {
+									return compare->valueA > v;
+								}
+								break;
+							case Comparison::LessThan : {
+									return compare->valueA < v;
+								}
+								break;
+							case Comparison::Range : {
+									return compare->valueA >= v && v <= compare->valueB;
+								}
+								break;
+							case Comparison::Date : {
 
-							}
-							break;
-						case Comparison::Date : {
-
-							}
-							break;
+								}
+								break;
+						}
 					}
 				} else
 					return true;
