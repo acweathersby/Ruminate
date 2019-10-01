@@ -75,11 +75,8 @@ namespace RUMINATE
 
 			void fillUIDBuffer(UID * buffer) const {
 				unsigned offset = 0;
-				for(auto iter = uids.begin(); iter != uids.end(); iter++) {
-					cout << offset << "sdf" <<  endl;
-					cout << *iter << endl;
+				for(auto iter = uids.begin(); iter != uids.end(); iter++)
 					buffer[offset++] = *iter;
-				}
 			}
 
 			void addContainer(const ContainerLU<Note>& container) {

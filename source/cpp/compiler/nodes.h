@@ -54,7 +54,6 @@ namespace RUMINATE_QUERY_NODES
 	    TagStatement,
 	};
 
-
 	struct Node {
 
 		NodeType type = NodeType::Undefined;
@@ -147,7 +146,13 @@ namespace RUMINATE_QUERY_NODES
 		{}
 
 		friend wostream& operator << (wostream& os, const Comparison& c) {
-			return	os << "{ Comparison }";
+			os << "{id:";
+			if(c.id)
+				os << *c.id;
+			else
+				os << "null";
+
+			return	os  << " valA: " << c.valueA << " valB:" << c.valueB <<  "}";
 		}
 	};
 
@@ -175,7 +180,7 @@ namespace RUMINATE_QUERY_NODES
 		bool order = 0;
 		TagStatement(Identifier * i, Comparison * c, bool o) : Node(), id(i), compare(c), order(o) {type = NodeType::TagStatement;}
 		virtual wostream& toStream(wostream& os) const {
-			return	os << "{TAG " << *compare << "}";
+			return	os << "{TAG id:" << *id << " comparision:" << *compare << "}";
 		}
 
 	};
@@ -202,7 +207,6 @@ namespace RUMINATE_QUERY_NODES
 		}
 
 		friend wostream& operator<<(wostream& os, const FilterClause& dt) {
-			cout << (long long) dt.expr << endl;
 			if(dt.expr)
 				return os << *dt.expr;
 			return os;
@@ -431,6 +435,9 @@ namespace RUMINATE_QUERY_NODES
 			if (reduce_size == 1) {
 				unsigned start = (unsigned long long) output[output_offset], end = tk.offset;
 
+				while(string[end-1] == L' ')
+					end--;
+
 				wstring * str = new(*allocator) wstring(string.substr(start, end - start));
 
 				IdentifierList * ctr = new(*allocator) IdentifierList;
@@ -441,6 +448,9 @@ namespace RUMINATE_QUERY_NODES
 
 			} else {
 				unsigned start = (unsigned long long) output[output_offset + 1], end = tk.offset;
+
+				while(string[end-1] == L' ')
+					end--;
 
 				wstring * str = new(*allocator) wstring(string.substr(start, end - start));
 
@@ -485,8 +495,6 @@ namespace RUMINATE_QUERY_NODES
 			end = tk.offset;
 
 			wstring str(string.substr(start, end - start));
-
-			wcout << str << endl;
 
 			((double *)output)[output_offset] = stod(str);
 

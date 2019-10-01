@@ -64,15 +64,15 @@ namespace RUMINATE
 			operator double() const {return dbl_val;}
 
 			friend bool operator == (double d, TagValue& v) { if(v.isDouble()) { return d == v.dbl_val; } return false; }
-			friend bool operator == (TagValue& v, double d) {return v == d;}
+			friend bool operator == (TagValue& v, double d) {return d == v;}
 			friend bool operator > (double d, TagValue& v) { if(v.isDouble()) { return d > v.dbl_val; } return false; }
 			friend bool operator > (TagValue& v, double d) { if(v.isDouble()) { return v.dbl_val > d; } return false; }
 			friend bool operator < (double d, TagValue& v) { if(v.isDouble()) { return d < v.dbl_val; } return false; }
 			friend bool operator < (TagValue& v, double d) { if(v.isDouble()) { return v.dbl_val < d; } return false; }
-			friend bool operator >= (double d, TagValue& v) { d == v || d > v; }
-			friend bool operator >= (TagValue& v, double d) { v == d || v > d; }
-			friend bool operator <= (double d, TagValue& v) { d == v || d < v; }
-			friend bool operator <= (TagValue& v, double d) { v == d || v < d; }
+			friend bool operator >= (double d, TagValue& v) { return d == v || d > v; }
+			friend bool operator >= (TagValue& v, double d) { return v == d || v > d; }
+			friend bool operator <= (double d, TagValue& v) { return d == v || d < v; }
+			friend bool operator <= (TagValue& v, double d) { return v == d || v < d; }
 
 
 			//String

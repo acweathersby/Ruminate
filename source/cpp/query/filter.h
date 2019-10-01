@@ -40,19 +40,16 @@ namespace RUMINATE
 			if(t) {
 				if(compare) {
 					auto& tag = *t;
-
-					wstring& tag_string = tag.id;
-
-					auto& list = compare->id->list;
-
-					for (int i = 0; i < list.size(); i++)
-						if(!fuzzySearchMatchFirst<wstring, wchar_t>(tag_string, *list[i]))
-							return false;
-
-					if(compare->type == Comparison::ID)
-						return true;
-
 					auto& v = tag.val;
+
+					if(compare->type == Comparison::ID) {
+						wstring* tag_string = v;
+						auto& list = compare->id->list;
+						for (int i = 0; i < list.size(); i++)
+							if(!fuzzySearchMatchFirst<wstring, wchar_t>(*tag_string, *list[i]))
+								return false;
+						return true;
+					}
 
 					if(v.isDouble()) {
 						switch(compare->type) {
@@ -69,7 +66,7 @@ namespace RUMINATE
 								}
 								break;
 							case Comparison::Range : {
-									return compare->valueA >= v && v <= compare->valueB;
+									return compare->valueA <= v && v <= compare->valueB;
 								}
 								break;
 							case Comparison::Date : {
@@ -120,11 +117,8 @@ namespace RUMINATE
 		{
 			switch(node->type) {
 				case NodeType::And : {
-
-						cout << 1234567 <<endl;
 						AndExpression* And = (AndExpression*)node;
 						return filter<Note, NoteString>(And->left, note) && filter<Note, NoteString>(And->right, note);
-
 					};
 				case NodeType::Or : {
 						OrExpression* Or = (OrExpression*)node;
@@ -143,11 +137,7 @@ namespace RUMINATE
 						return compareTag<Note>((TagStatement *)node, note);
 					};
 				case NodeType::ID : {
-						bool b =  compareIdentifier<Note, NoteString>((Identifier *)node, note);
-
-
-						wcout << "test string " << "SDFS"<< b << endl;
-						return b;
+						return compareIdentifier<Note, NoteString>((Identifier *)node, note);
 					};
 				default : {
 						return true;
@@ -167,20 +157,12 @@ namespace RUMINATE
 
 			for(int i = 0; i < note_length; i++) {
 
-				auto note = *in[i];
+				auto& note = *in[i];
 
-				cout << 1234567 <<endl;
 				if(filter<Note, NoteString>(filter_node.expr, note)) {
 					out[note_count++] = &note;
 				}
-
-				cout << 1234567 <<endl;
-
 			}
-
-
-
-
 			return 0;
 		}
 	}

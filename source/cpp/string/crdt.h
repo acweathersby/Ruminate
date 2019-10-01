@@ -266,7 +266,10 @@ namespace RUMINATE
 
 			Operator last;
 
-			OPBuffer() {}
+			OPBuffer() {
+				size = 512;
+				data = (char *) std::malloc(size);
+			}
 
 			OPBuffer(unsigned s) : size(8192) {
 				data = (char *) std::malloc(size);

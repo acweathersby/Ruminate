@@ -89,6 +89,10 @@ namespace RUMINATE
 
 				string += id;
 
+				string += L",\"body\":\"";
+
+				string += body.getValue();
+
 				string += L"\"}";
 
 				return string;
