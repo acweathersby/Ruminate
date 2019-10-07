@@ -1,30 +1,38 @@
 #pragma once
 
-#include <iostream>
-#include <cstring>
-#include <vector>
+#include "../string/crdt.h"
+#include "../string/search.h"
 #include "../uid/uid.h"
 #include "../tags/tags.h"
 #include "../utils/stream.h"
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <cstring>
 
 namespace RUMINATE
 {
+	using namespace STRING;
+	using namespace TAG;
+
 	namespace NOTE
 	{
-		using namespace TAG;
 		using std::wstring;
 		using std::vector;
 
-		template <class Body>
+		typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
+		typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
+
 		class Note
 		{
 
+		private:
+			virtual void serialize(std::ostream&) const = 0;
+			virtual void deserialize(std::istream&) = 0;
 		public:
 			unsigned type = 0;
 
 			TagContainer tags;
-
-			Body body;
 
 			UID uid;
 
@@ -36,36 +44,31 @@ namespace RUMINATE
 
 			Note(UID _uid = UID(), unsigned site = 0)
 				:
-				body(site),
 				uid(_uid),
 				id(L"")
 			{}
 
 			Note(unsigned char * data) {}
 
-			~Note() {}
+			virtual ~Note() {}
+
+			virtual const wstring toJSONString() = 0;
+
+			virtual bool fuzzySearchMatchFirst(const wstring&) = 0;
+
 			/**** Streaming Functions ****/
 			friend std::ostream& operator << (std::ostream& stream, const Note & note) {
-				stream << note.uid;
-				stream.write((char *)&note.type, sizeof(note.type));
-				writeString(stream, note.id);
-				stream.write((char *)&note.modified_time, sizeof(note.modified_time));
-				stream << note.tags;
-				stream << note.body;
+				note.serialize(stream);
 				return stream;
 			}
 
 			friend Note & operator << (Note & note, std::istream& stream) {
-				note.uid << stream;
-				stream.read((char *)&note.type, sizeof(note.type));
-				readString(stream, note.id);
-				stream.read((char *)&note.modified_time, sizeof(note.modified_time));
-				note.tags << stream;
-				note.body << stream;
+				note.deserialize(stream);
 				return note;
 			}
+
 			/**** End Streaming Functions ****/
-			const wstring id_name() const {
+			virtual const wstring id_name() const {
 				unsigned id_start = 0, i = 0;
 
 				while(i < id.size()) {
@@ -75,8 +78,42 @@ namespace RUMINATE
 
 				return id.substr(id_start);
 			}
+		};
 
-			const wstring toJSONString() {
+
+		class CRDTNote : public Note
+		{
+		private:
+		public:
+			JSCRDTString body;
+		private:
+			virtual void serialize(std::ostream& stream) const {
+				stream << uid;
+				stream.write((char *)&type, sizeof(type));
+				writeString(stream, id);
+				stream.write((char *)&modified_time, sizeof(modified_time));
+				stream << tags;
+				stream << body;
+			}
+
+			virtual void deserialize(std::istream& stream) {
+				uid << stream;
+				stream.read((char *)&type, sizeof(type));
+				readString(stream, id);
+				stream.read((char *)&modified_time, sizeof(modified_time));
+				tags << stream;
+				body << stream;
+			}
+
+		public:
+			CRDTNote(UID uid = UID(), unsigned site = 0) : Note(uid, site), body(site) {}
+			virtual ~CRDTNote() {}
+
+			virtual bool fuzzySearchMatchFirst(const wstring& string) {
+				return STRING::fuzzySearchMatchFirst<JSCRDTString, wchar_t>(body, string);
+			}
+
+			virtual const wstring toJSONString() {
 				wstring string = L"";
 
 				string += L"{";
@@ -98,5 +135,7 @@ namespace RUMINATE
 				return string;
 			}
 		};
+
+		static CRDTNote NullNote(NullUID, 0);
 	}
 }

@@ -3,6 +3,7 @@
 #include <iterator>
 #include <iostream>
 #include <vector>
+#include <string>
 #include <cstring>
 #include "./tokenizer.h"
 #include "./node_utils.h"
@@ -24,7 +25,7 @@ namespace RUMINATE_QUERY_NODES
 	typedef vector<ContainerIdentifier *> ContainerList;
 	typedef vector<Node *> SortList;
 
-	wostream& operator << (wostream& os, IdentifierList& id_list)
+	static wostream& operator << (wostream& os, IdentifierList& id_list)
 	{
 		for(auto iter = id_list.begin(); iter != id_list.end(); iter++)
 			os << **iter;
@@ -499,6 +500,7 @@ namespace RUMINATE_QUERY_NODES
 			((double *)output)[output_offset] = stod(str);
 
 			return output[output_offset];
+
 		}
 
 		static void * LAST(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {

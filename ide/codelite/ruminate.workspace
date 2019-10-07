@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeLite_Workspace Name="ruminate" Version="10.0.0">
+  <Project Name="libCompiler" Path="Compiler.project" Active="No"/>
+  <Project Name="ruminate" Path="ruminate.project" Active="Yes"/>
+  <BuildMatrix>
+    <WorkspaceConfiguration Name="NoConfig" Selected="yes">
+      <Project Name="rebuild_cache" ConfigName="NoConfig"/>
+      <Project Name="edit_cache" ConfigName="NoConfig"/>
+      <Project Name="Compiler" ConfigName="NoConfig"/>
+      <Project Name="ruminate" ConfigName="NoConfig"/>
+    </WorkspaceConfiguration>
+  </BuildMatrix>
+</CodeLite_Workspace>

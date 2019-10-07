@@ -5,13 +5,14 @@
 #include "../uid/uid.h"
 #include "../note/note.h"
 #include "../container/container.h"
-#include "../database/base.h"
+#include "../database/db_runner.h"
 //#include "./container.h"
 
 namespace RUMINATE
 {
 	using namespace CONTAINER;
 	using namespace DB;
+	using namespace NOTE;
 
 	namespace QUERY
 	{
@@ -27,7 +28,7 @@ namespace RUMINATE
 
 			Selected notes are placed in the output buffer.
 		**/
-		bool compareQueryIdentifier(const Identifier& id, const wstring& string, bool FOLLOWING_WILD_CARD = false)
+		static bool compareQueryIdentifier(const Identifier& id, const wstring& string, bool FOLLOWING_WILD_CARD = false)
 		{
 
 			int offset = 0;
@@ -37,7 +38,7 @@ namespace RUMINATE
 				const wstring& str = *id.list[i];
 
 				if (str == L"*") {
-					cout << "TEST ME  "<< id.list.size() << " " << i << endl;
+
 					if (i == (id.list.size()-1))
 						return true;
 
@@ -63,10 +64,10 @@ namespace RUMINATE
 			return false;
 		}
 
-		template<class Note>
-		int recurseContainerMatcher(const ContainerClause& container_query, const ContainerLU<Note>& container, unsigned& total, unsigned max_uids, UID * uids, unsigned container_offset = 0, unsigned FOLLOWING_WILD_CARD = 0)
+		static int recurseContainerMatcher(const ContainerClause& container_query, const ContainerLU& container, unsigned& total, unsigned max_uids, UID * uids, unsigned container_offset = 0, unsigned FOLLOWING_WILD_CARD = 0)
 		{
 			if(!container_query.list) {
+
 				container.fillUIDBuffer(&uids[total]);
 				total += container.uidSize();
 				return 1;
@@ -76,13 +77,16 @@ namespace RUMINATE
 
 			if(container.id == L"" || ctr->IS_WILD_CARD() || compareQueryIdentifier(*ctr, container.id) ) {
 
+
 				auto ctrs = container.containers;
 
 				unsigned offset = (FOLLOWING_WILD_CARD || container.id == L"") ? container_offset: container_offset + 1;
 
 				if (offset >= container_query.list->size()) {
 
+
 					if(container.uidSize() + total < max_uids) {
+
 
 						container.fillUIDBuffer(&uids[total]);
 
@@ -90,7 +94,7 @@ namespace RUMINATE
 					}
 				} else if (container.containerSize() > 0) {
 					for(auto iter = ctrs.begin(); iter != ctrs.end(); iter++)
-						recurseContainerMatcher<Note>(container_query, *(iter->second), total, max_uids, uids,  offset, FOLLOWING_WILD_CARD);
+						recurseContainerMatcher(container_query, *(iter->second), total, max_uids, uids,  offset, FOLLOWING_WILD_CARD);
 				}
 			}
 
@@ -98,37 +102,27 @@ namespace RUMINATE
 		}
 
 		//Filters out nodes based on container query.
-		template<class Note>
-		int filterContainer(ContainerClause& container, const ContainerLU<Note>& containers, const NoteDB<Note>& db, unsigned& total_results, unsigned max_results, Note ** buffer)
+		static int filterContainer(ContainerClause& container, const ContainerLU& ctr_lu,  DBRunner& db, unsigned& total_results, unsigned max_results, UID * buffer)
 		{
-			unsigned uid_buffer_size = 512;
+			unsigned uid_buffer_size = max_results;
 
-			UID * uids = (UID *)malloc(sizeof(UID)*uid_buffer_size);
+			recurseContainerMatcher(container, ctr_lu, total_results, uid_buffer_size, buffer);
 
-			total_results = 0;
-
-			if(!uids) return -1;
-
-			recurseContainerMatcher<Note>(container, containers, total_results, uid_buffer_size, uids);
-
-			for(int i = 0; i < total_results; i++)
-				buffer[i] = db.getNote(uids[i]);
+			cout << total_results << " results" << endl;
 
 			if(container.id) {
 
 				unsigned j = 0;
 
 				for(int i = 0; i < total_results; i++) {
-					auto note = buffer[i];
-
-					if(compareQueryIdentifier(*container.id, note->id_name()))
-						buffer[j++] = note;
+					if(compareQueryIdentifier(*container.id, db.getNoteID(buffer[i])))
+						buffer[j++] = buffer[i];
 				}
 
 				total_results = j;
 			}
 
-			free(uids);
+			cout << total_results << " results" << endl;
 
 			return 0;
 		}

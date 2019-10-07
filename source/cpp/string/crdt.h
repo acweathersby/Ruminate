@@ -1,8 +1,9 @@
 #pragma once
+
 #include <iostream>
 #include <cstring>
 #include <sstream>
-
+#include <fstream>
 
 namespace RUMINATE
 {
@@ -576,7 +577,6 @@ namespace RUMINATE
 									return false;
 								}
 
-
 								if
 								(
 								    peer_candidate < op && !peer_candidate.isDeleteOperation()
@@ -683,6 +683,7 @@ namespace RUMINATE
 			}
 
 			void fromFileStream (std::ifstream& stream) {
+
 				CharOperation source_op = findOpAtIndex(0);
 
 				while(stream.good()) {

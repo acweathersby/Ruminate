@@ -12,34 +12,36 @@
 #include "../database/base.h"
 #include "./container.h"
 #include "./filter.h"
+#include "./query_result.h"
 
 namespace RUMINATE
 {
 	using namespace CONTAINER;
 	using namespace DB;
+	using namespace NOTE;
 
 	namespace QUERY
 	{
 
 		using namespace RUMINATE_QUERY_NODES;
-
+		using namespace HC_TEMP;
 		using HC_Tokenizer::Token;
 		using HC_Parser::parse;
-		using namespace HC_TEMP;
 
 		typedef ParseBuffer<RUMINATE_QUERY_NODES::QueryBodyNode> Allocator;
 
-		template <class Note, class NoteString>
-		Note ** runQuery(const wstring& string, NoteDB<Note>& db, unsigned& total, const unsigned node_count_size = 512)
+		static QueryResult runQuery(const wstring& string, DBRunner& db)
+
 		{
+			const unsigned node_count_size = 512;
 
-			unsigned count = node_count_size;
+			unsigned count = node_count_size, total = 0;
 
-			Note ** out_B, **active_B;
+			UID * out_B, *active_B;
 
 			// Allocate stack space for note pointers.
-			Note * active_buffer[count];
-			Note * out_buffer[count];
+			UID * out_buffer = (UID *) malloc(sizeof(UID) * count * 2);
+			UID * active_buffer = out_buffer + count;
 
 			active_B = active_buffer;
 			out_B = out_buffer;
@@ -58,16 +60,20 @@ namespace RUMINATE
 
 					if (node->container) {
 
+
+
+						cout << node_count_size << " MAX" << endl;
+
 						total = 0;
 
-						filterContainer<Note>(*(node->container), db.getContainerTree(), db, total, node_count_size, out_B);
+						filterContainer(*(node->container), db.getContainerTree(), db, total, node_count_size, out_B);
 					}
 
 					if(node->filter) {
 
 						active_B = out_B;
 
-						filterNotes<Note, NoteString>(*(node->filter), active_B, out_B, total);
+						filterNotes(*(node->filter), db, active_B, out_B, total);
 
 					}
 
@@ -79,16 +85,12 @@ namespace RUMINATE
 				std::cout << e << std::endl;
 			}
 
-			if(total > 0) {
+			if(total > 0)
+				return QueryResult(string, out_buffer, total, db);
 
-				Note ** ptr = new Note *[total] ;
+			free(out_buffer);
 
-				std::memcpy(ptr, out_B, total<<3);
-
-				return ptr;
-			}
-
-			return nullptr;
+			return QueryResult(string, db);
 		}
 
 	}

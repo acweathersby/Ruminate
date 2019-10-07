@@ -5,7 +5,7 @@
 #include "../uid/uid.h"
 #include "../note/note.h"
 #include "../container/container.h"
-#include "../database/base.h"
+#include "../database/db_runner.h"
 #include "../string/search.h"
 //#include "./container.h"
 
@@ -27,8 +27,32 @@ namespace RUMINATE
 		using HC_Parser::parse;
 		using namespace HC_TEMP;
 
-		template<class Note>
-		bool compareTag(TagStatement* node, Note& note)
+		static bool compareDouble(Comparison& compare, double d)
+		{
+			switch(compare.type) {
+				case Comparison::Value : {
+						return compare.valueA == d;
+					}
+					break;
+				case Comparison::MoreThan : {
+						return compare.valueA > d;
+					}
+					break;
+				case Comparison::LessThan : {
+						return compare.valueA < d;
+					}
+					break;
+				case Comparison::Range : {
+						return compare.valueA <= d && d <= compare.valueB;
+					}
+					break;
+				case Comparison::ID : return false;
+				case Comparison::Date : return false;
+			}
+			return false;
+		}
+
+		static bool compareTag(TagStatement* node, Note& note)
 		{
 			auto& tags = note.tags;
 
@@ -52,28 +76,10 @@ namespace RUMINATE
 					}
 
 					if(v.isDouble()) {
-						switch(compare->type) {
-							case Comparison::Value : {
-									return compare->valueA == v;
-								}
-								break;
-							case Comparison::MoreThan : {
-									return compare->valueA > v;
-								}
-								break;
-							case Comparison::LessThan : {
-									return compare->valueA < v;
-								}
-								break;
-							case Comparison::Range : {
-									return compare->valueA <= v && v <= compare->valueB;
-								}
-								break;
-							case Comparison::Date : {
+						if(compare->type == Comparison::Date) {
 
-								}
-								break;
-						}
+						} else
+							return compareDouble(*compare, v);
 					}
 				} else
 					return true;
@@ -81,63 +87,60 @@ namespace RUMINATE
 
 			return false;
 		}
-		template<class Note>
-		bool compareSize(SizeStatement* node, Note& note)
+
+		static bool compareSize(SizeStatement* node, Note& note)
 		{
 			return false;
+			//return compareDouble(*node->compare, double(note.size));
 		}
 
-		template<class Note>
-		bool compareDateCreated(CreatedStatement* node, Note& note)
+		static bool compareDateCreated(CreatedStatement* node, Note& note)
 		{
-			return false;
+			return compareDouble(*node->compare, double(note.uid.created_time));
 		}
 
-		template<class Note>
-		bool compareDateModified(ModifiedStatement* node, Note& note)
+		static bool compareDateModified(ModifiedStatement* node, Note& note)
 		{
-			return false;
+			return compareDouble(*node->compare, double(note.modified_time));
 		}
 
-		template<class Note, class NoteString>
-		bool compareIdentifier(Identifier* node, Note& note)
+		static bool compareIdentifier(Identifier* node, Note& note)
 		{
-			auto& note_string = note.body;
 			auto& list = node->list;
 
 			for (int i = 0; i < list.size(); i++)
-				if(!fuzzySearchMatchFirst<NoteString, wchar_t>(note_string, *list[i]))
+				if(!note.fuzzySearchMatchFirst(*list[i]))
 					return false;
 
 			return true;
 		}
 
-		template<class Note, class NoteString>
-		bool filter(Node* node, Note& note)
+
+		static bool filter(Node* node, Note& note)
 		{
 			switch(node->type) {
 				case NodeType::And : {
 						AndExpression* And = (AndExpression*)node;
-						return filter<Note, NoteString>(And->left, note) && filter<Note, NoteString>(And->right, note);
+						return filter(And->left, note) && filter(And->right, note);
 					};
 				case NodeType::Or : {
 						OrExpression* Or = (OrExpression*)node;
-						return filter<Note, NoteString>(Or->left, note) || filter<Note, NoteString>(Or->right, note);
+						return filter(Or->left, note) || filter(Or->right, note);
 					};
 				case NodeType::SizeStatement : {
-						return compareSize<Note>((SizeStatement *)node, note);
+						return compareSize((SizeStatement *)node, note);
 					};
 				case NodeType::CreatedStatement : {
-						return compareDateCreated<Note>((CreatedStatement *)node, note);
+						return compareDateCreated((CreatedStatement *)node, note);
 					};
 				case NodeType::ModifiedStatement : {
-						return compareDateModified<Note>((ModifiedStatement *)node, note);
+						return compareDateModified((ModifiedStatement *)node, note);
 					};
 				case NodeType::TagStatement : {
-						return compareTag<Note>((TagStatement *)node, note);
+						return compareTag((TagStatement *)node, note);
 					};
 				case NodeType::ID : {
-						return compareIdentifier<Note, NoteString>((Identifier *)node, note);
+						return compareIdentifier((Identifier *)node, note);
 					};
 				default : {
 						return true;
@@ -145,11 +148,8 @@ namespace RUMINATE
 			}
 		}
 
-
-
 		//Filters out notes based on note content
-		template<class Note, class NoteString>
-		int filterNotes(FilterClause& filter_node, Note ** in, Note ** out, unsigned& note_count)
+		static int filterNotes(FilterClause& filter_node, DBRunner& db, UID * in, UID * out, unsigned& note_count)
 		{
 			unsigned note_length = note_count;
 
@@ -157,11 +157,10 @@ namespace RUMINATE
 
 			for(int i = 0; i < note_length; i++) {
 
-				auto& note = *in[i];
+				auto note = db.getNote(in[i]);
 
-				if(filter<Note, NoteString>(filter_node.expr, note)) {
-					out[note_count++] = &note;
-				}
+				if(filter(filter_node.expr, *note))
+					out[note_count++] = note->uid;
 			}
 			return 0;
 		}

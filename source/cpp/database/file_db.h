@@ -1,4 +1,5 @@
 #pragma once
+
 #include "./base.h"
 #include <string>
 #include <cstring>
@@ -6,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
+#include <system_error>
 
 #define RUMINATE_FILE_EXTENSION L".rnote"
 
@@ -14,34 +16,33 @@
  *  Data is stored in ruminate.note file objects.
  * 	Containers are literally mapped to file system folders.
  *
- *  Any file can be made into a note. The file store will automatically convert file contents into an file rnote.
+ *  Any file can be made into a note. The file store will automatically convert file contents into a rnote.
  *  Rnote files have a header containing UID and time stamp, note body data, and a footer comprising the tags of the note.
  *  The header is the first line in the file
- * 	The footer is the last line in the file.
- *
  */
 
 
 namespace RUMINATE
 {
+
 	namespace fs = std::filesystem;
 	namespace DB
 	{
 
-		wstring non_rnote_extensions = L".txt";
+		static wstring non_rnote_extensions = L".txt";
 
-		bool acceptedNonRnoteExtensions(const wstring ext, const wstring& extension_list)
+		static bool acceptedNonRnoteExtensions(const wstring ext, const wstring& extension_list)
 		{
 			return extension_list.find(ext) != std::wstring::npos;
 		}
 
 
-		template<class Note>
-		class file_db : public NoteDB<Note>
+		class FileDB : public NoteDB
 		{
 		private:
-			std::unordered_map<UID, Note *> notes;
-			ContainerLU<Note> ctr; //Root Container entry.
+
+			ContainerLU * ctr; //Root Container entry.
+
 			wstring folder;
 
 		public:
@@ -49,103 +50,164 @@ namespace RUMINATE
 			/*
 			 * Folder is the file system folder to mount the DB to.
 			 */
-			file_db(std::wstring f) : NoteDB<Note>() , folder(f) {
-				fs::recursive_directory_iterator iter(folder);
+			FileDB(std::wstring& f) : NoteDB() , folder(f) {}
 
-				unsigned folder_size = folder.size();
+			virtual ~FileDB() {};
+			std::unordered_map<UID, Note *> notes; // Local note cache.
 
-				//Iterate through all obects in folder and -
-				// push file information to cache.
-				// Cache
-				// read any ruminate files and push UID data to ContainerLU cache.
-				// convert any text file into a ruminate note and push UID to ContainerLU cache.
+			virtual void MergeNoteLU(NoteLU& noteLU, ContainerLU& containerLU) {
 
-				for(auto& p: iter) {
-					if(p.is_directory()) {
-						//Load directory information into store.
+				//Look through all files and create UID's for each item.
 
-						//Strip path of the any leading . characters
-						auto path = p.path().wstring().substr(folder_size);
+				std::error_code ec;
 
-						//Use string indexing to precache the container.
-						ctr[path];
+				try {
+					fs::recursive_directory_iterator iter(folder);
 
-						continue;
-					}
+					unsigned folder_size = folder.size();
 
-					if(p.is_regular_file()) {
+					//Iterate through all obects in folder and -
+					// push file information to cache.
+					// Cache
+					// read any ruminate files and push UID data to ContainerLU cache.
+					// convert any text file into a ruminate note and push UID to ContainerLU cache.
 
-						std::ifstream file;
-						file.open(p.path());
 
-						if(file.is_open()) {
+					for(auto& p: iter) {
+						if(p.is_directory()) {
+							//Load directory information into store.
 
-							if(p.path().extension() == RUMINATE_FILE_EXTENSION) {
+							//Strip path of the any leading . characters
+							auto path = p.path().wstring().substr(folder_size);
 
-								Note * note = new Note();
+							//Use string indexing to precache the container.
+							containerLU[path];
 
-								(*note) << file;
+							continue;
+						}
 
-								addNote(*note);
+						if(p.is_regular_file()) {
 
-							} else if(acceptedNonRnoteExtensions(p.path().extension().wstring(), non_rnote_extensions)) {
+							std::ifstream file;
 
-								Note * note = new Note();
+							unsigned long long modified = fs::last_write_time(p.path()).time_since_epoch().count();
 
-								note->id = p.path().parent_path().wstring().substr(folder_size) +  L"/" + p.path().stem().wstring();
+							UID uid;
 
-								note->tags.fromBracketedStream(file);
+							wstring id = p.path().parent_path().wstring().substr(folder_size) +  L"/" + p.path().stem().wstring();
 
-								note->body.fromFileStream(file);
+							file.open(p.path());
 
-								addNote(*note);
+							if(file.is_open()) {
+								if(acceptedNonRnoteExtensions(p.path().extension().wstring(), non_rnote_extensions)) {
+									if(file.is_open()) {
+										//Get Stored UID
+										CRDTNote note;
+
+										note.id = p.path().parent_path().wstring().substr(folder_size) +  L"/" + p.path().stem().wstring();
+
+										note.tags.fromBracketedStream(file);
+
+										note.body.fromFileStream(file);
+
+										addNote(note);
+									}
+
+								} else {
+									//Get Stored UID
+									uid = uid << file;
+
+									//Turn into real rnote;
+								}
+								file.close();
+							}
+
+							bool UPDATE = false;
+
+							auto result = noteLU.find(uid);
+
+							if(result != noteLU.end()) {
+								//Update the notes location if the Modified date is newer.
+								unsigned long long current_time = result->second.first;
+
+								if(current_time < modified) {
+									UPDATE = true;
+									//remove entry from ContainerLU
+									containerLU.removeNote(id, uid);
+								}
+								//Otherwise do nothing.
+							} else {
+								UPDATE = true;
+								//Update the location and set the uid to sync.
+							}
+
+							if(UPDATE) {
+								containerLU.addNote(id, uid);
+								noteLU.insert( {uid, {modified, id}});
 							}
 						}
-						file.close();
 					}
+
+				} catch(std::bad_alloc& e) {
+					std::wcout << "Failed to allocate space " << e.what() << folder << std::endl;
+				} catch(fs::filesystem_error& e) {
+					std::wcout << "Failed to load folder " << e.what() << std::endl;
+				} catch (...) {
+					std::wcout << "General Error" << std::endl;
 				}
+
+				return;
 			}
 
-			virtual ~file_db() {};
+			virtual Note * getNote(UID uid, const NoteLU& lu) {
 
-			void saveNotes() {
-				for(auto& n : notes) {
-					Note& note = *(n.second);
-					wstring path = note.id;
-					path = folder + path + wstring(RUMINATE_FILE_EXTENSION);
+				auto result = lu.find(uid);
 
-					std::ofstream file;
+				if(result != lu.end()) {
+
+
+					std::ifstream file;
+
+					wstring path = folder + L"/" + result->second.second + RUMINATE_FILE_EXTENSION;
+
+					std::wcout << path;
+
+					cout << " ATSTSTSTSTST" << endl;
+
 					file.open(path);
 
 					if(file.is_open()) {
-						file << note;
+
+						CRDTNote * note = new CRDTNote();
+
+						(*note) << file;
+
+						return note;
+
 					}
-					file.close();
 				}
+
+				return nullptr;
 			}
 
-			virtual bool addNote(Note& note) {
-				std::wcout << note.uid.toJSONString() << "  " << note.id << std::endl;
-				notes.insert( {note.uid, &note});
-				//add note to containers
-				ctr.addNote(note);
+			virtual bool addNote(Note&note) {
+
+				wstring path = note.id;
+
+				path = folder + path + wstring(RUMINATE_FILE_EXTENSION);
+
+				std::ofstream file;
+
+				file.open(path);
+
+				if(file.is_open()) {
+					file << note;
+				}
+
+				file.close();
+
 				return true;
 			}
-
-			virtual Note * getNote(const UID& uid) const {
-				auto iter = notes.find(uid);
-
-				if(iter != notes.end()) {
-					std::wcout << uid.toJSONString() << "  " << iter->second->id << std::endl;
-					return (iter->second);
-				}
-
-				return (new Note()); // <<<< MEMORY LEAK <<<<<<<
-			}
-
-			virtual const ContainerLU<Note>& getContainerTree() const {
-				return ctr;
-			};
 
 			virtual void close() {
 				for(auto& n : notes) {

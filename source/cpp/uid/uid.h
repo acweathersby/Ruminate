@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <time.h>
 #include <iostream>
+#include <string>
 #include <cstring>
 #include <random>
 
@@ -37,6 +38,12 @@ namespace RUMINATE
 			random = dist(mt);
 		}
 
+		UID(unsigned n) {
+			magic = 0;
+			created_time = 0;
+			random = 0;
+		}
+
 		friend bool operator == (const UID& a, const UID& b) {
 			return a.created_time == b.created_time && b.random == a.random;
 		}
@@ -60,6 +67,8 @@ namespace RUMINATE
 			return string;
 		}
 	};
+
+	static UID NullUID(0);
 
 }
 

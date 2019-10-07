@@ -18,10 +18,12 @@ namespace RUMINATE
 
 		stream.read((char *)&size, sizeof(size));
 
-		StringType buffer[size];
+		StringType * buffer = new StringType[size];
 
 		stream.read((char *)buffer, size * sizeof(StringType));
 
 		string.assign(buffer, size);
+
+		delete[] buffer;
 	}
 }

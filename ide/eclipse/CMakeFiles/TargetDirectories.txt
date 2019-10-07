@@ -1,0 +1,4 @@
+/home/anthony/work/active/apps/ruminate/ide/eclipse/CMakeFiles/rebuild_cache.dir
+/home/anthony/work/active/apps/ruminate/ide/eclipse/CMakeFiles/edit_cache.dir
+/home/anthony/work/active/apps/ruminate/ide/eclipse/CMakeFiles/Compiler.dir
+/home/anthony/work/active/apps/ruminate/ide/eclipse/CMakeFiles/ruminate.dir

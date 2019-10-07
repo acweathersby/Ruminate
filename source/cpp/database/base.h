@@ -1,4 +1,5 @@
 #pragma once
+#include <utility>
 #include <unordered_map>
 #include "../uid/uid.h"
 #include "../container/container.h"
@@ -6,9 +7,13 @@
 namespace RUMINATE
 {
 	using namespace CONTAINER;
+	using namespace NOTE;
 	namespace DB
 	{
-		template<class Note>
+
+		typedef std::pair<unsigned long long, wstring> NoteBrief; // Used for a modified date and container string.
+		typedef std::unordered_map<UID,NoteBrief> NoteLU; // Lookup used to determine the mapping of a particular UID to a modified time;
+
 		class NoteDB
 		{
 		public:
@@ -30,11 +35,9 @@ namespace RUMINATE
 
 			virtual bool addNote(Note&) = 0;
 
-			virtual Note * getNote(const UID& uid) const = 0;
+			virtual Note * getNote(UID, const NoteLU&) = 0;
 
-			virtual const ContainerLU<Note>& getContainerTree() const = 0;
-
-			virtual void close() = 0;
+			virtual void MergeNoteLU (NoteLU&, ContainerLU&) = 0;
 		};
 	}
 }

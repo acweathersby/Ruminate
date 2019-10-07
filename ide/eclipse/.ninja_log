@@ -1,0 +1,14 @@
+# ninja log v5
+1	20	1570304486	CMakeFiles/ruminate.dir/database/file_db.cpp.o	39bcebf719fd856a
+3	96	1570304486	CMakeFiles/ruminate.dir/query/query.cpp.o	da4c4468d178e2b8
+0	133	1570304486	CMakeFiles/Compiler.dir/compiler/parse_buffer.cpp.o	854f4fcc0e500d6f
+6	732	1570304486	CMakeFiles/ruminate.dir/tags/tags.cpp.o	f965c682a37250ef
+0	839	1570304486	CMakeFiles/Compiler.dir/compiler/gnql_cpp.cpp.o	f2f0e7d9f5e38df
+6	869	1570304486	CMakeFiles/ruminate.dir/tags/tag.cpp.o	d8d2e3b2a281a106
+2	958	1570304486	CMakeFiles/ruminate.dir/note/note.cpp.o	25dae2e983afd255
+0	1089	1570304487	CMakeFiles/Compiler.dir/compiler/parser.cpp.o	50038e4ea9b72429
+1	1473	1570304487	CMakeFiles/ruminate.dir/main.cpp.o	47931b189a6c88b5
+0	1500	1570304487	CMakeFiles/Compiler.dir/compiler/main.cpp.o	7ab620a044418c7e
+1500	1511	1570304487	libCompiler.a	183825d408dd541a
+7	2126	1570304488	CMakeFiles/ruminate.dir/ui/cli.cpp.o	f3bb41818d71de5b
+2126	2223	1570304488	ruminate	a4e2378baad46a4

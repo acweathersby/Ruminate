@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <cstring>
 
@@ -19,12 +21,12 @@ namespace RUMINATE
 		{
 			int source_index = 0, source_length = source.size(), match_length = match.size(), buffer_end = -1;
 
-			window_size = std::min(std::max(window_size, match_length), source_length);
+			window_size = std::min(std::min(std::max(window_size, match_length), source_length), 1023);
 
 			if(window_size < match_length)
 				return -1;
 
-			MatchCharT buffer[window_size+1];
+			MatchCharT buffer[1024];
 
 			buffer[window_size] = 0;
 
@@ -52,7 +54,7 @@ namespace RUMINATE
 						match_count++;
 						mi--;
 					} else {
-						if(match_count > 0); // Add to list of matches
+						if(match_count > 0) {}; // Add to list of matches
 
 						match_count = 0;
 
@@ -75,12 +77,12 @@ namespace RUMINATE
 		{
 			int source_index = 0, source_length = source.size(), match_length = match.size(),buffer_end = -1;
 
-			window_size = std::min(std::max(window_size, match_length), source_length);
+			window_size = std::min(std::min(std::max(window_size, match_length), source_length), 1023);
 
 			if(window_size < match_length)
 				return -1;
 
-			MatchCharT buffer[window_size+1];
+			MatchCharT buffer[1024];
 
 			buffer[window_size] = 0;
 
@@ -108,7 +110,7 @@ namespace RUMINATE
 						match_count++;
 						mi++;
 					} else {
-						if(match_count > 0); // Add to list of matches
+						if(match_count > 0) {}; // Add to list of matches
 
 						match_count = 0;
 

@@ -1,8 +1,10 @@
 #pragma once
+
 #include "../uid/uid.h"
 #include "../note/note.h"
 #include <unordered_map>
 #include <vector>
+#include <string>
 #include <cstring>
 
 /** Classes for dealing with Notes based on there id (container location) */
@@ -11,6 +13,8 @@
 
 namespace RUMINATE
 {
+	using namespace NOTE;
+
 	namespace CONTAINER
 	{
 		using std::wstring;
@@ -21,18 +25,17 @@ namespace RUMINATE
 
 		typedef vector<UID> UIDList;
 
-		template<class Note>
 		struct ContainerLU {
 
 			wstring id;
 
-			unordered_map<wstring, ContainerLU<Note>*> containers;
+			unordered_map<wstring, ContainerLU*> containers;
 
 			UIDList uids;
 
 			ContainerLU() {}
 
-			ContainerLU<Note>& operator [] (const wstring string) {
+			ContainerLU& operator [] (const wstring string) {
 				int i = 0, start = 0;
 
 				if(string[i] == Delimiter)
@@ -47,7 +50,7 @@ namespace RUMINATE
 				wstring str = (string.substr(start, i - start)),
 				        rest = string.substr(i);
 
-				ContainerLU<Note> * sub = nullptr;
+				ContainerLU * sub = nullptr;
 
 				auto iter = containers.find(str);
 
@@ -55,7 +58,7 @@ namespace RUMINATE
 					sub = iter->second;
 				} else {
 
-					sub = new ContainerLU<Note>();
+					sub = new ContainerLU();
 
 					sub->id = str;
 
@@ -79,22 +82,19 @@ namespace RUMINATE
 					buffer[offset++] = *iter;
 			}
 
-			void addContainer(const ContainerLU<Note>& container) {
-				const wstring id = container.id;
-				containers.insert( {id, &container});
+			void addContainer(ContainerLU& container) {
+				wstring id = container.id;
+				containers.insert( { id, (&container)});
 			}
 
-			void removeContainer(const ContainerLU<Note>& container) {
+			void removeContainer(const ContainerLU& container) {
 				if(containers.find(container.id) != containers.end())
 					containers.erase(container.id);
 			}
 
-			void addNote(const Note& note) {
-
+			void removeNote(const wstring& id, const UID& uid) {
 				//Retrive only the portion of the note preceding the last delemiter;
 				unsigned i = 0, last_del = 0;
-
-				const wstring& id = note.id;
 
 				while(i < id.size()) {
 					if(id[i] == Delimiter)
@@ -102,16 +102,40 @@ namespace RUMINATE
 					i++;
 				}
 
-				(*this)[id.substr(0, last_del)].addUID(note.uid);
+				(*this)[id.substr(0, last_del)].removeUID(uid);
+			}
+
+			void addNote(const wstring& id, const UID& uid) {
+
+				//Retrive only the portion of the note preceding the last delemiter;
+				unsigned i = 0, last_del = 0;
+
+				while(i < id.size()) {
+					if(id[i] == Delimiter)
+						last_del = i;
+					i++;
+				}
+
+				std::wcout << id << endl;
+
+				(*this)[id.substr(0, last_del)].addUID(uid);
+			}
+
+			void addNote(const Note& note) {
+				return addNote(note.id, note.uid);
 			}
 
 			void addUID(const UID& uid) {
 				uids.push_back(uid);
 			}
+
+			void removeUID(const UID& uid) {
+				for(auto iter = uids.begin(); iter != uids.end(); iter++)
+					if((*iter) == uid) {
+						uids.erase(iter);
+						return;
+					}
+			}
 		};
-
-
-
-
 	}
 }
