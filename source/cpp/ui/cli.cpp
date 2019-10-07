@@ -1,5 +1,6 @@
 #include "./cli.h"
 #include <iostream>
+#include <thread>
 
 bool cli(wstring filepath)
 {
@@ -20,6 +21,11 @@ bool cli(wstring filepath)
 		std::getline(std::wcin, string);
 
 		QueryResult query = runQuery(string, db);
+
+		while (!query.READY()) {
+			//Sleep this thread;
+			std::this_thread::yield();
+		}
 
 		cout << query << endl;
 

@@ -59,7 +59,9 @@ void RUMINATE::TAG::TagContainer::fromBracketedStream(std::istream& stream)
 	//Only consume characters if a particular set of characters is found. { tag_name : tag_val [, ...] }
 	unsigned root = stream.tellg();
 
-	if(stream.get() == '{') {
+	char t = stream.get();
+
+	if(t == '{') {
 		int c = stream.get();
 		while(stream.good() && c != '}') {
 			//First part is text data. Ignore white space.

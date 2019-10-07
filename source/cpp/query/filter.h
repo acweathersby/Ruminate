@@ -143,7 +143,7 @@ namespace RUMINATE
 						return compareIdentifier((Identifier *)node, note);
 					};
 				default : {
-						return true;
+						return false;
 					}
 			}
 		}

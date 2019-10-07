@@ -181,9 +181,11 @@ namespace RUMINATE_QUERY_NODES
 		bool order = 0;
 		TagStatement(Identifier * i, Comparison * c, bool o) : Node(), id(i), compare(c), order(o) {type = NodeType::TagStatement;}
 		virtual wostream& toStream(wostream& os) const {
-			return	os << "{TAG id:" << *id << " comparision:" << *compare << "}";
+			if (compare) 
+				return	os << "{TAG id:" << *id << " comparision:" << *compare << "}";
+			else 
+				return	os << "{TAG id:" << *id << "}";
 		}
-
 	};
 
 	struct SortClause : public Node {

@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cstring>
+#include <string>
 #include <unordered_map>
 
 #ifdef assert
