@@ -1,3 +1,5 @@
+#pragma once
+
 #include <algorithm>
 
 template <const int tSize>
@@ -12,6 +14,12 @@ struct OptionalNodesBase {
 };
 
 template<class ... > struct OptionalNodes {};
+
+template<class A>
+struct OptionalNodes<A> : public OptionalNodesBase<1> {
+	__declspec(align(8)) A a;
+	OptionalNodes<A>(int a, int b, void ** c) : OptionalNodesBase<1>(a,b,c) {};
+};
 
 template<class A, class B>
 struct OptionalNodes<A, B> : public OptionalNodesBase<2> {
@@ -59,3 +67,14 @@ struct OptionalNodes<A, B, C, D, E, F> : public OptionalNodesBase<6> {
 	OptionalNodes<A, B, C, D, E, F>(int a, int b, void ** c) : OptionalNodesBase<6>(a,b,c) {};
 };
 
+template<class A, class B, class C, class D, class E, class F, class G>
+struct OptionalNodes<A, B, C, D, E, F, G> : public OptionalNodesBase<7> {
+	__declspec(align(8)) A a;
+	__declspec(align(8)) B b;
+	__declspec(align(8)) C c;
+	__declspec(align(8)) D d;
+	__declspec(align(8)) E e;
+	__declspec(align(8)) F f;
+	__declspec(align(8)) G g;
+	OptionalNodes<A, B, C, D, E, F, G>(int a, int b, void ** c) : OptionalNodesBase<7>(a,b,c) {};
+};

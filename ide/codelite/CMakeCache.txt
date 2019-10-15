@@ -19,7 +19,10 @@ CMAKE_AR:FILEPATH=/usr/bin/ar
 
 //Choose the type of build, options are: None Debug Release RelWithDebInfo
 // MinSizeRel ...
-CMAKE_BUILD_TYPE:STRING=
+CMAKE_BUILD_TYPE:STRING=Debug
+
+//Enable/Disable color output during build.
+CMAKE_COLOR_MAKEFILE:BOOL=ON
 
 //CXX compiler
 CMAKE_CXX_COMPILER:FILEPATH=/usr/local/clang_9.0.0/bin/clang++
@@ -34,10 +37,10 @@ CMAKE_CXX_COMPILER_RANLIB:FILEPATH=/usr/local/clang_9.0.0/bin/llvm-ranlib
 CMAKE_CXX_FLAGS:STRING=-Wall -stdlib=libc++ -std=c++17 -fdeclspec
 
 //Flags used by the CXX compiler during DEBUG builds.
-CMAKE_CXX_FLAGS_DEBUG:STRING=-g -g
+CMAKE_CXX_FLAGS_DEBUG:STRING=-g
 
 //Flags used by the CXX compiler during MINSIZEREL builds.
-CMAKE_CXX_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG -Os -DNDEBUG
+CMAKE_CXX_FLAGS_MINSIZEREL:STRING=-O2 -DNDEBUG -Os -DNDEBUG
 
 //Flags used by the CXX compiler during RELEASE builds.
 CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG -O3 -DNDEBUG
@@ -58,7 +61,7 @@ CMAKE_C_COMPILER_RANLIB:FILEPATH=/usr/local/clang_9.0.0/bin/llvm-ranlib
 CMAKE_C_FLAGS:STRING=-Wall -std=c99
 
 //Flags used by the C compiler during DEBUG builds.
-CMAKE_C_FLAGS_DEBUG:STRING=-g -g
+CMAKE_C_FLAGS_DEBUG:STRING=-O0 -g -Wall -g
 
 //Flags used by the C compiler during MINSIZEREL builds.
 CMAKE_C_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG -Os -DNDEBUG
@@ -93,8 +96,8 @@ CMAKE_INSTALL_PREFIX:PATH=/usr/local
 //Path to a program.
 CMAKE_LINKER:FILEPATH=/usr/bin/ld
 
-//Program used to build from build.ninja files.
-CMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/ninja
+//Path to a program.
+CMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make
 
 //Flags used by the linker during the creation of modules during
 // all build types.
@@ -214,6 +217,8 @@ CMAKE_CACHE_MAJOR_VERSION:INTERNAL=3
 CMAKE_CACHE_MINOR_VERSION:INTERNAL=15
 //Patch version of cmake used to create the current loaded cache
 CMAKE_CACHE_PATCH_VERSION:INTERNAL=4
+//ADVANCED property for variable: CMAKE_COLOR_MAKEFILE
+CMAKE_COLOR_MAKEFILE-ADVANCED:INTERNAL=1
 //Path to CMake executable.
 CMAKE_COMMAND:INTERNAL=/bin/cmake
 //Path to cpack program executable.
@@ -269,7 +274,7 @@ CMAKE_EXPORT_COMPILE_COMMANDS-ADVANCED:INTERNAL=1
 //Name of external makefile project generator.
 CMAKE_EXTRA_GENERATOR:INTERNAL=CodeLite
 //Name of generator.
-CMAKE_GENERATOR:INTERNAL=Ninja
+CMAKE_GENERATOR:INTERNAL=Unix Makefiles
 //Generator instance identifier.
 CMAKE_GENERATOR_INSTANCE:INTERNAL=
 //Name of generator platform.

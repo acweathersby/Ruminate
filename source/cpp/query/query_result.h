@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../note/note.h"
-#include "../database/db_runner.h"
+#include "../database/include/db_runner.h"
 
 namespace RUMINATE
 {

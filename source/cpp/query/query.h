@@ -1,15 +1,13 @@
 #pragma once
 
 #include <cstring>
-#include "../compiler/tokenizer.h"
-#include "../compiler/gnql_cpp.h"
-#include "../compiler/nodes.h"
-#include "../compiler/parser.h"
+#include "../compiler/compiler.h"
 #include "../uid/uid.h"
 #include "../note/note.h"
 #include "../tags/tags.h"
 #include "../container/container.h"
-#include "../database/base.h"
+#include "../database/include/base.h"
+
 #include "./container.h"
 #include "./filter.h"
 #include "./query_result.h"
@@ -23,12 +21,12 @@ namespace RUMINATE
 	namespace QUERY
 	{
 
-		using namespace RUMINATE_QUERY_NODES;
+		using namespace RUMINATE_COMMAND_NODES;
 		using namespace HC_TEMP;
 		using HC_Tokenizer::Token;
 		using HC_Parser::parse;
 
-		typedef ParseBuffer<RUMINATE_QUERY_NODES::QueryBodyNode> Allocator;
+		typedef ParseBuffer<RUMINATE_COMMAND_NODES::QUERY_Body_n> Allocator;
 
 		static QueryResult runQuery(const wstring& string, DBRunner& db)
 
@@ -46,21 +44,16 @@ namespace RUMINATE
 			active_B = active_buffer;
 			out_B = out_buffer;
 
-			Token tk(string);
+
 
 			try {
 
-				auto query_buffer = HC_Parser::parse<Allocator, HC_TEMP::Data<Allocator, RUMINATE_QUERY_NODES::NodeFunctions<Allocator>>>(tk);
-
-				auto node = query_buffer.getRootObject();
-
-				wcout << (*node) << endl;
+				auto buffer = RUMINATE::COMPILER::compileWString(string);
+				auto node = (QUERY_Body_n *)buffer.getRootObject();
 
 				if (node) {
 
 					if (node->container) {
-
-
 
 						cout << node_count_size << " MAX" << endl;
 
@@ -74,7 +67,6 @@ namespace RUMINATE
 						active_B = out_B;
 
 						filterNotes(*(node->filter), db, active_B, out_B, total);
-
 					}
 
 					if(node->sort) {

@@ -94,3 +94,6 @@ documents/api/*
 
 #Emscripten Directories
 emsdk/
+
+#IDE project directory
+ide/

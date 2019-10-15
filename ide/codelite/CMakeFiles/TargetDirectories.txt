@@ -1,4 +1,6 @@
 /home/anthony/work/active/apps/ruminate/ide/codelite/CMakeFiles/rebuild_cache.dir
 /home/anthony/work/active/apps/ruminate/ide/codelite/CMakeFiles/edit_cache.dir
-/home/anthony/work/active/apps/ruminate/ide/codelite/CMakeFiles/Compiler.dir
 /home/anthony/work/active/apps/ruminate/ide/codelite/CMakeFiles/ruminate.dir
+/home/anthony/work/active/apps/ruminate/ide/codelite/CMakeFiles/FileDB.dir
+/home/anthony/work/active/apps/ruminate/ide/codelite/CMakeFiles/Compiler.dir
+/home/anthony/work/active/apps/ruminate/ide/codelite/CMakeFiles/Database.dir

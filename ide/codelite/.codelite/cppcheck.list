@@ -1,0 +1,12 @@
+/home/anthony/work/active/apps/ruminate/source/cpp/compiler/gnql_cpp.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/compiler/parse_buffer.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/compiler/parser.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/database/include/database.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/database/file/file_db.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/database/include/database.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/main.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/note/note.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/query/query.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/tags/tag.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/tags/tags.cpp
+/home/anthony/work/active/apps/ruminate/source/cpp/ui/cli.cpp

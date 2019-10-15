@@ -1,4 +1,4 @@
-# Graze Note Query Language
+# Junction are hints in plaintext files that instruct Graze on how to incorrupt data from that file into ruminate. 
 
 @IGNORE θws θnl 
 

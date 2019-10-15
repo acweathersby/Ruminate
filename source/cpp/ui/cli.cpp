@@ -2,15 +2,15 @@
 #include <iostream>
 #include <thread>
 
-bool cli(wstring filepath)
+bool cli()
 {
 
 
-	FileDB filedb(filepath);
+	//FileDB filedb(filepath);
 
-	DBRunner db;
+	//DBRunner db;
 
-	db.addDatabase(&filedb);
+	//db.addDatabase(&filedb);
 
 	//Create a few notes and place their uids in the container catch.
 	wstring string;
@@ -20,22 +20,35 @@ bool cli(wstring filepath)
 		std::cout << "Let's hear it now:" << std::endl;
 		std::getline(std::wcin, string);
 
-		QueryResult query = runQuery(string, db);
+		if(L"q" == string)
+			break;
 
-		while (!query.READY()) {
-			//Sleep this thread;
-			std::this_thread::yield();
-		}
+		auto buffer = RUMINATE::COMPILER::compileWString(string);
+		auto node = buffer.getRootObject();
 
-		cout << query << endl;
+		wcout << (unsigned char) node->type << " " << (*node) << endl;
 
-		for(int i = 0; i < query.size(); i++) {
-			std::wcout << query[i].toJSONString() << endl;
-		}
+		/*
+				QueryResult query = runQuery(string, db);
 
-		std::getline(std::wcin, string);
-		std::cout << "\033[2J\033[1;1H";
+				while (!query.READY()) {
+					//Sleep this thread;
+					std::this_thread::yield();
+				}
+
+				cout << query << endl;
+
+				for(int i = 0; i < query.size(); i++) {
+					std::wcout << query[i].toJSONString() << endl;
+				}
+
+				std::getline(std::wcin, string);
+				std::cout << "\033[2J\033[1;1H";
+				 */
 	}
 
-	filedb.close();
+	//filedb.close();
+
+	return true;
+
 }
