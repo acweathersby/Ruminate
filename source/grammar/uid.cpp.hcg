@@ -1,0 +1,12 @@
+# UID grammar
+
+<> goal → list
+
+<> list → single
+	│ list , single							↦c ^UID_List
+
+<> single → τRUMI \- created \- random 		↦c ^UID_UID
+
+<> created → (θid │ θnum) 					↦c ^UID_Created
+
+<> random → (θid │ θnum)  					↦c ^UID_Random

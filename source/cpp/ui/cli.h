@@ -7,8 +7,9 @@
 #include "../note/note.h"
 #include "../uid/uid.h"
 #include "../query/query.h"
-#include "../database/file_db.h"
+#include "../database/file/file_db.h"
 #include "../string/crdt.h"
+#include "../compiler/compiler.h"
 
 using namespace RUMINATE;
 using namespace RUMINATE::STRING;
@@ -20,4 +21,4 @@ using namespace RUMINATE::QUERY;
 using namespace RUMINATE::DB;
 using namespace std;
 
-bool cli(wstring);
+bool cli();

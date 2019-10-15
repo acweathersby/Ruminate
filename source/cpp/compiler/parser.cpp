@@ -1,7 +1,5 @@
 #include "./parser.h"
 
-using namespace HC_Parser;
-
 int HC_Parser::getLookUpValue(wstring str, const SymbolLookup& sym_lu)
 {
 

@@ -4,6 +4,7 @@
 		<VirtualDirectory Name="source">
 			<VirtualDirectory Name="cpp">
 				<VirtualDirectory Name="compiler">
+					<File Name="../../source/cpp/compiler/command_string.cpp.cpp"/>
 					<File Name="../../source/cpp/compiler/gnql_cpp.cpp"/>
 					<File Name="../../source/cpp/compiler/parse_buffer.cpp"/>
 					<File Name="../../source/cpp/compiler/parser.cpp"/>
@@ -15,18 +16,25 @@
 		<VirtualDirectory Name="source">
 			<VirtualDirectory Name="cpp">
 				<VirtualDirectory Name="compiler">
+					<File Name="../../source/cpp/compiler/command_nodes.h"/>
+					<File Name="../../source/cpp/compiler/command_string.cpp.h"/>
+					<File Name="../../source/cpp/compiler/compiler.h"/>
 					<File Name="../../source/cpp/compiler/gnql_cpp.h"/>
+					<File Name="../../source/cpp/compiler/node.h"/>
 					<File Name="../../source/cpp/compiler/node_utils.h"/>
 					<File Name="../../source/cpp/compiler/nodes.h"/>
+					<File Name="../../source/cpp/compiler/note_nodes.h"/>
 					<File Name="../../source/cpp/compiler/parse_buffer.h"/>
 					<File Name="../../source/cpp/compiler/parser.h"/>
+					<File Name="../../source/cpp/compiler/query_nodes.h"/>
 					<File Name="../../source/cpp/compiler/tokenizer.h"/>
+					<File Name="../../source/cpp/compiler/uid_nodes.h"/>
 				</VirtualDirectory>
 			</VirtualDirectory>
 		</VirtualDirectory>
 	</VirtualDirectory>
 	<Settings Type="Static Library">
-		<Configuration Name="NoConfig" CompilerType="clang++" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+		<Configuration Name="Debug" CompilerType="clang++" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
 			<Compiler Options="-g" Required="yes" PreCompiledHeader="">
 				<IncludePath Value="."/>
 			</Compiler>
@@ -40,10 +48,10 @@
 			<PreBuild/>
 			<PostBuild/>
 			<CustomBuild Enabled="yes">
-				<RebuildCommand>/usr/bin/ninja -t clean Compiler &amp;&amp; /usr/bin/ninja Compiler</RebuildCommand>
-				<CleanCommand>/usr/bin/ninja -t clean Compiler</CleanCommand>
-				<BuildCommand>/usr/bin/ninja Compiler</BuildCommand>
-				<SingleFileCommand></SingleFileCommand>
+				<RebuildCommand>/usr/bin/make -f$(ProjectPath)/Makefile -j 72 clean &amp;&amp; /usr/bin/make -f$(ProjectPath)/Makefile -j 72 Compiler</RebuildCommand>
+				<CleanCommand>/usr/bin/make -f$(ProjectPath)/Makefile -j 72 clean</CleanCommand>
+				<BuildCommand>/usr/bin/make -f$(ProjectPath)/Makefile -j 72 Compiler</BuildCommand>
+				<SingleFileCommand>/usr/bin/make -f$(ProjectPath)/Makefile -B $(CurrentFileFullName).o</SingleFileCommand>
 				<PreprocessFileCommand/>
 				<WorkingDirectory>$(WorkspacePath)</WorkingDirectory>
 			</CustomBuild>

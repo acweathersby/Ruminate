@@ -1,0 +1,18 @@
+# Note grammar
+
+@IMPORT ./query_string.cpp.hcg as Query
+
+<> goal → note
+
+<> note → type? Query::container_clause? \; tags? \; data?			↦c ^NOTE_Note
+
+<> type → Query::number
+
+<> tags → tag 														↦r ^NOTE_TagList
+	│ tags , tag													↦r ^NOTE_TagList
+
+<> tag → Query::sentence \= Query::number 					↦r ^NOTE_TagNumber
+	│ Query::sentence \= Query::sentence 					↦r ^NOTE_TagString
+	│ Query::sentence 										↦r ^NOTE_Tag
+
+<> data → Query::sentence									↦r ^NOTE_Body

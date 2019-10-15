@@ -5,7 +5,7 @@
 #include "../uid/uid.h"
 #include "../note/note.h"
 #include "../container/container.h"
-#include "../database/db_runner.h"
+#include "../database/include/db_runner.h"
 #include "../string/search.h"
 //#include "./container.h"
 
@@ -21,43 +21,43 @@ namespace RUMINATE
 	namespace QUERY
 	{
 
-		using namespace RUMINATE_QUERY_NODES;
+		using namespace RUMINATE_COMMAND_NODES;
 
 		using HC_Tokenizer::Token;
 		using HC_Parser::parse;
 		using namespace HC_TEMP;
 
-		static bool compareDouble(Comparison& compare, double d)
+		static bool compareDouble(QUERY_Comparison_n& compare, double d)
 		{
 			switch(compare.type) {
-				case Comparison::Value : {
+				case QUERY_Comparison_n::Value : {
 						return compare.valueA == d;
 					}
 					break;
-				case Comparison::MoreThan : {
+				case QUERY_Comparison_n::MoreThan : {
 						return compare.valueA > d;
 					}
 					break;
-				case Comparison::LessThan : {
+				case QUERY_Comparison_n::LessThan : {
 						return compare.valueA < d;
 					}
 					break;
-				case Comparison::Range : {
+				case QUERY_Comparison_n::Range : {
 						return compare.valueA <= d && d <= compare.valueB;
 					}
 					break;
-				case Comparison::ID : return false;
-				case Comparison::Date : return false;
+				case QUERY_Comparison_n::ID : return false;
+				case QUERY_Comparison_n::Date : return false;
 			}
 			return false;
 		}
 
-		static bool compareTag(TagStatement* node, Note& note)
+		static bool compareTag(QUERY_Tag_n* node, Note& note)
 		{
 			auto& tags = note.tags;
 
-			Comparison* compare = node->compare;
-			Identifier& id = *node->id;
+			QUERY_Comparison_n* compare = node->compare;
+			QUERY_Identifier_n& id = *node->id;
 
 			Tag * t = getMatchingTag(tags, *(id.list[0]));
 
@@ -66,7 +66,7 @@ namespace RUMINATE
 					auto& tag = *t;
 					auto& v = tag.val;
 
-					if(compare->type == Comparison::ID) {
+					if(compare->type == QUERY_Comparison_n::ID) {
 						wstring* tag_string = v;
 						auto& list = compare->id->list;
 						for (int i = 0; i < list.size(); i++)
@@ -76,7 +76,7 @@ namespace RUMINATE
 					}
 
 					if(v.isDouble()) {
-						if(compare->type == Comparison::Date) {
+						if(compare->type == QUERY_Comparison_n::Date) {
 
 						} else
 							return compareDouble(*compare, v);
@@ -88,23 +88,23 @@ namespace RUMINATE
 			return false;
 		}
 
-		static bool compareSize(SizeStatement* node, Note& note)
+		static bool compareSize(QUERY_Size_n* node, Note& note)
 		{
 			return false;
 			//return compareDouble(*node->compare, double(note.size));
 		}
 
-		static bool compareDateCreated(CreatedStatement* node, Note& note)
+		static bool compareDateCreated(QUERY_Created_n* node, Note& note)
 		{
 			return compareDouble(*node->compare, double(note.uid.created_time));
 		}
 
-		static bool compareDateModified(ModifiedStatement* node, Note& note)
+		static bool compareDateModified(QUERY_Modified_n* node, Note& note)
 		{
 			return compareDouble(*node->compare, double(note.modified_time));
 		}
 
-		static bool compareIdentifier(Identifier* node, Note& note)
+		static bool compareIdentifier(QUERY_Identifier_n* node, Note& note)
 		{
 			auto& list = node->list;
 
@@ -120,27 +120,27 @@ namespace RUMINATE
 		{
 			switch(node->type) {
 				case NodeType::And : {
-						AndExpression* And = (AndExpression*)node;
+						QUERY_And_n* And = (QUERY_And_n*) node;
 						return filter(And->left, note) && filter(And->right, note);
 					};
 				case NodeType::Or : {
-						OrExpression* Or = (OrExpression*)node;
+						QUERY_Or_n* Or = (QUERY_Or_n*)node;
 						return filter(Or->left, note) || filter(Or->right, note);
 					};
 				case NodeType::SizeStatement : {
-						return compareSize((SizeStatement *)node, note);
+						return compareSize((QUERY_Size_n *)node, note);
 					};
 				case NodeType::CreatedStatement : {
-						return compareDateCreated((CreatedStatement *)node, note);
+						return compareDateCreated((QUERY_Created_n *)node, note);
 					};
 				case NodeType::ModifiedStatement : {
-						return compareDateModified((ModifiedStatement *)node, note);
+						return compareDateModified((QUERY_Modified_n *)node, note);
 					};
 				case NodeType::TagStatement : {
-						return compareTag((TagStatement *)node, note);
+						return compareTag((QUERY_Tag_n *)node, note);
 					};
 				case NodeType::ID : {
-						return compareIdentifier((Identifier *)node, note);
+						return compareIdentifier((QUERY_Identifier_n *)node, note);
 					};
 				default : {
 						return false;
@@ -149,7 +149,7 @@ namespace RUMINATE
 		}
 
 		//Filters out notes based on note content
-		static int filterNotes(FilterClause& filter_node, DBRunner& db, UID * in, UID * out, unsigned& note_count)
+		static int filterNotes(QUERY_Filter_n& filter_node, DBRunner& db, UID * in, UID * out, unsigned& note_count)
 		{
 			unsigned note_length = note_count;
 

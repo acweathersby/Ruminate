@@ -5,7 +5,7 @@
 #include "../uid/uid.h"
 #include "../note/note.h"
 #include "../container/container.h"
-#include "../database/db_runner.h"
+#include "../database/include/db_runner.h"
 //#include "./container.h"
 
 namespace RUMINATE
@@ -17,7 +17,7 @@ namespace RUMINATE
 	namespace QUERY
 	{
 
-		using namespace RUMINATE_QUERY_NODES;
+		using namespace RUMINATE_COMMAND_NODES;
 
 		using HC_Tokenizer::Token;
 		using HC_Parser::parse;
@@ -28,7 +28,7 @@ namespace RUMINATE
 
 			Selected notes are placed in the output buffer.
 		**/
-		static bool compareQueryIdentifier(const Identifier& id, const wstring& string, bool FOLLOWING_WILD_CARD = false)
+		static bool compareQueryIdentifier(const QUERY_Identifier_n& id, const wstring& string, bool FOLLOWING_WILD_CARD = false)
 		{
 
 			int offset = 0;
@@ -64,7 +64,7 @@ namespace RUMINATE
 			return false;
 		}
 
-		static int recurseContainerMatcher(const ContainerClause& container_query, const ContainerLU& container, unsigned& total, unsigned max_uids, UID * uids, unsigned container_offset = 0, unsigned FOLLOWING_WILD_CARD = 0)
+		static int recurseContainerMatcher(const QUERY_Container_n& container_query, const ContainerLU& container, unsigned& total, unsigned max_uids, UID * uids, unsigned container_offset = 0, unsigned FOLLOWING_WILD_CARD = 0)
 		{
 			if(!container_query.list) {
 
@@ -102,7 +102,7 @@ namespace RUMINATE
 		}
 
 		//Filters out nodes based on container query.
-		static int filterContainer(ContainerClause& container, const ContainerLU& ctr_lu,  DBRunner& db, unsigned& total_results, unsigned max_results, UID * buffer)
+		static int filterContainer(QUERY_Container_n& container, const ContainerLU& ctr_lu,  DBRunner& db, unsigned& total_results, unsigned max_results, UID * buffer)
 		{
 			unsigned uid_buffer_size = max_results;
 

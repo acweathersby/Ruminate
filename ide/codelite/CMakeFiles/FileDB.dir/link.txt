@@ -1,0 +1,2 @@
+/usr/bin/ar qc libFileDB.a  CMakeFiles/FileDB.dir/database/file/file_db.cpp.o
+/usr/bin/ranlib libFileDB.a

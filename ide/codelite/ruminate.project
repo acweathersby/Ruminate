@@ -1,123 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
-<CodeLite_Project Name="ruminate" InternalType="" Version="10.0.0">
-  <Plugins>
-    <Plugin Name="qmake">
-      <![CDATA[00010001N0008NoConfig000000000000]]>
-    </Plugin>
-  </Plugins>
-  <VirtualDirectory Name="src">
-    <VirtualDirectory Name="source">
-      <VirtualDirectory Name="cpp">
-        <VirtualDirectory Name="database">
-          <File Name="../../source/cpp/database/file_db.cpp"/>
-        </VirtualDirectory>
-        <File Name="../../source/cpp/main.cpp"/>
-        <VirtualDirectory Name="note">
-          <File Name="../../source/cpp/note/note.cpp"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="query">
-          <File Name="../../source/cpp/query/query.cpp"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="tags">
-          <File Name="../../source/cpp/tags/tag.cpp"/>
-          <File Name="../../source/cpp/tags/tags.cpp"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="ui">
-          <File Name="../../source/cpp/ui/cli.cpp"/>
-        </VirtualDirectory>
-      </VirtualDirectory>
-    </VirtualDirectory>
-  </VirtualDirectory>
-  <VirtualDirectory Name="include">
-    <VirtualDirectory Name="source">
-      <VirtualDirectory Name="cpp">
-        <VirtualDirectory Name="container">
-          <File Name="../../source/cpp/container/container.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="database">
-          <File Name="../../source/cpp/database/base.h"/>
-          <File Name="../../source/cpp/database/db_runner.h"/>
-          <File Name="../../source/cpp/database/file_db.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="note">
-          <File Name="../../source/cpp/note/note.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="query">
-          <File Name="../../source/cpp/query/container.h"/>
-          <File Name="../../source/cpp/query/filter.h"/>
-          <File Name="../../source/cpp/query/query.h"/>
-          <File Name="../../source/cpp/query/query_result.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="string">
-          <File Name="../../source/cpp/string/crdt.h"/>
-          <File Name="../../source/cpp/string/opid.h"/>
-          <File Name="../../source/cpp/string/search.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="tags">
-          <File Name="../../source/cpp/tags/tag_value.h"/>
-          <File Name="../../source/cpp/tags/tags.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="ui">
-          <File Name="../../source/cpp/ui/cli.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="uid">
-          <File Name="../../source/cpp/uid/uid.h"/>
-        </VirtualDirectory>
-        <VirtualDirectory Name="utils">
-          <File Name="../../source/cpp/utils/stream.h"/>
-        </VirtualDirectory>
-      </VirtualDirectory>
-    </VirtualDirectory>
-  </VirtualDirectory>
-  <Settings Type="Executable">
-    <GlobalSettings>
-      <Compiler Options="" C_Options="" Assembler="">
-        <IncludePath Value="."/>
-      </Compiler>
-      <Linker Options="">
-        <LibraryPath Value="."/>
-      </Linker>
-      <ResourceCompiler Options=""/>
-    </GlobalSettings>
-    <Configuration Name="NoConfig" CompilerType="clang++" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="-g" C_Options="-g" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="."/>
-      </Compiler>
-      <Linker Options="" Required="yes"/>
-      <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./" Command="./$(ProjectName)" CommandArguments="/home/anthony/test" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
-      <BuildSystem Name="Default"/>
-      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
-        <![CDATA[]]>
-      </Environment>
-      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
-        <DebuggerSearchPaths>/home/anthony/work/active/apps/ruminate/source/cpp/compiler
-/home/anthony/work/active/apps/ruminate/source/cpp</DebuggerSearchPaths>
-        <PostConnectCommands/>
-        <StartupCommands/>
-      </Debugger>
-      <PreBuild/>
-      <PostBuild/>
-      <CustomBuild Enabled="yes">
-        <RebuildCommand>/usr/bin/ninja -t clean ruminate &amp;&amp; /usr/bin/ninja ruminate</RebuildCommand>
-        <CleanCommand>/usr/bin/ninja -t clean ruminate</CleanCommand>
-        <BuildCommand>/usr/bin/ninja ruminate</BuildCommand>
-        <PreprocessFileCommand/>
-        <SingleFileCommand/>
-        <MakefileGenerationCommand/>
-        <ThirdPartyToolName/>
-        <WorkingDirectory>$(WorkspacePath)</WorkingDirectory>
-      </CustomBuild>
-      <AdditionalRules>
-        <CustomPostBuild/>
-        <CustomPreBuild/>
-      </AdditionalRules>
-      <Completion EnableCpp11="no" EnableCpp14="no">
-        <ClangCmpFlagsC/>
-        <ClangCmpFlags/>
-        <ClangPP/>
-        <SearchPaths/>
-      </Completion>
-    </Configuration>
-  </Settings>
+<CodeLite_Project Name="ruminate" InternalType="">
+	<VirtualDirectory Name="src">
+		<VirtualDirectory Name="source">
+			<VirtualDirectory Name="cpp">
+				<VirtualDirectory Name="database">
+					<VirtualDirectory Name="include">
+						<File Name="../../source/cpp/database/include/database.cpp"/>
+					</VirtualDirectory>
+				</VirtualDirectory>
+				<File Name="../../source/cpp/main.cpp"/>
+				<VirtualDirectory Name="note">
+					<File Name="../../source/cpp/note/note.cpp"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="query">
+					<File Name="../../source/cpp/query/query.cpp"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="tags">
+					<File Name="../../source/cpp/tags/tag.cpp"/>
+					<File Name="../../source/cpp/tags/tags.cpp"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="ui">
+					<File Name="../../source/cpp/ui/cli.cpp"/>
+				</VirtualDirectory>
+			</VirtualDirectory>
+		</VirtualDirectory>
+	</VirtualDirectory>
+	<VirtualDirectory Name="include">
+		<VirtualDirectory Name="source">
+			<VirtualDirectory Name="cpp">
+				<VirtualDirectory Name="container">
+					<File Name="../../source/cpp/container/container.h"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="database">
+					<VirtualDirectory Name="include">
+						<File Name="../../source/cpp/database/include/base.h"/>
+						<File Name="../../source/cpp/database/include/db_runner.h"/>
+					</VirtualDirectory>
+				</VirtualDirectory>
+				<VirtualDirectory Name="note">
+					<File Name="../../source/cpp/note/note.h"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="query">
+					<File Name="../../source/cpp/query/container.h"/>
+					<File Name="../../source/cpp/query/filter.h"/>
+					<File Name="../../source/cpp/query/query.h"/>
+					<File Name="../../source/cpp/query/query_result.h"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="string">
+					<File Name="../../source/cpp/string/crdt.h"/>
+					<File Name="../../source/cpp/string/opid.h"/>
+					<File Name="../../source/cpp/string/search.h"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="tags">
+					<File Name="../../source/cpp/tags/tag_value.h"/>
+					<File Name="../../source/cpp/tags/tags.h"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="ui">
+					<File Name="../../source/cpp/ui/cli.h"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="uid">
+					<File Name="../../source/cpp/uid/uid.h"/>
+				</VirtualDirectory>
+				<VirtualDirectory Name="utils">
+					<File Name="../../source/cpp/utils/stream.h"/>
+				</VirtualDirectory>
+			</VirtualDirectory>
+		</VirtualDirectory>
+	</VirtualDirectory>
+	<Settings Type="Executable">
+		<Configuration Name="Debug" CompilerType="clang++" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+			<Compiler Options="-g" Required="yes" PreCompiledHeader="">
+				<IncludePath Value="."/>
+			</Compiler>
+			<Linker Options="" Required="yes"/>
+			<ResourceCompiler Options="" Required="no"/>
+			<General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./" Command="./$(ProjectName)" CommandArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes"/>
+			<Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="">
+				<PostConnectCommands/>
+				<StartupCommands/>
+			</Debugger>
+			<PreBuild/>
+			<PostBuild/>
+			<CustomBuild Enabled="yes">
+				<RebuildCommand>/usr/bin/make -f$(ProjectPath)/Makefile -j 72 clean &amp;&amp; /usr/bin/make -f$(ProjectPath)/Makefile -j 72 ruminate</RebuildCommand>
+				<CleanCommand>/usr/bin/make -f$(ProjectPath)/Makefile -j 72 clean</CleanCommand>
+				<BuildCommand>/usr/bin/make -f$(ProjectPath)/Makefile -j 72 ruminate</BuildCommand>
+				<SingleFileCommand>/usr/bin/make -f$(ProjectPath)/Makefile -B $(CurrentFileFullName).o</SingleFileCommand>
+				<PreprocessFileCommand/>
+				<WorkingDirectory>$(WorkspacePath)</WorkingDirectory>
+			</CustomBuild>
+			<AdditionalRules>
+				<CustomPostBuild/>
+				<CustomPreBuild/>
+			</AdditionalRules>
+		</Configuration>
+		<GlobalSettings>
+			<Compiler Options="">
+				<IncludePath Value="."/>
+			</Compiler>
+			<Linker Options="">
+				<LibraryPath Value="."/>
+			</Linker>
+			<ResourceCompiler Options=""/>
+		</GlobalSettings>
+	</Settings>
 </CodeLite_Project>
