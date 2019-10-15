@@ -2,7 +2,7 @@
 
 <> goal → list
 
-<> list → single
+<> list → single 							↦c ^UID_List
 	│ list , single							↦c ^UID_List
 
 <> single → τRUMI \- created \- random 		↦c ^UID_UID

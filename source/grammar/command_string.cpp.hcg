@@ -8,6 +8,8 @@
 
 @IMPORT ./note.cpp.hcg as Note
 
+@IGNORE θws θnl 
+
 <> goal → command_body
 
 <> command_body → τADD (UID::single │ Query::container_clause)? ; note_data   	↦c ^COMMAND_Add

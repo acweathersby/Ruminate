@@ -45,23 +45,32 @@ namespace RUMINATE_COMMAND_NODES
 
 		static void * NOTE_TagNumber(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 
-			OptionalNodes<QUERY_Sentence_n *, void *, double> options(bitfield, output_offset, output);
+			OptionalNodes<wstring *, void *, double> options(bitfield, output_offset, output);
 
-			return new (* allocator) NOTE_Tag_n(options.a->string, options.c);
+			return new (* allocator) NOTE_Tag_n(options.a, options.c);
 		}
 
 		static void * NOTE_TagString(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
-			OptionalNodes<QUERY_Sentence_n *, void *, QUERY_Sentence_n *> options(bitfield, output_offset, output);
-			return new (* allocator) NOTE_Tag_n(options.a->string, options.c->string);
+			OptionalNodes<wstring *, void *, wstring *> options(bitfield, output_offset, output);
+			return new (* allocator) NOTE_Tag_n(options.a, options.c);
 		}
 
 		static void * NOTE_Tag(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
-			OptionalNodes<QUERY_Sentence_n *> options(bitfield, output_offset, output);
-			return new (* allocator) NOTE_Tag_n(options.a->string);
+			OptionalNodes<wstring *> options(bitfield, output_offset, output);
+			return new (* allocator) NOTE_Tag_n(options.a);
 		}
 
-		static void * NOTE_Body(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
-			return ((QUERY_Sentence_n *) output[0])->string;
+		static void * NOTE_String(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
+
+			const wstring& string = tk.string;
+
+			unsigned start = (unsigned long long) output[output_offset],
+
+			         end = tk.offset;
+
+			wstring * str = new(*allocator) wstring(string.substr(start, end - start));
+
+			return str;
 		}
 
 		/************
@@ -71,10 +80,10 @@ namespace RUMINATE_COMMAND_NODES
 
 			if (reduce_size == 1) {
 				ctr = new(*allocator) UID_List_n;
-				ctr->push_back((UID_UID_n *)output[output_offset]);
+				ctr->uids.push_back((UID_UID_n *)output[output_offset]);
 			} else {
 				ctr = (UID_List_n *) output[output_offset];
-				ctr->push_back((UID_UID_n *)output[output_offset + 2]);
+				ctr->uids.push_back((UID_UID_n *)output[output_offset + 2]);
 			}
 
 			return ctr;
@@ -127,11 +136,13 @@ namespace RUMINATE_COMMAND_NODES
 		/************ Command Nodes */
 		static void * COMMAND_Add(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 			OptionalNodes<void *, Node *, void *, NOTE_Note_n *> options(bitfield, output_offset, output);
-
-			if(options.b->type == NodeType::UID)
-				return new(*allocator) COMMAND_Add_n((UID_UID_n *)  options.b, options.d);
-			else
-				return new(*allocator) COMMAND_Add_n((QUERY_Container_n *) options.b, options.d);
+			if(options.b) {
+				if(options.b->type == NodeType::UID)
+					return new(*allocator) COMMAND_Add_n((UID_UID_n *)  options.b, options.d);
+				else
+					return new(*allocator) COMMAND_Add_n((QUERY_Container_n *) options.b, options.d);
+			} else
+				return new(*allocator) COMMAND_Add_n(options.d);
 		}
 
 		static void * COMMAND_Delete(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
@@ -334,12 +345,9 @@ namespace RUMINATE_COMMAND_NODES
 
 		static void * QUERY_Sentence(Token& tk, unsigned reduce_size, unsigned bitfield, int output_offset, void ** output, Allocator* allocator) {
 			const wstring& string = tk.string;
-
 			unsigned
 			start = (unsigned long long) output[output_offset],
 			end = tk.offset;
-
-
 			wstring * str = new(*allocator) wstring(string.substr(start, end - start));
 
 			return new(*allocator) struct QUERY_Sentence_n(str);

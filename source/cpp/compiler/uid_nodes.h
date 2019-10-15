@@ -19,5 +19,20 @@ namespace RUMINATE_COMMAND_NODES
 		}
 	};
 
-	typedef vector<UID_UID_n *> UID_List_n;
+	struct UID_List_n : public Node {
+
+		vector<UID_UID_n *> uids;
+
+		UID_List_n(): Node() { type = NodeType::UID_LIST;}
+
+		virtual wostream& toStream(wostream& os) const {
+			os << "{type:\"UID_LIST\", \nuids:[";
+
+			for(auto iter = uids.begin(); iter != uids.end(); iter++) {
+				os << (**iter) << ", ";
+			}
+
+			return os <<"]}";
+		}
+	};
 };

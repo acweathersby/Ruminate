@@ -17,9 +17,25 @@ namespace RUMINATE_COMMAND_NODES
 		QUERY_Container_n * ctr = nullptr;
 		NOTE_Note_n * data = nullptr;
 
+		COMMAND_Add_n(NOTE_Note_n * d = nullptr) : Node(), data(d) {type = NodeType::ADD;}
+
 		COMMAND_Add_n(UID_UID_n * u, NOTE_Note_n * d = nullptr) : Node(), uid(u), data(d) {type = NodeType::ADD;}
 
 		COMMAND_Add_n(QUERY_Container_n * c, NOTE_Note_n * d = nullptr) : Node(), ctr(c), data(d) {type = NodeType::ADD;}
+
+		virtual wostream& toStream(wostream& os) const {
+			os << "{ \n type:\"ADD\"";
+
+			if(uid) {
+				os << ",\nuid:" << (*uid);
+			} else if (ctr) {
+				os << ",\nucontainer:" << (*ctr);
+			}
+
+			os << ",\ndata: " << (*data);
+
+			return os << "\n}";
+		};
 	};
 
 	struct COMMAND_Delete_n : public Node {
@@ -30,6 +46,18 @@ namespace RUMINATE_COMMAND_NODES
 		COMMAND_Delete_n(UID_List_n * l = nullptr) : Node(), uids(l) {type = NodeType::DELETE;}
 
 		COMMAND_Delete_n(QUERY_Body_n * b = nullptr) : Node(), query(b) {type = NodeType::DELETE;}
+
+		virtual wostream& toStream(wostream& os) const {
+			os << "{ \n type:\"DELETE\"";
+
+			if(uids) {
+				os << ",\nuids: " << * uids;
+			} else if (query) {
+				os << ",\nuquery:" << (*query);
+			}
+
+			return os << "\n}";
+		};
 	};
 
 	struct COMMAND_Retrieve_n : public Node {
@@ -45,16 +73,12 @@ namespace RUMINATE_COMMAND_NODES
 		};
 
 		virtual wostream& toStream(wostream& os) const {
-			os << "{ \n type:\"RETRIEVE\", \n val:";
+			os << "{ \n type:\"RETRIEVE\"";
 
 			if(uids) {
-				os << "[ ";
-				for(auto iter = uids->begin(); iter != uids->end(); iter++) {
-					os << (*iter) << ", ";
-				}
-				os << "]";
+				os << ",\nuids: " << * uids;
 			} else if (query) {
-				os << *query;
+				os << ",\nuquery:" << (*query);
 			}
 
 			return os << "\n}";
