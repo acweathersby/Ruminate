@@ -27,20 +27,25 @@ namespace RUMINATE_COMMAND_NODES
 			os << "{ \n type:\"ADD\"";
 
 			if(uid) {
-				os << ",\nuid:" << (*uid);
+				os << ",\nid:" << (*uid);
 			} else if (ctr) {
-				os << ",\nucontainer:" << (*ctr);
+				os << ",\ncontainer:" << (*ctr);
 			}
 
 			os << ",\ndata: " << (*data);
 
 			return os << "\n}";
 		};
+
+		bool hasContainer() {return (ctr != nullptr); }
+
+		bool hasUID() {	return (uid != nullptr); }
 	};
 
 	struct COMMAND_Delete_n : public Node {
 
 		UID_List_n * uids = nullptr;
+
 		QUERY_Body_n * query = nullptr;
 
 		COMMAND_Delete_n(UID_List_n * l = nullptr) : Node(), uids(l) {type = NodeType::DELETE;}
@@ -51,13 +56,17 @@ namespace RUMINATE_COMMAND_NODES
 			os << "{ \n type:\"DELETE\"";
 
 			if(uids) {
-				os << ",\nuids: " << * uids;
+				os << ",\nids: " << * uids;
 			} else if (query) {
-				os << ",\nuquery:" << (*query);
+				os << ",\nquery:" << (*query);
 			}
 
 			return os << "\n}";
 		};
+
+		bool hasQuery() {return (query != nullptr); }
+
+		bool hasUIDList() {	return (uids != nullptr); }
 	};
 
 	struct COMMAND_Retrieve_n : public Node {
@@ -76,12 +85,16 @@ namespace RUMINATE_COMMAND_NODES
 			os << "{ \n type:\"RETRIEVE\"";
 
 			if(uids) {
-				os << ",\nuids: " << * uids;
+				os << ",\nids: " << * uids;
 			} else if (query) {
-				os << ",\nuquery:" << (*query);
+				os << ",\nquery:" << (*query);
 			}
 
 			return os << "\n}";
 		};
+
+		bool hasQuery() {return (query != nullptr); }
+
+		bool hasUIDList() {	return (uids != nullptr); }
 	};
 }

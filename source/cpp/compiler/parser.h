@@ -39,9 +39,8 @@ namespace HC_Parser
 
 	int getToken(Token& tk, const SymbolLookup& sym_lu);
 
-	template <class Allocator>
-	void parseRunner(
-	    Allocator* buffer,
+	static void parseRunner(
+	    ParseBuffer<char>* buffer,
 	    Token& tk,
 	    const SymbolLookup& sym_lu,
 	    const int * state_table[],
@@ -121,7 +120,7 @@ namespace HC_Parser
 					continue;
 				}
 
-				throw 104;
+				throw ParseErrorCode::ErrorStateReached;
 			}
 
 			switch (action & 3) {
@@ -182,8 +181,8 @@ complete:
 		Handles parser exceptions. Deconstructs buffer and isses a
 		void buffer if necessary.
 	**/
-	template <class Allocator, class Data>
-	Allocator parse(
+	template <class Data>
+	ParseBuffer<char> parse(
 	    Token& tk,
 	    wostream& os = std::wcout
 	)
@@ -195,9 +194,9 @@ complete:
 
 		try {
 
-			Allocator buffer(8192);
+			ParseBuffer<char> buffer(128);
 
-			parseRunner<Allocator>(&buffer, tk, Data::symbol_lu, Data::state_lookup, Data::goto_lookup, Data::state_actions, Data::error_actions);
+			parseRunner(&buffer, tk, Data::symbol_lu, Data::state_lookup, Data::goto_lookup, Data::state_actions, Data::error_actions);
 
 			return buffer;
 
@@ -228,6 +227,6 @@ complete:
 			}
 		}
 
-		return Allocator(0);
+		return ParseBuffer<char>(0);
 	}
 }

@@ -28,7 +28,7 @@ Main Features
 
 	Server Systems
 
-		Custom backends feeding a standard string based data interface
+		Custom backends feeding a standard text based data interface
 
 			Data is updated based on note types
 				> Tags :
@@ -46,12 +46,12 @@ Main Features
 
 
 				Command string begining with a colon. followed by command, finalized with optional data. 
-					{ADD | DELETE | RETRIEVE <this is implied>} : {QUERY_STRING | UID LIST} : {NOTE DATA}
+					{ADD | DELETE | RETRIEVE <this is implied>} : {QUERY_STRING | UID LIST | CONTAINER ID} : {NOTE DATA}
 					
-					DELETE - delete these UIDs - returns indexed based success/fail list. 
+					DELETE - delete these UIDs - returns UID list with success/fail information. 
 					
 					ADD - Expects one new UID or a blank entry. Adds or updates one new note. Expects note information to be in the form
-						container/id , tag list, note data.
+						{container/id}?, {tag list}?, {note data}? where at least one of these is present
 						
 						if UID is provided then note data can be in the form,
 						[id]?:[tag]?:[data]?

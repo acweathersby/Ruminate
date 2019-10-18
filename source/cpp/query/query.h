@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstring>
-#include "../compiler/compiler.h"
 #include "../uid/uid.h"
 #include "../note/note.h"
 #include "../tags/tags.h"
@@ -22,13 +21,8 @@ namespace RUMINATE
 	{
 
 		using namespace RUMINATE_COMMAND_NODES;
-		using namespace HC_TEMP;
-		using HC_Tokenizer::Token;
-		using HC_Parser::parse;
 
-		typedef ParseBuffer<RUMINATE_COMMAND_NODES::QUERY_Body_n> Allocator;
-
-		static QueryResult runQuery(const wstring& string, DBRunner& db)
+		static QueryResult runQuery(const RUMINATE_COMMAND_NODES::QUERY_Body_n& node, DBRunner& db)
 
 		{
 			const unsigned node_count_size = 512;
@@ -44,46 +38,36 @@ namespace RUMINATE
 			active_B = active_buffer;
 			out_B = out_buffer;
 
-
-
 			try {
 
-				auto buffer = RUMINATE::COMPILER::compileWString(string);
-				auto node = (QUERY_Body_n *)buffer.getRootObject();
+				if (node.container) {
 
-				if (node) {
+					total = 0;
 
-					if (node->container) {
-
-						cout << node_count_size << " MAX" << endl;
-
-						total = 0;
-
-						filterContainer(*(node->container), db.getContainerTree(), db, total, node_count_size, out_B);
-					}
-
-					if(node->filter) {
-
-						active_B = out_B;
-
-						filterNotes(*(node->filter), db, active_B, out_B, total);
-					}
-
-					if(node->sort) {
-
-					}
+					filterContainer(*(node.container), db, total, node_count_size, out_B);
 				}
+
+				if(node.filter) {
+
+					active_B = out_B;
+
+					filterNotes(*(node.filter), db, active_B, out_B, total);
+				}
+
+				if(node.sort) {
+
+				}
+
 			} catch (int e) {
 				std::cout << e << std::endl;
 			}
 
 			if(total > 0)
-				return QueryResult(string, out_buffer, total, db);
+				return QueryResult(wstring(L""), out_buffer, total, db);
 
 			free(out_buffer);
 
-			return QueryResult(string, db);
+			return QueryResult(wstring(L""), db);
 		}
-
 	}
 }

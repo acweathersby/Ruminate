@@ -2,17 +2,32 @@
 
 @IMPORT ./query_string.cpp.hcg as Query
 
+@IGNORE θws θnl 
+
 <> goal → note
 
-<> note → type? Query::container_clause? \; tags? \; string?			↦c ^NOTE_Note
+<> note → [type? Query::container_clause? \; tags? \; string?]			↦c ^NOTE_Note
 
-<> type → Query::number
+<> type → n_number
 
 <> tags → tag 														↦r ^NOTE_TagList
 	│ tags , tag													↦r ^NOTE_TagList
 
-<> tag → string \= Query::number 								↦r ^NOTE_TagNumber
-	│ string \= string 											↦r ^NOTE_TagString
-	│ string 													↦r ^NOTE_Tag
+<> tag → string \= string 												↦r ^NOTE_TagString
+	│ string 														↦r ^NOTE_Tag
 
-<> string → Query::string_data	 								↦r ^NOTE_String
+<> string → n_string_data_val	 									↦r ^NOTE_String
+
+<> n_string_data_val → n_string_data_val n_string_symbols           ↦r ^StringData
+    │ n_string_symbols                                              ↦r ^StringData
+
+<> n_string_symbols → θany                                          ↦r ^StringData
+    │ θsym                                                          ↦r ^StringData
+    │ θop                                                           ↦r ^StringData
+    │ θid                                                           ↦r ^StringData
+    │ θnum                                                          ↦r ^StringData
+    │ θws 															↦r ^StringData
+    │ θnl 															↦r ^StringData
+
+<> n_number → θnum                                                 ↦r ^Number
+

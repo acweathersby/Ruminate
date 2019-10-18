@@ -11,7 +11,7 @@
 
 <> start → query_body
 
-<> query_body → container_clause? filter_clause? sort_clause?                   ↦c ^QUERY_Body
+<> query_body → [container_clause? filter_clause? sort_clause?]                  ↦c ^QUERY_Body
 
 ## Container Clause
 
@@ -107,27 +107,27 @@
 <> sentence → \" string_data \"                                     ↦r ^QUERY_Sentence
     │ \' string_data \'                                             ↦r ^QUERY_Sentence
 
-<> string_data → string_symbols string_data_val?                    ↦r ^QUERY_StringData
+<> string_data → string_symbols string_data_val?                    ↦r ^StringData
 
-<> wild_card → \*                                                   ↦r ^QUERY_StringDataValue
+<> wild_card → \*                                                   ↦r ^StringData
 
 <> string_data_val → 
-    │ string_data_val string_symbols                                ↦r ^QUERY_StringDataValue
-    │ string_data_val escaped_value                                 ↦r ^QUERY_StringDataValue
-    │ string_data_val white_space                                   ↦r ^QUERY_StringDataValue
-    │ string_symbols                                                ↦r ^QUERY_StringDataValue
-    │ escaped_value                                                 ↦r ^QUERY_StringDataValue
-    │ white_space                                                   ↦r ^QUERY_StringDataValue
+      string_data_val string_symbols                                ↦r ^StringData
+    │ string_data_val escaped_value                                 ↦r ^StringData
+    │ string_data_val white_space                                   ↦r ^StringData
+    │ string_symbols                                                ↦r ^StringData
+    │ escaped_value                                                 ↦r ^StringData
+    │ white_space                                                   ↦r ^StringData
 
 <> escaped_value → \\ string_symbols                                ↦r ^QUERY_EscapedValue
 
-<> white_space → θws                                                ↦r ^QUERY_Symbol
+<> white_space → θws                                                ↦r ^StringData
 
-<> string_symbols → θany                                            ↦r ^QUERY_Symbol
-    │ θsym                                                          ↦r ^QUERY_Symbol
-    │ θop                                                           ↦r ^QUERY_Symbol
-    │ θid                                                           ↦r ^QUERY_Symbol
+<> string_symbols → θany                                            ↦r ^StringData
+    │ θsym                                                          ↦r ^StringData
+    │ θop                                                           ↦r ^StringData
+    │ θid                                                           ↦r ^StringData
 
-<> number → θnum                                                    ↦r ^QUERY_Number
+<> number → θnum                                                    ↦r ^Number
 
 

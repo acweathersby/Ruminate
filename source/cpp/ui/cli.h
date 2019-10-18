@@ -10,6 +10,7 @@
 #include "../database/file/file_db.h"
 #include "../string/crdt.h"
 #include "../compiler/compiler.h"
+#include "../text_command/text_command.h"
 
 using namespace RUMINATE;
 using namespace RUMINATE::STRING;
@@ -21,4 +22,4 @@ using namespace RUMINATE::QUERY;
 using namespace RUMINATE::DB;
 using namespace std;
 
-bool cli();
+bool cli(wstring& filepath);

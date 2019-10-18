@@ -35,7 +35,7 @@ namespace RUMINATE
 
 			ContainerLU() {}
 
-			ContainerLU& operator [] (const wstring string) {
+			ContainerLU& operator [] (const wstring& string) {
 				int i = 0, start = 0;
 
 				if(string[i] == Delimiter)

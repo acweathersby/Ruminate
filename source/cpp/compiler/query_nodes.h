@@ -1,14 +1,15 @@
 #pragma once
 
 #include "./node.h"
+#include <sstream>
 
 namespace RUMINATE_COMMAND_NODES
 {
 	struct QUERY_ContainerIdentifier_n;
 
-	typedef vector<QUERY_ContainerIdentifier_n *> QUERY_ContainerIdentifierList_n;
-	typedef vector<Node *> QUERY_SortList_n;
-	typedef vector<const wstring *> QUERY_IdentifierList_n;
+	typedef vector<QUERY_ContainerIdentifier_n *, ParseBuffer<QUERY_ContainerIdentifier_n *>> QUERY_ContainerIdentifierList_n;
+	typedef vector<Node *, ParseBuffer<Node *>> QUERY_SortList_n;
+	typedef vector<const parse_string *, ParseBuffer<const parse_string *>> QUERY_IdentifierList_n;
 
 	static wostream& operator << (wostream& os, QUERY_IdentifierList_n& id_list)
 	{
@@ -18,9 +19,9 @@ namespace RUMINATE_COMMAND_NODES
 	}
 
 	struct QUERY_Sentence_n : public Node {
-		wstring * string;
+		parse_string * string;
 
-		QUERY_Sentence_n(wstring * str) : Node(), string(str) { type = NodeType::Sentence;}
+		QUERY_Sentence_n(parse_string * str) : Node(), string(str) { type = NodeType::Sentence;}
 
 		friend wostream& operator<<(wostream& os, const QUERY_Sentence_n& dt) {
 			return os << "{sentence: \"" << (*dt.string) << "\"}";
@@ -33,7 +34,7 @@ namespace RUMINATE_COMMAND_NODES
 		QUERY_Identifier_n(QUERY_IdentifierList_n * l) : Node(), list(*l) {type = NodeType::ID;}
 
 		virtual wostream& toStream(wostream& os) const {
-			return	os << "{id: \"" << list << "\"}";
+			return	os << list;
 		}
 	};
 
@@ -46,11 +47,11 @@ namespace RUMINATE_COMMAND_NODES
 		}
 
 		virtual wostream& toStream(wostream& os) const {
-			return	os << "{ctnr-id: \"" << list << "\"}";
+			return	os << list;
 		}
 
 		bool IS_WILD_CARD() {
-			return list.size() == 1 && *list[0] == wstring(L"*");
+			return list.size() == 1 && *list[0] == parse_string(L"*");
 		}
 	};
 
@@ -197,27 +198,31 @@ namespace RUMINATE_COMMAND_NODES
 			type = NodeType::ContainerClause;
 		}
 
+		const wstring toString() {
+
+			std::wostringstream stream;
+
+			stream << *this;
+
+			return stream.str();
+		}
+
 		friend wostream& operator<<(wostream& os, const QUERY_Container_n& dt) {
 
 			QUERY_ContainerIdentifierList_n& list = *dt.list;
 
-			os << "{\ntype:\"Container Identifier\"";
+			os << "/";
 
-			if (dt.id) {
-				os << ",\nid:" << *dt.id;
-			}
+			if(dt.list)
+				for (auto itr = list.cbegin(); itr != list.cend(); itr++)
+					os  << (**itr) << "/";
 
-			if(dt.list) {
-				os << ",\nctrs:[";
-				int i =0;
-				for (auto itr = list.cbegin(); itr != list.cend(); itr++, i++) {
-					if(i > 0) os << ",";
-					os  << (**itr) << "";
-				}
-				os << "]";
-			}
 
-			return os << "\n}";
+			if (dt.id)
+				os << * dt.id;
+
+
+			return os << "";
 		}
 	};
 

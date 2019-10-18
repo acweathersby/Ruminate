@@ -9,21 +9,21 @@ namespace RUMINATE_COMMAND_NODES
 
 	struct NOTE_Tag_n : public Node {
 
-		wstring * key = nullptr;
+		parse_string * key = nullptr;
 
 		double num_val = NaN;
 
-		wstring * val = nullptr;
+		parse_string * val = nullptr;
 
-		NOTE_Tag_n(wstring * k, wstring * v): Node(), key(k), val(v) {
+		NOTE_Tag_n(parse_string * k, parse_string * v): Node(), key(k), val(v) {
 			type = NodeType::NOTE_TAG;
 		}
 
-		NOTE_Tag_n(wstring * k, double v): Node(), key(k), num_val(v) {
+		NOTE_Tag_n(parse_string * k, double v): Node(), key(k), num_val(v) {
 			type = NodeType::NOTE_TAG;
 		}
 
-		NOTE_Tag_n(wstring * k): Node(), key(k), num_val(NaN) {
+		NOTE_Tag_n(parse_string * k): Node(), key(k), num_val(NaN) {
 			type = NodeType::NOTE_TAG;
 		}
 
@@ -32,7 +32,7 @@ namespace RUMINATE_COMMAND_NODES
 
 			os << ",\nkey:\"" << * key << "\"";
 
-			if (!isnan(num_val)) {
+			if (hasNumberValue()) {
 				os << ",\nval:" << num_val;
 			} else if (val) {
 				os << ",\nval:\"" << * val << "\"";
@@ -40,17 +40,29 @@ namespace RUMINATE_COMMAND_NODES
 			return os << "\n}";
 		};
 
+		bool shouldRemove() const {
+			return false;
+		}
+
+		bool hasStringValue()const  {
+			return val != nullptr;
+		}
+
+		bool hasNumberValue()const  {
+			return !isnan(num_val);
+		}
+
 	};
 
-	typedef vector<NOTE_Tag_n *> NOTE_TagList_n;
+	typedef vector<NOTE_Tag_n *, ParseBuffer<NOTE_Tag_n *>> NOTE_TagList_n;
 
 	struct NOTE_Note_n : public Node {
 		unsigned note_type = 0;
 		QUERY_Container_n * ctr = nullptr;
 		NOTE_TagList_n * tags = nullptr;
-		wstring * body = nullptr;
+		parse_string * body = nullptr;
 
-		NOTE_Note_n(unsigned t, QUERY_Container_n* c, NOTE_TagList_n* tl, wstring * b): Node(), note_type(t), ctr(c), tags(tl), body(b) {
+		NOTE_Note_n(unsigned t, QUERY_Container_n* c, NOTE_TagList_n* tl, parse_string * b): Node(), note_type(t), ctr(c), tags(tl), body(b) {
 			type = NodeType::NOTE;
 		}
 

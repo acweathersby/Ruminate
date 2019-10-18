@@ -19,23 +19,19 @@ namespace RUMINATE
 
 		using namespace RUMINATE_COMMAND_NODES;
 
-		using HC_Tokenizer::Token;
-		using HC_Parser::parse;
-		using namespace HC_TEMP;
-
 		/**
 			Parses query string and selects notes from input array that meet the query criteria.
 
 			Selected notes are placed in the output buffer.
 		**/
-		static bool compareQueryIdentifier(const QUERY_Identifier_n& id, const wstring& string, bool FOLLOWING_WILD_CARD = false)
+		static bool compareQueryIdentifier(const QUERY_Identifier_n& id, const wstring& string, bool WHOLE_MATCH = true, bool FOLLOWING_WILD_CARD = false)
 		{
 
 			int offset = 0;
 
 			for (int i = 0; i < id.list.size(); i++) {
 
-				const wstring& str = *id.list[i];
+				const parse_string& str = *id.list[i];
 
 				if (str == L"*") {
 
@@ -48,7 +44,12 @@ namespace RUMINATE
 
 				size_t start = string.find(str, offset);
 
-				if (FOLLOWING_WILD_CARD || (int) start == 0) {
+				wcout << str << endl;
+				wcout << string << endl;
+				wcout << "-------------------------" << endl;
+
+
+				if (FOLLOWING_WILD_CARD || (int) start == 0 || (!WHOLE_MATCH && (int)start > 0)) {
 
 					offset = start + str.size();
 
@@ -75,7 +76,7 @@ namespace RUMINATE
 
 			auto ctr = (* (container_query.list))[container_offset];
 
-			if(container.id == L"" || ctr->IS_WILD_CARD() || compareQueryIdentifier(*ctr, container.id) ) {
+			if(container.id == L"" || ctr->IS_WILD_CARD() || compareQueryIdentifier(*ctr, container.id, true) ) {
 
 
 				auto ctrs = container.containers;
@@ -102,27 +103,24 @@ namespace RUMINATE
 		}
 
 		//Filters out nodes based on container query.
-		static int filterContainer(QUERY_Container_n& container, const ContainerLU& ctr_lu,  DBRunner& db, unsigned& total_results, unsigned max_results, UID * buffer)
+		static int filterContainer(QUERY_Container_n& container, DBRunner& db, unsigned& total_results, unsigned max_results, UID * buffer)
 		{
+			const ContainerLU& ctr_lu = db.getContainerTree();
 			unsigned uid_buffer_size = max_results;
 
 			recurseContainerMatcher(container, ctr_lu, total_results, uid_buffer_size, buffer);
-
-			cout << total_results << " results" << endl;
 
 			if(container.id) {
 
 				unsigned j = 0;
 
 				for(int i = 0; i < total_results; i++) {
-					if(compareQueryIdentifier(*container.id, db.getNoteID(buffer[i])))
+					if(compareQueryIdentifier(*container.id, db.getNoteID(buffer[i]), false))
 						buffer[j++] = buffer[i];
 				}
 
 				total_results = j;
 			}
-
-			cout << total_results << " results" << endl;
 
 			return 0;
 		}

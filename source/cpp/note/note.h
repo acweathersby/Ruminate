@@ -6,6 +6,7 @@
 #include "../uid/uid.h"
 #include "../tags/tags.h"
 #include "../utils/stream.h"
+#include "../compiler/compiler.h"
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -55,7 +56,13 @@ namespace RUMINATE
 
 			virtual const wstring toJSONString() = 0;
 
-			virtual bool fuzzySearchMatchFirst(const wstring&) = 0;
+			virtual bool fuzzySearchMatchFirst(const RUMINATE_COMMAND_NODES::parse_string&) = 0;
+
+			virtual void updateBody(const RUMINATE_COMMAND_NODES::parse_string&) = 0;
+
+			void updateTags(const RUMINATE_COMMAND_NODES::NOTE_TagList_n& tag_node) {
+				tags.update(tag_node);
+			}
 
 			/**** Streaming Functions ****/
 			friend std::ostream& operator << (std::ostream& stream, const Note & note) {
@@ -110,8 +117,8 @@ namespace RUMINATE
 			CRDTNote(UID uid = UID(), unsigned site = 0) : Note(uid, site), body(site) {}
 			virtual ~CRDTNote() {}
 
-			virtual bool fuzzySearchMatchFirst(const wstring& string) {
-				return STRING::fuzzySearchMatchFirst<JSCRDTString, wchar_t>(body, string);
+			virtual bool fuzzySearchMatchFirst(const RUMINATE_COMMAND_NODES::parse_string& string) {
+				return STRING::fuzzySearchMatchFirst<JSCRDTString, wchar_t, RUMINATE_COMMAND_NODES::parse_string>(body, string);
 			}
 
 			virtual const wstring toJSONString() {
@@ -135,6 +142,11 @@ namespace RUMINATE
 
 				return string;
 			}
+
+			virtual void updateBody(const RUMINATE_COMMAND_NODES::parse_string& body_string) {
+				;
+			}
+
 		};
 
 		static CRDTNote NullNote(NullUID, 0);

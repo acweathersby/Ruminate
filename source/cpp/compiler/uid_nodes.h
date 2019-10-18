@@ -1,9 +1,12 @@
 #pragma once
 
 #include "./node.h"
+#include "./parse_buffer.h"
 
 namespace RUMINATE_COMMAND_NODES
 {
+
+
 	struct UID_UID_n : public Node {
 
 		unsigned random = 0;
@@ -18,12 +21,13 @@ namespace RUMINATE_COMMAND_NODES
 			return os << "{type:\"UID\", created:" << created << ", random:" << random << "}";
 		}
 	};
+	typedef vector<UID_UID_n *, ParseBuffer<UID_UID_n *>> UIDVector;
 
 	struct UID_List_n : public Node {
 
-		vector<UID_UID_n *> uids;
+		UIDVector & uids;
 
-		UID_List_n(): Node() { type = NodeType::UID_LIST;}
+		UID_List_n(UIDVector & u): Node(), uids(u) { type = NodeType::UID_LIST;}
 
 		virtual wostream& toStream(wostream& os) const {
 			os << "{type:\"UID_LIST\", \nuids:[";

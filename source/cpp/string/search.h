@@ -16,8 +16,8 @@ namespace RUMINATE
 			}
 		}
 
-		template<class SourceString, class MatchCharT>
-		int fuzzySearchRL(SourceString& source, const std::basic_string<MatchCharT>& match, int window_size = 48, unsigned base = 0)
+		template<class SourceString, class MatchCharT, class MatchString>
+		int fuzzySearchRL(SourceString& source, const MatchString& match, int window_size = 48, unsigned base = 0)
 		{
 			int source_index = 0, source_length = source.size(), match_length = match.size(), buffer_end = -1;
 
@@ -72,8 +72,8 @@ namespace RUMINATE
 			return -1;
 		}
 
-		template<class SourceString, class MatchCharT>
-		int fuzzySearchLR(SourceString& source, const std::basic_string<MatchCharT>& match, int window_size = 48, unsigned base = 0)
+		template<class SourceString, class MatchCharT, class MatchString>
+		int fuzzySearchLR(SourceString& source, const MatchString& match, int window_size = 48, unsigned base = 0)
 		{
 			int source_index = 0, source_length = source.size(), match_length = match.size(),buffer_end = -1;
 
@@ -128,10 +128,10 @@ namespace RUMINATE
 			return -1;
 		}
 
-		template<class SourceString, class MatchCharT>
-		bool fuzzySearchMatchFirst(SourceString& source, const std::basic_string<MatchCharT>& match, unsigned window_size = 0)
+		template<class SourceString, class MatchCharT, class MatchString = SourceString>
+		bool fuzzySearchMatchFirst(SourceString& source, const MatchString& match, unsigned window_size = 0)
 		{
-			return fuzzySearchRL<SourceString, MatchCharT>(source, match, window_size) >= 0 ? true : false;
+			return fuzzySearchRL<SourceString, MatchCharT, MatchString>(source, match, window_size) >= 0 ? true : false;
 		}
 	}
 }

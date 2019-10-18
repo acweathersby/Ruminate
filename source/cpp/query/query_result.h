@@ -17,7 +17,6 @@ namespace RUMINATE
 		private:
 
 			wstring query;
-			UID * uids = nullptr;
 			int length = 0;
 			bool READY_BOOL = false;
 			unsigned * references;
@@ -25,6 +24,7 @@ namespace RUMINATE
 
 
 		public:
+			UID * uids = nullptr;
 
 			friend std::ostream& operator << (std::ostream& stream, const QueryResult query) {
 				stream << "{type:\"search result\", size: " << query.length;
@@ -33,7 +33,7 @@ namespace RUMINATE
 				return stream;
 			}
 
-			unsigned size() {return length;};
+			unsigned size() const {return length;};
 
 			QueryResult(const wstring& q, DBRunner& d) : db(d) {
 				references = new unsigned(1);

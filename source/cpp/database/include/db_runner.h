@@ -23,7 +23,7 @@ namespace RUMINATE
 
 			vector<NoteDB *> databases;
 
-			NoteDB * primary_db = nullptr;
+			//NoteDB * primary_db = nullptr;
 
 			ContainerLU ctr; //Root Container entry.
 
@@ -75,7 +75,34 @@ namespace RUMINATE
 				notes.insert( {note.uid, &note});
 				//add note to containers
 				ctr.addNote(note);
+				//Update databases.
 				return true;
+			}
+
+			bool deleteNote(Note& note) {
+				ctr.removeUID(note.uid);
+				noteLU.erase(note.uid);
+				//Remove from databases.
+				return true;
+			}
+
+			bool updateNote(Note& note) {
+
+				UID uid = note.uid;
+
+				wstring& id = note.id;
+
+				wstring old_id = getNoteID(uid);
+
+				if(old_id != id) relocateNote(note, old_id);
+
+				return true;
+			}
+
+			void relocateNote(const Note& note, const wstring& old_id) {
+				ctr.removeNote(old_id, note.uid);
+				ctr.addNote(note.id, note.uid);
+				noteLU.insert( {note.uid, {note.modified_time, note.id}});
 			}
 
 			wstring getNoteID(const UID& uid) {
@@ -84,9 +111,13 @@ namespace RUMINATE
 				if(result != noteLU.end())
 					return result->second.second;
 
-				else return getNote(uid)->id;
-			}
+				auto note = getNote(uid);
 
+				if(note)
+					return note->id;
+
+				return wstring(L"");
+			}
 
 			Note * getNote(const UID& uid) {
 
@@ -121,7 +152,7 @@ namespace RUMINATE
 					}
 				}
 
-				return &NullNote; // <<<< MEMORY LEAK <<<<<<<
+				return nullptr;
 			}
 
 			const ContainerLU& getContainerTree() const {

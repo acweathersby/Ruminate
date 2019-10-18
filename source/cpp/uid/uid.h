@@ -6,6 +6,7 @@
 #include <string>
 #include <cstring>
 #include <random>
+#include "../compiler/uid_nodes.h"
 
 namespace RUMINATE
 {
@@ -44,12 +45,22 @@ namespace RUMINATE
 			random = 0;
 		}
 
+		UID(const RUMINATE_COMMAND_NODES::UID_UID_n& uid) {
+			created_time = uid.created;
+			random = uid.random;
+		}
+
+
 		friend bool operator == (const UID& a, const UID& b) {
 			return a.created_time == b.created_time && b.random == a.random;
 		}
 
 		friend std::ostream& operator << (std::ostream& stream, const UID& uid) {
-			stream.write((char *)(&(uid)), sizeof(uid));
+			if(stream.rdbuf() == std::cout.rdbuf()) {
+				stream << std::hex << "RUMI-" <<  uid.created_time << "-" << uid.random;
+			} else {
+				stream.write((char *)(&(uid)), sizeof(uid));
+			}
 			return stream;
 		}
 

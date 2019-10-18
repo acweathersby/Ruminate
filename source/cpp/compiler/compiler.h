@@ -18,13 +18,11 @@ namespace RUMINATE
 
 		using HC_Tokenizer::Token;
 
-		typedef ParseBuffer<RUMINATE_COMMAND_NODES::Node> Allocator;
-
-		static Allocator compileWString(const wstring& string)
+		static ParseBuffer<char> compileWString(const wstring& string)
 		{
 			Token tk(string);
 
-			return parse<Allocator, HC_TEMP::Data<Allocator, RUMINATE_COMMAND_NODES::NodeFunctions<Allocator>>>(tk);
+			return parse<HC_TEMP::Data<RUMINATE_COMMAND_NODES::NodeFunctions>>(tk);
 		}
 	}
 }

@@ -7,6 +7,6 @@
 
 <> single → τRUMI \- created \- random 		↦c ^UID_UID
 
-<> created → (θid │ θnum) 					↦c ^UID_Created
+<> created → (θid │ θnum │ θhex) 					↦c ^UID_Created
 
-<> random → (θid │ θnum)  					↦c ^UID_Random
+<> random → (θid │ θnum │ θhex)  					↦c ^UID_Random

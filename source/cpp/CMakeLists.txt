@@ -11,8 +11,8 @@ SET (CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET (CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 
-SET (CMAKE_CXX_FLAGS_INIT                "-Wall -stdlib=libc++ -std=c++17 -fdeclspec")
-SET (CMAKE_CXX_FLAGS_DEBUG          	 "-O0 -g -Wall -stdlib=libc++ -std=c++17 -fdeclspec")
+SET (CMAKE_CXX_FLAGS_INIT                "-Wall -stdlib=libc++ -std=c++17 -fdeclspec -pthread")
+SET (CMAKE_CXX_FLAGS_DEBUG          	 "-O0 -g -Wall -stdlib=libc++ -std=c++17 -fdeclspec -pthread")
 SET (CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-O2 -DNDEBUG")
 SET (CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET (CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
@@ -44,6 +44,7 @@ target_link_libraries(FileDB PUBLIC Database)
 ## Use all the *.cpp files we found under this folder for the project
 FILE(GLOB SRCS 
 	"main.cpp"
+	"definitions.h"
 	"database/compiler/compiler.h"
 	"database/include/*"
 	"container/*"
@@ -52,8 +53,10 @@ FILE(GLOB SRCS
 	"string/*"
 	"tags/*"
 	"uid/*"
+	"text_command/*"
 	"ui/*"
 	"utils/*"
+	"localization/*"
 ) 
 
 ## Add Include Directories

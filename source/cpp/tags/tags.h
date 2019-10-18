@@ -4,9 +4,10 @@
 #include <tuple>
 #include <vector>
 #include <cstring>
+#include "../compiler/compiler.h"
 #include "./tag_value.h"
-#include "../utils/stream.h"
-
+#include "../utils/stream.h"\
+ 
 namespace RUMINATE
 {
 
@@ -92,7 +93,35 @@ namespace RUMINATE
 			unsigned size () const {
 				return tags.size();
 			}
+
+
+			void update(const RUMINATE_COMMAND_NODES::NOTE_TagList_n& tag_list) {
+				for(auto iter = tag_list.begin(); iter != tag_list.end(); iter++) {
+
+					RUMINATE_COMMAND_NODES::NOTE_Tag_n& tag = **iter;
+
+					if(tag.shouldRemove()) {}
+					else if(tag.hasStringValue()) {
+						addTag(wstring(*tag.key), wstring(*tag.val));
+					} else if (tag.hasNumberValue()) {
+						addTag(wstring(*tag.key), tag.num_val);
+					} else {
+						addTag(wstring(*tag.key));
+					}
+				}
+			}
 		};
-		Tag * getMatchingTag(TagContainer&, const wstring&);
+
+
+		template<class U>
+		Tag * getMatchingTag(TagContainer& tags, const U& id)
+		{
+			for(int i = 0; i < tags.size(); i++) {
+				Tag * tag = tags[i];
+				if(id.compare(tag->id) == 0)
+					return tag;
+			}
+			return NULL;
+		};
 	}
 }

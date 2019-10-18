@@ -23,10 +23,6 @@ namespace RUMINATE
 
 		using namespace RUMINATE_COMMAND_NODES;
 
-		using HC_Tokenizer::Token;
-		using HC_Parser::parse;
-		using namespace HC_TEMP;
-
 		static bool compareDouble(QUERY_Comparison_n& compare, double d)
 		{
 			switch(compare.type) {
@@ -67,10 +63,9 @@ namespace RUMINATE
 					auto& v = tag.val;
 
 					if(compare->type == QUERY_Comparison_n::ID) {
-						wstring* tag_string = v;
 						auto& list = compare->id->list;
 						for (int i = 0; i < list.size(); i++)
-							if(!fuzzySearchMatchFirst<wstring, wchar_t>(*tag_string, *list[i]))
+							if(!fuzzySearchMatchFirst<wstring, wchar_t, parse_string>(*v, *list[i]))
 								return false;
 						return true;
 					}
