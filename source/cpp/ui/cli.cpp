@@ -1,41 +1,40 @@
 #include "./cli.h"
+
+#include <filesystem>
 #include <iostream>
 #include <thread>
 
-bool cli(wstring& filepath)
-{
-	FileDB filedb(filepath);
+bool cli(wstring & filepath) {
+    FileDB<RUMINATE::NOTE::BasicNote> filedb(filepath);
 
-	DBRunner db;
+    DBRunner db;
 
-	db.addDatabase(&filedb);
+    db.addDatabase(&filedb);
 
-	//Create a few notes and place their uids in the container catch.
-	wstring string;
+    // Create a few notes and place their uids in the container catch.
+    wstring string;
 
-	while(1) {
+    while (1) {
+        std::cout << "Let's hear it now:" << std::endl;
+        std::getline(std::wcin, string);
 
-		std::cout << "Let's hear it now:" << std::endl;
-		std::getline(std::wcin, string);
+        if (L"q" == string) // Exit if q is entered at prompt.
+            break;
 
-		if(L"q" == string) // Exit if q is entered at prompt.
-			break;
+        auto & result = RUMINATE::COMMAND::runStringCommand(string, db);
 
-		auto& result = RUMINATE::COMMAND::runStringCommand(string, db);
+        while (!result.READY())
+            // Sleep this thread; Wait until the result has data.
+            std::this_thread::yield();
+        std::cout << result.size() << endl;
+        for (int i = 0; i < result.size(); i++)
+            std::wcout << result[i].toJSONString() << endl;
 
-		while (!result.READY())
-			//Sleep this thread; Wait until the result has data.
-			std::this_thread::yield();
+        std::getline(std::wcin, string);
+        std::cout << "\033[2J\033[1;1H";
+    }
 
+    filedb.close();
 
-		for(int i = 0; i < result.size(); i++)
-			std::wcout << result[i].toJSONString() << endl;
-
-		std::getline(std::wcin, string);
-		std::cout << "\033[2J\033[1;1H";
-	}
-
-	filedb.close();
-
-	return true;
+    return true;
 }

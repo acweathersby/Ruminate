@@ -1,154 +1,88 @@
-
 #pragma once
 
-#include "../string/crdt.h"
-#include "../string/search.h"
-#include "../uid/uid.h"
-#include "../tags/tags.h"
-#include "../utils/stream.h"
-#include "../compiler/compiler.h"
-#include <vector>
+#include <cstring>
 #include <iostream>
 #include <sstream>
-#include <cstring>
+#include <vector>
 
-namespace RUMINATE
-{
-	using namespace STRING;
-	using namespace TAG;
+#include "../compiler/compiler.h"
+#include "../string/crdt.h"
+#include "../string/search.h"
+#include "../tags/tags.h"
+#include "../uid/uid.h"
+#include "../utils/stream.h"
 
-	namespace NOTE
-	{
-		using std::wstring;
-		using std::vector;
+namespace RUMINATE {
 
-		typedef CharOp <OP_ID, OPChar<ASCII>> ASCII_OP;
-		typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
+    namespace NOTE {
+        using namespace STRING;
+        using namespace TAG;
+        using std::vector;
+        using std::wstring;
 
-		class Note
-		{
+        typedef CharOp<OP_ID, OPChar<ASCII>> ASCII_OP;
+        typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
 
-		private:
-			virtual void serialize(std::ostream&) const = 0;
-			virtual void deserialize(std::istream&) = 0;
-		public:
-			unsigned type = 0;
+        class Note {
 
-			TagContainer tags;
+          private:
+            virtual void serialize(std::ostream &) const = 0;
+            virtual void deserialize(std::istream &)     = 0;
 
-			UID uid;
+          public:
+            unsigned type = 0;
 
-			wstring id;
+            TagContainer tags;
 
-			time_t modified_time;
+            UID uid;
 
-			bool SERIALIZED = false;
+            wstring id;
 
-			Note(UID _uid = UID(), unsigned site = 0)
-				:
-				uid(_uid),
-				id(L"")
-			{}
+            time_t modified_time;
 
-			Note(unsigned char * data) {}
+            bool SERIALIZED = false;
 
-			virtual ~Note() {}
+            Note(UID _uid = UID())
+                : uid(_uid),
+                  id(L"") {}
 
-			virtual const wstring toJSONString() = 0;
+            Note(unsigned char * data) {}
 
-			virtual bool fuzzySearchMatchFirst(const RUMINATE_COMMAND_NODES::parse_string&) = 0;
+            virtual ~Note() {}
 
-			virtual void updateBody(const RUMINATE_COMMAND_NODES::parse_string&) = 0;
+            virtual const wstring toJSONString() = 0;
 
-			void updateTags(const RUMINATE_COMMAND_NODES::NOTE_TagList_n& tag_node) {
-				tags.update(tag_node);
-			}
+            virtual bool fuzzySearchMatchFirst(const RUMINATE_COMMAND_NODES::parse_string &) = 0;
 
-			/**** Streaming Functions ****/
-			friend std::ostream& operator << (std::ostream& stream, const Note & note) {
-				note.serialize(stream);
-				return stream;
-			}
+            virtual void updateBody(const RUMINATE_COMMAND_NODES::parse_string &) = 0;
 
-			friend Note & operator << (Note & note, std::istream& stream) {
-				note.deserialize(stream);
-				return note;
-			}
+            void updateTags(const RUMINATE_COMMAND_NODES::NOTE_TagList_n & tag_node) {
+                tags.update(tag_node);
+            }
 
-			/**** End Streaming Functions ****/
-			virtual const wstring id_name() const {
-				unsigned id_start = 0, i = 0;
+            /**** Streaming Functions ****/
+            friend std::ostream & operator<<(std::ostream & stream, const Note & note) {
+                note.serialize(stream);
+                return stream;
+            }
 
-				while(i < id.size()) {
-					i++;
-					if(id[i] == L'/') id_start = i+1;
-				}
+            friend Note & operator<<(Note & note, std::istream & stream) {
+                note.deserialize(stream);
+                return note;
+            }
 
-				return id.substr(id_start);
-			}
-		};
+            /**** End Streaming Functions ****/
+            virtual const wstring id_name() const {
+                unsigned id_start = 0, i = 0;
 
+                while (i < id.size()) {
+                    i++;
+                    if (id[i] == L'/')
+                        id_start = i + 1;
+                }
 
-		class CRDTNote : public Note
-		{
-		private:
-		public:
-			JSCRDTString body;
-		private:
-			virtual void serialize(std::ostream& stream) const {
-				stream << uid;
-				stream.write((char *)&type, sizeof(type));
-				writeString(stream, id);
-				stream.write((char *)&modified_time, sizeof(modified_time));
-				stream << tags;
-				stream << body;
-			}
-
-			virtual void deserialize(std::istream& stream) {
-				uid << stream;
-				stream.read((char *)&type, sizeof(type));
-				readString(stream, id);
-				stream.read((char *)&modified_time, sizeof(modified_time));
-				tags << stream;
-				body << stream;
-			}
-
-		public:
-			CRDTNote(UID uid = UID(), unsigned site = 0) : Note(uid, site), body(site) {}
-			virtual ~CRDTNote() {}
-
-			virtual bool fuzzySearchMatchFirst(const RUMINATE_COMMAND_NODES::parse_string& string) {
-				return STRING::fuzzySearchMatchFirst<JSCRDTString, wchar_t, RUMINATE_COMMAND_NODES::parse_string>(body, string);
-			}
-
-			virtual const wstring toJSONString() {
-				wstring string = L"";
-
-				string += L"{";
-
-				string += L"\"uid\":";
-
-				string += uid.toJSONString();
-
-				string += L",\"id\":\"";
-
-				string += id;
-
-				string += L",\"body\":\"";
-
-				string += body.getValue();
-
-				string += L"\"}";
-
-				return string;
-			}
-
-			virtual void updateBody(const RUMINATE_COMMAND_NODES::parse_string& body_string) {
-				;
-			}
-
-		};
-
-		static CRDTNote NullNote(NullUID, 0);
-	}
-}
+                return id.substr(id_start);
+            }
+        };
+    } // namespace NOTE
+} // namespace RUMINATE

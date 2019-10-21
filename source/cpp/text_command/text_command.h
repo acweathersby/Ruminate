@@ -1,215 +1,221 @@
 #pragma once
 
-#include <string>
 #include <cstring>
+#include <string>
+#include <thread>
 #include <vector>
-#include <thread>         // std::thread
+
 #include "../compiler/compiler.h"
 #include "../database/include/db_runner.h"
+#include "../note/note.h"
 #include "../query/query.h"
 #include "../uid/uid.h"
-#include "../note/note.h"
 #include "./text_command_result.h"
 #include "./text_command_result_codes.h"
 
-namespace RUMINATE
-{
-	namespace COMMAND
-	{
-		using namespace QUERY;
-		using namespace DB;
-		using namespace NOTE;
+namespace RUMINATE {
+    namespace COMMAND {
 
-		/*
+        using namespace QUERY;
+        using namespace DB;
+        using namespace NOTE;
+
+        /*
 		 * Text result static objects.
 		 */
 
-		static ADD_FAILURE_TOO_MANY_RESULTS add_failure_too_many_results;
-		static ADD_FAILURE_NO_UID_MATCH add_failure_no_uid_match;
-		static ADD_SUCCESS add_success;
-		static REMOVE_SUCCESS remove_success;
-		static REMOVE_FAILURE_UID_DOES_NOT_MATCH remove_failure_uid_does_not_match;
-		static REMOVE_FAILURE_NO_RESULTS remove_failure_no_results;
-		static RETRIEVE_SUCCESS retrieve_success;
+        static ADD_FAILURE_TOO_MANY_RESULTS add_failure_too_many_results;
+        static ADD_FAILURE_NO_UID_MATCH add_failure_no_uid_match;
+        static ADD_SUCCESS add_success;
+        static REMOVE_SUCCESS remove_success;
+        static REMOVE_FAILURE_UID_DOES_NOT_MATCH remove_failure_uid_does_not_match;
+        static REMOVE_FAILURE_NO_RESULTS remove_failure_no_results;
+        static RETRIEVE_SUCCESS retrieve_success;
+        static TEXT_COMMAND_FAILURE text_command_failure;
 
-		/*
+        /*
 		 * Update note data from a NOTE_Note_n object
 		 */
-		static bool UpdateNote(Note& note, const NOTE_Note_n& note_node, DBRunner& db)
-		{
-			bool NOTE_UPDATED = false;
-			//upate the note according to the settings of the note type.
-			if(note_node.body) {
-				NOTE_UPDATED = true;
-				note.updateBody(*note_node.body);
-			}
+        static bool UpdateNote(Note & note, const NOTE_Note_n & note_node, DBRunner & db) {
+            bool NOTE_UPDATED = false;
+            //upate the note according to the settings of the note type.
+            if (note_node.body) {
+                NOTE_UPDATED = true;
+                note.updateBody(*note_node.body);
+            }
 
-			if(note_node.ctr) {
-				NOTE_UPDATED = true;
+            if (note_node.ctr) {
+                NOTE_UPDATED = true;
 
-				wstring container_id = note_node.ctr->toString();
+                wstring container_id = note_node.ctr->toString();
 
-				note.id = container_id;
-			}
+                note.id = container_id;
+            }
 
-			if(note_node.tags) {
-				NOTE_UPDATED = true;
-				note.updateTags(*note_node.tags);
-			}
+            if (note_node.tags) {
+                NOTE_UPDATED = true;
+                note.updateTags(*note_node.tags);
+            }
 
-			if(NOTE_UPDATED)
-				db.updateNote(note);
+            if (NOTE_UPDATED)
+                db.updateNote(note);
 
-			wcout << note.toJSONString() << endl;
+            wcout << note.toJSONString() << endl;
 
-			return NOTE_UPDATED;
-		}
+            return NOTE_UPDATED;
+        }
 
-		static void ThreadRunner(const std::wstring* s, DBRunner* d, TextCommandResult* r)
-		{
+        static void ThreadRunner(const std::wstring * s, DBRunner * d, TextCommandResult * r) {
 
-			const std::wstring& string = *s;
-			DBRunner& db = *d;
-			TextCommandResult& result = *r;
+            const std::wstring & string = *s;
+            DBRunner & db               = *d;
+            TextCommandResult & result  = *r;
 
-			auto buffer = RUMINATE::COMPILER::compileWString(string);
+            auto buffer = RUMINATE::COMPILER::compileWString(string);
 
-			auto node = buffer.getRootObject<RUMINATE_COMMAND_NODES::Node>();
+            auto node = buffer.getRootObject<RUMINATE_COMMAND_NODES::Node>();
+            cout << "Node Pointer " << (unsigned long long) node << endl;
+            if (!node) {
+                result.result = &text_command_failure;
+                return;
+            }
 
-			switch(node->type) {
-				case RUMINATE_COMMAND_NODES::NodeType::ADD : {
+            switch (node->type) {
 
-						result.type = TextCommandResult::ResultTypes::ADD;
+            default:
+                break;
 
-						RUMINATE_COMMAND_NODES::COMMAND_Add_n& add_node = * (RUMINATE_COMMAND_NODES::COMMAND_Add_n *) node;
+            case RUMINATE_COMMAND_NODES::NodeType::ADD: {
 
-						if(add_node.hasUID()) {
+                result.type = TextCommandResult::ResultTypes::ADD;
 
-							//Try to find a matching note with UID signature. If none exist, DO NOT create a new note. UID MUST be a real UID value already present in
-							//the DB. If none exist, the user MUST supply an ADD command utilizing the Container Format in order to create a new note. This allows arbitrary
-							//UID values to be presented to the DB without corrupting the internal UID state of the DB.
+                RUMINATE_COMMAND_NODES::COMMAND_Add_n & add_node = *(RUMINATE_COMMAND_NODES::COMMAND_Add_n *) node;
 
-							UID uid(* add_node.uid);
+                if (add_node.hasUID()) {
 
-							Note* note = db.getNote(uid);
+                    //Try to find a matching note with UID signature. If none exist, DO NOT               } else if (add_node.hasContainer())  create a new note. UID MUST be a real UID value already present in
+                    //the DB. If none exist, the user MUST supply an ADD command utilizing the Container Format in order to create a new note. This allows arbitrary
+                    //UID values to be presented to the DB without corrupting the internal UID state of the DB.
 
-							if(note) {
-								UpdateNote(*note, * add_node.data, db);
-								result.result = &add_success;
-							} else {
-								result.result = &add_failure_no_uid_match;
-							}
+                    UID uid(*add_node.uid);
 
-						} else if(add_node.hasContainer()) {
-							//Try to find node that fully matches container ID. If none exists, then create a new note with the signature.
+                    Note * note = db.getNote(uid);
 
-							//The note data node MUST container either tag data or body_string data.
+                    if (note) {
+                        UpdateNote(*note, *add_node.data, db);
+                        result.result = &add_success;
+                    } else {
+                        result.result = &add_failure_no_uid_match;
+                    }
 
-							//the optional type information will inform the system of what type of note to make.
-							unsigned results = 0;
-							unsigned count = 500;
+                } else if (add_node.hasContainer()) {
+                    //Try to find node that fully matches container ID. If none exists, then create a new note with the signature.
 
-							UID * out_buffer = (UID *) buffer.alloc(sizeof(UID) * count);
+                    //The note data node MUST container either tag data or body_string data.
 
-							auto query_results = QUERY::filterContainer(* add_node.ctr, db, results, 500, out_buffer);
+                    //the optional type information will inform the system of what type of note to make.
+                    unsigned results = 0;
+                    unsigned count   = 500;
 
-							if(results == 1) {
-								Note * note = db.getNote(out_buffer[0]);
+                    UID * out_buffer = (UID *) buffer.alloc(sizeof(UID) * count);
 
-								if(note) {
-									UpdateNote(*note, * add_node.data, db);
-									result.result = &add_success;
-								} else {
-									result.result = &add_failure_no_uid_match;
-								}
-							} else {
-								result.result = &add_failure_too_many_results;
-							}
-						}
+                    QUERY::filterContainer(*add_node.ctr, db, results, 500, out_buffer);
 
-					} ; break;
+                    if (results == 1) {
+                        Note * note = db.getNote(out_buffer[0]);
 
-				case RUMINATE_COMMAND_NODES::NodeType::DELETE : {
+                        if (note) {
+                            UpdateNote(*note, *add_node.data, db);
+                            result.result = &add_success;
+                        } else {
+                            result.result = &add_failure_no_uid_match;
+                        }
+                    } else {
+                        result.result = &add_failure_too_many_results;
+                    }
+                }
 
-						result.type = TextCommandResult::ResultTypes::DELETE;
+            }; break;
 
-						RUMINATE_COMMAND_NODES::COMMAND_Delete_n& delete_node = * (RUMINATE_COMMAND_NODES::COMMAND_Delete_n *) node;
+            case RUMINATE_COMMAND_NODES::NodeType::DELETE: {
 
-						if(delete_node.hasQuery()) {
+                result.type = TextCommandResult::ResultTypes::DELETE;
 
-							auto query_node = delete_node.query;
+                RUMINATE_COMMAND_NODES::COMMAND_Delete_n & delete_node = *(RUMINATE_COMMAND_NODES::COMMAND_Delete_n *) node;
 
-							auto query = runQuery(*query_node, db);
+                if (delete_node.hasQuery()) {
 
-							result.addUIDs(query);
+                    auto query_node = delete_node.query;
 
-							if(query.size() > 0) {
-								for(int i = 0; i < query.size(); i++)
-									db.deleteNote(query[i]);
-								result.result = &remove_success;
-							} else {
-								result.result = &remove_failure_no_results;
-							}
+                    auto query = runQuery(*query_node, db);
 
-						} else if(delete_node.hasUIDList()) {
+                    result.addUIDs(query);
 
-							auto uid_list = delete_node.uids;
+                    if (query.size() > 0) {
+                        for (int i = 0; i < query.size(); i++)
+                            db.deleteNote(query[i]);
+                        result.result = &remove_success;
+                    } else {
+                        result.result = &remove_failure_no_results;
+                    }
 
-							result.addUIDs(*uid_list);
+                } else if (delete_node.hasUIDList()) {
 
-							if(result.size() > 0) {
-								for(int i = 0; i < result.size(); i++)
-									db.deleteNote(result[i]);
+                    auto uid_list = delete_node.uids;
 
-								result.result = &remove_success;
-							} else
-								result.result = &remove_failure_uid_does_not_match;
-						}
+                    result.addUIDs(*uid_list);
 
-					} ; break;
+                    if (result.size() > 0) {
+                        for (int i = 0; i < result.size(); i++)
+                            db.deleteNote(result[i]);
 
-				case RUMINATE_COMMAND_NODES::NodeType::RETRIEVE : {
+                        result.result = &remove_success;
+                    } else
+                        result.result = &remove_failure_uid_does_not_match;
+                }
 
-						result.type = TextCommandResult::ResultTypes::RETRIEVE;
+            }; break;
 
-						RUMINATE_COMMAND_NODES::COMMAND_Retrieve_n * retrieve_node = (RUMINATE_COMMAND_NODES::COMMAND_Retrieve_n *) node;
+            case RUMINATE_COMMAND_NODES::NodeType::RETRIEVE: {
 
-						if(retrieve_node->hasQuery()) {
+                result.type = TextCommandResult::ResultTypes::RETRIEVE;
 
-							auto query_node = retrieve_node->query;
+                RUMINATE_COMMAND_NODES::COMMAND_Retrieve_n * retrieve_node = (RUMINATE_COMMAND_NODES::COMMAND_Retrieve_n *) node;
 
-							auto query = runQuery(*query_node, db);
+                if (retrieve_node->hasQuery()) {
 
-							result.addUIDs(query);
+                    auto query_node = retrieve_node->query;
 
-							result.result = &retrieve_success;
+                    auto query = runQuery(*query_node, db);
 
-						} else if(retrieve_node->hasUIDList()) {
+                    result.addUIDs(query);
 
-							auto uid_list = retrieve_node->uids;
+                    result.result = &retrieve_success;
 
-							result.addUIDs(*uid_list);
+                } else if (retrieve_node->hasUIDList()) {
 
-							result.result = &retrieve_success;
-						}
+                    auto uid_list = retrieve_node->uids;
 
-					} ; break;
+                    result.addUIDs(*uid_list);
 
-			}
-		}
+                    result.result = &retrieve_success;
+                }
 
-		/*
+            }; break;
+            }
+        }
+
+        /*
 			Runs a ruminate text command
 		*/
-		static TextCommandResult& runStringCommand(const std::wstring& string, DBRunner& db)
-		{
-			TextCommandResult & result = * new TextCommandResult(db);
+        static TextCommandResult & runStringCommand(const std::wstring & string, DBRunner & db) {
+            TextCommandResult & result = *new TextCommandResult(db);
 
-			std::thread first(ThreadRunner, &string, &db, &result);
+            std::thread first(ThreadRunner, &string, &db, &result);
 
-			first.detach();
+            first.detach();
 
-			return result;
-		}
-	}
-}
+            return result;
+        }
+    } // namespace COMMAND
+} // namespace RUMINATE

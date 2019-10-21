@@ -27,4 +27,8 @@ const std::wstring RUMINATE::COMMAND::REMOVE_FAILURE_UID_DOES_NOT_MATCH::msg =
 const std::wstring RUMINATE::COMMAND::REMOVE_FAILURE_NO_RESULTS::msg =
     L"The REMOVE command failed. The query do match any notes.";
 
+const std::wstring RUMINATE::COMMAND::TEXT_COMMAND_FAILURE::msg =
+    L"The text command was invalid.";
+
+
 #endif

@@ -1,18 +1,16 @@
 cmake_minimum_required(VERSION 3.15)
 
-
-
 SET (CMAKE_CXX_STANDARD 17)
 
-SET (CMAKE_C_FLAGS_INIT                "-Wall -std=c99")
+SET (CMAKE_C_FLAGS_INIT                "-std=c99")
 SET (CMAKE_C_FLAGS_DEBUG_INIT          "-O0 -g -Wall")
 SET (CMAKE_C_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
 SET (CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET (CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 
-SET (CMAKE_CXX_FLAGS_INIT                "-Wall -stdlib=libc++ -std=c++17 -fdeclspec -pthread")
-SET (CMAKE_CXX_FLAGS_DEBUG          	 "-O0 -g -Wall -stdlib=libc++ -std=c++17 -fdeclspec -pthread")
+SET (CMAKE_CXX_FLAGS_INIT                "-stdlib=libc++ -std=c++17 -fdeclspec -pthread -lstdc++fs")
+SET (CMAKE_CXX_FLAGS_DEBUG          	 "-O0 -g -Wall")
 SET (CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-O2 -DNDEBUG")
 SET (CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET (CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
@@ -42,7 +40,8 @@ target_link_libraries(FileDB PUBLIC Database)
 
 
 ## Use all the *.cpp files we found under this folder for the project
-FILE(GLOB SRCS 
+FILE(GLOB SRCS
+ 
 	"main.cpp"
 	"definitions.h"
 	"database/compiler/compiler.h"
@@ -72,7 +71,6 @@ include_directories(${PROJECT_NAME} PRIVATE "utils")
 
 ## Define the executable
 add_executable(${PROJECT_NAME} ${SRCS})
-
 
 target_link_libraries(${PROJECT_NAME} Compiler FileDB)
 

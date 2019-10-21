@@ -1,169 +1,154 @@
 #pragma once
 
-#include "./base.h"
-#include <string>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <vector>
 #include <iostream>
-#include <unordered_map>
+#include <string>
 #include <system_error>
+#include <unordered_map>
+#include <vector>
 
-namespace RUMINATE
-{
+#include "./base.h"
 
-	namespace DB
-	{
+namespace RUMINATE {
 
-		class DBRunner final
-		{
+    namespace DB {
 
-			std::unordered_map<UID, Note *> notes; // Local note cache.
+        class DBRunner final {
+            std::unordered_map<UID, Note *> notes; // Local note cache.
 
-			vector<NoteDB *> databases;
+            vector<NoteDB *> databases;
 
-			//NoteDB * primary_db = nullptr;
+            // NoteDB * primary_db = nullptr;
 
-			ContainerLU ctr; //Root Container entry.
+            ContainerLU ctr; // Root Container entry.
 
-			NoteLU noteLU;
+            NoteLU noteLU;
 
-			/*
-			 * Synchronizes note data between databases.
-			 */
-			void updateLU() {
-				for(auto iter = databases.begin(); iter != databases.end(); iter++) {
-					NoteDB& db = **iter;
-					db.MergeNoteLU(noteLU, ctr);
-				}
-			}
+            /*
+   * Synchronizes note data between databases.
+   */
+            void updateLU() {
+                for (auto iter = databases.begin(); iter != databases.end(); iter++) {
+                    NoteDB & db = **iter;
+                    db.MergeNoteLU(noteLU, ctr);
+                }
+            }
 
+          public:
+            DBRunner() {}
 
-		public:
+            ~DBRunner() {}
 
-			DBRunner() {
+            /*
+   * 	Intended to be called by the process runtime at regular intervals to
+   * handle database upkeep tasks such syncronization and cache purging.
+   */
+            void update() {}
 
-			}
+            int addDatabase(NoteDB * db) {
+                for (auto iter = databases.begin(); iter != databases.end(); iter++)
+                    if (*iter == db)
+                        return -1;
 
-			~DBRunner() {
+                databases.push_back(db);
 
-			}
+                updateLU();
 
-			/*
-			 * 	Intended to be called by the process runtime at regular intervals to handle
-			 * database upkeep tasks such syncronization and cache purging.
-			 */
-			void update() {
+                return 0;
+            }
 
-			}
+            bool addNote(Note & note) {
+                std::wcout << note.uid.toJSONString() << "  " << note.id << std::endl;
+                notes.insert({note.uid, &note});
+                // add note to containers
+                ctr.addNote(note);
+                // Update databases.
+                return true;
+            }
 
-			int addDatabase(NoteDB * db) {
+            bool deleteNote(Note & note) {
+                ctr.removeUID(note.uid);
+                noteLU.erase(note.uid);
+                // Remove from databases.
+                return true;
+            }
 
-				for(auto iter = databases.begin(); iter != databases.end(); iter++)
-					if(*iter == db) return -1;
+            bool updateNote(Note & note) {
+                UID uid = note.uid;
 
-				databases.push_back(db);
+                wstring & id = note.id;
 
-				updateLU();
+                wstring old_id = getNoteID(uid);
 
-				return 0;
-			}
+                if (old_id != id)
+                    relocateNote(note, old_id);
 
-			bool addNote(Note& note) {
-				std::wcout << note.uid.toJSONString() << "  " << note.id << std::endl;
-				notes.insert( {note.uid, &note});
-				//add note to containers
-				ctr.addNote(note);
-				//Update databases.
-				return true;
-			}
+                return true;
+            }
 
-			bool deleteNote(Note& note) {
-				ctr.removeUID(note.uid);
-				noteLU.erase(note.uid);
-				//Remove from databases.
-				return true;
-			}
+            void relocateNote(const Note & note, const wstring & old_id) {
+                ctr.removeNote(old_id, note.uid);
+                ctr.addNote(note.id, note.uid);
+                noteLU.insert({note.uid, {note.modified_time, note.id}});
+            }
 
-			bool updateNote(Note& note) {
+            wstring getNoteID(const UID & uid) {
+                auto result = noteLU.find(uid);
 
-				UID uid = note.uid;
+                if (result != noteLU.end())
+                    return result->second.second;
 
-				wstring& id = note.id;
+                auto note = getNote(uid);
 
-				wstring old_id = getNoteID(uid);
+                if (note)
+                    return note->id;
 
-				if(old_id != id) relocateNote(note, old_id);
+                return wstring(L"");
+            }
 
-				return true;
-			}
+            Note * getNote(const UID & uid) {
 
-			void relocateNote(const Note& note, const wstring& old_id) {
-				ctr.removeNote(old_id, note.uid);
-				ctr.addNote(note.id, note.uid);
-				noteLU.insert( {note.uid, {note.modified_time, note.id}});
-			}
+                Note * note = nullptr;
 
-			wstring getNoteID(const UID& uid) {
-				auto result = noteLU.find(uid);
+                // Check local cache for the existence of the note.
+                auto iter = notes.find(uid);
 
-				if(result != noteLU.end())
-					return result->second.second;
+                if (iter != notes.end()) {
+                    return (iter->second);
+                }
 
-				auto note = getNote(uid);
+                // Check databases for the note. If the note exists, add to all other
+                // databases. unsigned active_index = 0;
 
-				if(note)
-					return note->id;
+                for (auto iter = databases.begin(); iter != databases.end(); iter++) {
+                    note = (*iter)->getNote(uid, noteLU);
 
-				return wstring(L"");
-			}
+                    if (note) {
+                        for (auto iter2 = databases.begin(); iter2 != databases.end();
+                             iter2++) {
+                            if (iter == iter2)
+                                continue;
 
-			Note * getNote(const UID& uid) {
+                            (*iter)->addNote(*note);
+                        }
 
-				Note * note = nullptr;
+                        notes.insert({note->uid, note});
 
-				//Check local cache for the existence of the note.
-				auto iter = notes.find(uid);
+                        return note;
+                    }
+                }
 
-				if(iter != notes.end()) {
-					std::wcout << uid.toJSONString() << "  " << iter->second->id << std::endl;
-					return (iter->second);
-				}
+                std::cout << "MADNESS!" << std::endl;
 
-				//Check databases for the note. If the note exists, add to all other databases.
-				unsigned active_index = 0;
+                return nullptr;
+            }
 
-				for(auto iter = databases.begin(); iter != databases.end(); iter++) {
+            const ContainerLU & getContainerTree() const { return ctr; };
 
-					note = (*iter)->getNote(uid, noteLU);
-
-					if(note) {
-
-						for(auto iter2 = databases.begin(); iter2 != databases.end(); iter2++) {
-							if(iter == iter2) continue;
-
-							(*iter)->addNote(*note);
-						}
-
-						notes.insert( {note->uid, note});
-
-						return note;
-					}
-				}
-
-				return nullptr;
-			}
-
-			const ContainerLU& getContainerTree() const {
-				return ctr;
-			};
-
-		private:
-
-			void syncDB() {
-
-			}
-		};
-	}
-}
+          private:
+            void syncDB() {}
+        };
+    } // namespace DB
+} // namespace RUMINATE

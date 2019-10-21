@@ -1,127 +1,162 @@
 #pragma once
 
+#include "../compiler/compiler.h"
+#include "../string/utf.h"
+#include "../utils/stream.h"
+
+#include "./tag_value.h"
+#include <cstring>
 #include <iostream>
 #include <tuple>
 #include <vector>
-#include <cstring>
-#include "../compiler/compiler.h"
-#include "./tag_value.h"
-#include "../utils/stream.h"\
- 
-namespace RUMINATE
-{
+namespace RUMINATE {
 
 
-	namespace TAG
-	{
-		using std::wstring;
-		using std::vector;
+    namespace TAG {
+        using std::vector;
+        using std::wstring;
 
-		static unsigned sentinal_start 	= 0xFFFF0001;
-		static unsigned sentinal_end 	= 0x1000FFFF;
+        static unsigned sentinal_start = 0xFFFF0001;
+        static unsigned sentinal_end   = 0x1000FFFF;
 
-		struct Tag {
-			wstring id;
-			TagValue val;
-		};
+        struct Tag {
+            wstring id;
+            TagValue val;
+        };
 
-		class TagContainer
-		{
-		public:
-			vector<Tag> tags;
-			unsigned char count = 0;
+        class TagContainer {
+          public:
+            vector<Tag> tags;
+            unsigned char count = 0;
 
-			void addTag(wstring);
-			void addTag(wstring, double);
-			void addTag(wstring, long long);
-			void addTag(wstring, int);
-			void addTag(wstring, wstring);
-			void removeTag(wstring);
+            void addTag(wstring);
+            void addTag(wstring, double);
+            void addTag(wstring, long long);
+            void addTag(wstring, int);
+            void addTag(wstring, wstring);
+            void removeTag(wstring);
 
-			/**** Streaming Functions ****/
+            /**** Streaming Functions ****/
 
-			friend std::ostream& operator << (std::ostream& stream, const TagContainer& ctr) {
+            friend std::ostream & operator<<(std::ostream & stream, const TagContainer & ctr) {
 
-				stream.write((char *)&ctr.count, sizeof(ctr.count));
+                //stream.write((char *) &ctr.count, sizeof(ctr.count));
+                stream << "{";
 
-				for(auto tag : ctr.tags) {
-					stream.write((char *)&sentinal_start, sizeof(sentinal_start));
-					writeString(stream, tag.id);
-					stream << tag.val;
-				}
+                for (auto tag : ctr.tags) {
+                    //stream.write((char *) &sentinal_start, sizeof(sentinal_start));
+                    stream << tag.id;
+                    stream << ":";
+                    stream << tag.val;
+                    stream << ";";
+                }
 
-				stream.write((char *)&sentinal_end, sizeof(sentinal_end));
+                stream << "}";
 
-				return stream;
-			}
+                //stream.write((char *) &sentinal_end, sizeof(sentinal_end));
 
-			friend TagContainer& operator << (TagContainer& ctr, std::istream& stream) {
-				unsigned char total = 0;
-				stream.read((char *)&total, sizeof(total));
+                return stream;
+            }
 
-				unsigned sentinal = 0;
-				stream.read((char *)&sentinal, sizeof(sentinal));
+            friend TagContainer & operator<<(TagContainer & ctr, std::istream & stream) {
+                // unsigned char total = 0;
+                // stream.read((char *) &total, sizeof(total));
 
-				if(sentinal == sentinal_start && total > 0) {
-					while(sentinal != sentinal_end && stream.good()) {
-						Tag tag;
-						readString(stream, tag.id);
-						tag.val << stream;
-						ctr.tags.push_back(tag);
-						stream.read((char*)&sentinal, 4);
+                //                //unsigned sentinal = 0;
+                //                //stream.read((char *) &sentinal, sizeof(sentinal));
+                char c;
 
-						std::wcout << tag.id << std::endl;
+                if (stream.peek() == '{') {
+                    stream.get(c);
 
-						ctr.count++;
-					}
-				}
+                    while (stream.good()) {
+                        stream.get(c);
+                        if (c == '}')
+                            break;
+                        Tag tag;
 
-				if(total != ctr.count)
-					std::cout << "Count does not match total!" << std::endl;
+                        readString(stream, tag.id, (wchar_t) ':');
 
-				return ctr;
-			}
+                        tag.val << stream;
+                    }
+                }
 
-			void fromBracketedStream(std::istream&) ;
+                /*
+                if (sentinal == sentinal_start && total > 0) {
+                    while (sentinal != sentinal_end && stream.good()) {
+                        Tag tag;
 
-			/**** End Streaming Functions ****/
+                        tag.id = stream.get char c;
 
-			Tag * operator [](const unsigned index) {
-				return &tags[index];
-			}
+                        while (stream.get(c)) {
+                            if (c == ";")
+                                break;
+                            tag.id += c;
+                        }
 
-			unsigned size () const {
-				return tags.size();
-			}
-
-
-			void update(const RUMINATE_COMMAND_NODES::NOTE_TagList_n& tag_list) {
-				for(auto iter = tag_list.begin(); iter != tag_list.end(); iter++) {
-
-					RUMINATE_COMMAND_NODES::NOTE_Tag_n& tag = **iter;
-
-					if(tag.shouldRemove()) {}
-					else if(tag.hasStringValue()) {
-						addTag(wstring(*tag.key), wstring(*tag.val));
-					} else if (tag.hasNumberValue()) {
-						addTag(wstring(*tag.key), tag.num_val);
-					} else {
-						addTag(wstring(*tag.key));
-					}
-				}
-			}
-		};
+                        while (stream.get(c)) {
+                            if (c == ";")
+                                break;
+                            tag.id += c;
+                        }
 
 
-		template<class U>
-		Tag * getMatchingTag(TagContainer& tags, const U& id)
-		{
-			for(int i = 0; i < tags.size(); i++) {
-				Tag * tag = tags[i];
-				if(id.compare(tag->id) == 0)
-					return tag;
-			}
-			return NULL;
-		};
-	}
-}
+                        readString(stream, tag.id);
+                        tag.val << stream;
+                        ctr.tags.push_back(tag);
+                        stream.read((char *) &sentinal, 4);
+
+                        std::wcout << tag.id << std::endl;
+
+                        ctr.count++;
+                    }
+                }
+*/
+                // if (total != ctr.count)
+                //     std::cout << "Count does not match total!" << std::endl;
+
+                return ctr;
+            }
+
+            void fromBracketedStream(std::istream &);
+
+            /**** End Streaming Functions ****/
+
+            Tag * operator[](const unsigned index) {
+                return &tags[index];
+            }
+
+            unsigned size() const {
+                return tags.size();
+            }
+
+
+            void update(const RUMINATE_COMMAND_NODES::NOTE_TagList_n & tag_list) {
+                for (auto iter = tag_list.begin(); iter != tag_list.end(); iter++) {
+
+                    RUMINATE_COMMAND_NODES::NOTE_Tag_n & tag = **iter;
+
+                    if (tag.shouldRemove()) {
+                    } else if (tag.hasStringValue()) {
+                        addTag(wstring(*tag.key), wstring(*tag.val));
+                    } else if (tag.hasNumberValue()) {
+                        addTag(wstring(*tag.key), tag.num_val);
+                    } else {
+                        addTag(wstring(*tag.key));
+                    }
+                }
+            }
+        };
+
+
+        template <class U>
+        Tag * getMatchingTag(TagContainer & tags, const U & id) {
+            for (int i = 0; i < tags.size(); i++) {
+                Tag * tag = tags[i];
+                if (id.compare(tag->id) == 0)
+                    return tag;
+            }
+            return NULL;
+        };
+    } // namespace TAG
+} // namespace RUMINATE

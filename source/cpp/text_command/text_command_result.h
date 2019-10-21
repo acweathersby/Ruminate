@@ -1,74 +1,78 @@
 #pragma once
 
-#include <string>
 #include <cstring>
+#include <string>
 #include <vector>
 
-#include "./text_command_result_codes.h"
 #include "../compiler/compiler.h"
 #include "../database/include/db_runner.h"
+#include "../note/note.h"
 #include "../query/query.h"
 #include "../uid/uid.h"
-#include "../note/note.h"
+#include "./text_command_result_codes.h"
 
-namespace RUMINATE
-{
-	namespace COMMAND
-	{
-		using namespace QUERY;
-		using namespace DB;
-		using namespace NOTE;
+namespace RUMINATE {
+    namespace COMMAND {
+        using namespace QUERY;
+        using namespace DB;
+        using namespace NOTE;
 
-		class TextCommandResult
-		{
+        class TextCommandResult {
 
+          private: //MEMBERS
+            bool ready = false;
 
-		private: //MEMBERS
-			bool ready = false;
+          public: //MEMBERS
+            enum class ResultTypes {
+                UNDEFINED,
+                ADD,
+                DELETE,
+                RETRIEVE
+            };
 
-		public: //MEMBERS
+            ResultTypes type = ResultTypes::UNDEFINED;
 
-			enum class ResultTypes
-			{
-			    UNDEFINED,
-			    ADD,
-			    DELETE,
-			    RETRIEVE
-			};
+            const TEXT_COMMAND_RESULT_CODES * result = nullptr;
 
-			ResultTypes type = ResultTypes::UNDEFINED;
+            DBRunner & db;
 
-			const TEXT_COMMAND_RESULT_CODES * result = nullptr;
+            vector<UID> uids;
 
-			DBRunner & db;
+          public: //METHODS
+            friend std::wostream & operator<<(std::wostream & stream, const TextCommandResult & tcr) {
+                if (tcr.result)
+                    return stream << *tcr.result;
+                return stream << L"No Result Has Been Received";
+            }
 
-			vector<UID> uids;
+            TextCommandResult(DBRunner & d) : db(d) {}
 
-		public: //METHODS
+            TextCommandResult(const TextCommandResult & tx) : db(tx.db) {
+                uids = tx.uids;
+            }
 
-			TextCommandResult(DBRunner & d) : db(d) {}
+            //Returns true when the result data has been populated.
+            bool READY();
 
-			TextCommandResult(const TextCommandResult& tx) : db(tx.db) {
-				uids = tx.uids;
-			}
+            //Return the number of notes retrieved from the text command.
+            unsigned size();
 
-			//Returns true when the result data has been populated.
-			bool READY();
+            void addUIDs(const RUMINATE_COMMAND_NODES::UID_List_n & list);
 
-			//Return the number of notes retrieved from the text command.
-			unsigned size();
+            void addUIDs(const QueryResult & list);
 
-			void addUIDs(const RUMINATE_COMMAND_NODES::UID_List_n& list);
+            Note & operator[](unsigned index) {
 
-			void addUIDs(const QueryResult& list);
+                if (index >= size() || !READY())
+                    return NullNote;
 
-			Note& operator[] (unsigned index) {
+                Note * note = db.getNote(uids[index]);
 
-				if(index+1 > size() || !READY())
-					return NullNote;
+                if (!note)
+                    return NullNote;
 
-				return * db.getNote(uids[index]);
-			}
-		};
-	}
-}
+                return *note;
+            }
+        };
+    } // namespace COMMAND
+} // namespace RUMINATE
