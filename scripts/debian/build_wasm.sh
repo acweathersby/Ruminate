@@ -2,7 +2,7 @@
 
 EMCC_DEBUG=1 
 
-emcc ./source/cpp/main.cpp \
+emcc ./source/js.cpp/main.cpp \
 	-D JAVASCRIPT_WASM \
 	-std=c++17 \
 	-s WASM=1 \

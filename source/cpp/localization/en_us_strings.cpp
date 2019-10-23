@@ -10,7 +10,7 @@ const std::wstring RUMINATE::COMMAND::RETRIEVE_SUCCESS::msg =
     L"The RETRIEVE command resolved successfuly.";
 
 const std::wstring RUMINATE::COMMAND::ADD_FAILURE_TOO_MANY_RESULTS::msg =
-    L"The ADD command returned too many results. Please use a different form of the ADD command, such one with the notes UID, to exactly specify the note to add.";
+    L"The ADD command returned too many results. Please use a different form of the ADD command, such as one with the note's UID, to exactly specify the note to add.";
 
 const std::wstring RUMINATE::COMMAND::ADD_SUCCESS::msg =
     L"The ADD command resolved successfuly.";

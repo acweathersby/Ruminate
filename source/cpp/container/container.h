@@ -10,12 +10,12 @@
 
 /** Classes for dealing with Notes based on there id (container location) */
 
-#define Delimiter (L'/')
-
-namespace RUMINATE {
+namespace RUMINATE
+{
     using namespace NOTE;
 
-    namespace CONTAINER {
+    namespace CONTAINER
+    {
         using std::cout;
         using std::endl;
         using std::unordered_map;
@@ -34,20 +34,17 @@ namespace RUMINATE {
 
             ContainerLU() {}
 
-            ContainerLU & operator[](const wstring & string) {
+            ContainerLU & operator[](const wstring & string)
+            {
                 int i = 0, start = 0;
 
-                if (string[i] == Delimiter)
-                    start++, i++;
+                if (string[i] == Delimiter) start++, i++;
 
-                if (i >= string.size())
-                    return *this;
+                if (i >= string.size()) return *this;
 
-                while (i < string.size() && string[i] != Delimiter)
-                    i++;
+                while (i < string.size() && string[i] != Delimiter) i++;
 
-                wstring str  = (string.substr(start, i - start)),
-                        rest = string.substr(i);
+                wstring str = (string.substr(start, i - start)), rest = string.substr(i);
 
                 ContainerLU * sub = nullptr;
 
@@ -67,68 +64,62 @@ namespace RUMINATE {
                 return (*sub)[rest];
             }
 
-            unsigned containerSize() const {
-                return containers.size();
-            }
+            unsigned containerSize() const { return containers.size(); }
 
-            unsigned uidSize() const {
-                return uids.size();
-            }
+            unsigned uidSize() const { return uids.size(); }
 
-            void fillUIDBuffer(UID * buffer) const {
+            void fillUIDBuffer(UID * buffer) const
+            {
                 unsigned offset = 0;
-                for (auto iter = uids.begin(); iter != uids.end(); iter++)
-                    buffer[offset++] = *iter;
+                for (auto iter = uids.begin(); iter != uids.end(); iter++) buffer[offset++] = *iter;
             }
 
-            void addContainer(ContainerLU & container) {
+            void addContainer(ContainerLU & container)
+            {
                 wstring id = container.id;
                 containers.insert({id, (&container)});
             }
 
-            void removeContainer(const ContainerLU & container) {
-                if (containers.find(container.id) != containers.end())
-                    containers.erase(container.id);
+            void removeContainer(const ContainerLU & container)
+            {
+                if (containers.find(container.id) != containers.end()) containers.erase(container.id);
             }
 
-            void removeNote(const wstring & id, const UID & uid) {
-                //Retrive only the portion of the note preceding the last delemiter;
+            void removeNote(const wstring & id, const UID & uid)
+            {
+                // Retrive only the portion of the note preceding the last delemiter;
                 unsigned i = 0, last_del = 0;
 
                 while (i < id.size()) {
-                    if (id[i] == Delimiter)
-                        last_del = i;
+                    if (id[i] == Delimiter) last_del = i;
                     i++;
                 }
 
                 (*this)[id.substr(0, last_del)].removeUID(uid);
             }
 
-            void addNote(const wstring & id, const UID & uid) {
+            void addNote(const wstring & id, const UID & uid)
+            {
 
-                //Retrive only the portion of the note preceding the last delemiter;
+                // Retrive only the portion of the note preceding the last delemiter;
                 unsigned i = 0, last_del = 0;
 
                 while (i < id.size()) {
-                    if (id[i] == Delimiter)
-                        last_del = i;
+                    if (id[i] == Delimiter) last_del = i;
                     i++;
                 }
-
-                std::wcout << id << endl;
 
                 (*this)[id.substr(0, last_del)].addUID(uid);
             }
 
-            void addNote(const Note & note) {
-                return addNote(note.id, note.uid);
-            }
+            void addNote(const ID & id, const UID & uid) { (*this)[id.container()].addUID(uid); }
 
-            void addUID(const UID & uid) {
-                uids.push_back(uid);
-            }
+            void addNote(const Note & note) { return addNote(note.id, note.uid); }
 
-            void removeUID(const UID & uid) {
+            void addUID(const UID & uid) { uids.push_back(uid); }
+
+            void removeUID(const UID & uid)
+            {
                 for (auto iter = uids.begin(); iter != uids.end(); iter++)
                     if ((*iter) == uid) {
                         uids.erase(iter);

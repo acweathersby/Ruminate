@@ -11,11 +11,14 @@
 
 #include "./base.h"
 
-namespace RUMINATE {
+namespace RUMINATE
+{
 
-    namespace DB {
+    namespace DB
+    {
 
-        class DBRunner final {
+        class DBRunner final
+        {
             std::unordered_map<UID, Note *> notes; // Local note cache.
 
             vector<NoteDB *> databases;
@@ -27,9 +30,10 @@ namespace RUMINATE {
             NoteLU noteLU;
 
             /*
-   * Synchronizes note data between databases.
-   */
-            void updateLU() {
+             * Synchronizes note data between databases.
+             */
+            void updateLU()
+            {
                 for (auto iter = databases.begin(); iter != databases.end(); iter++) {
                     NoteDB & db = **iter;
                     db.MergeNoteLU(noteLU, ctr);
@@ -42,15 +46,15 @@ namespace RUMINATE {
             ~DBRunner() {}
 
             /*
-   * 	Intended to be called by the process runtime at regular intervals to
-   * handle database upkeep tasks such syncronization and cache purging.
-   */
+             * 	Intended to be called by the process runtime at regular intervals to
+             * handle database upkeep tasks such syncronization and cache purging.
+             */
             void update() {}
 
-            int addDatabase(NoteDB * db) {
+            int addDatabase(NoteDB * db)
+            {
                 for (auto iter = databases.begin(); iter != databases.end(); iter++)
-                    if (*iter == db)
-                        return -1;
+                    if (*iter == db) return -1;
 
                 databases.push_back(db);
 
@@ -59,8 +63,8 @@ namespace RUMINATE {
                 return 0;
             }
 
-            bool addNote(Note & note) {
-                std::wcout << note.uid.toJSONString() << "  " << note.id << std::endl;
+            bool addNote(Note & note)
+            {
                 notes.insert({note.uid, &note});
                 // add note to containers
                 ctr.addNote(note);
@@ -68,47 +72,49 @@ namespace RUMINATE {
                 return true;
             }
 
-            bool deleteNote(Note & note) {
+            bool deleteNote(Note & note)
+            {
                 ctr.removeUID(note.uid);
                 noteLU.erase(note.uid);
                 // Remove from databases.
                 return true;
             }
 
-            bool updateNote(Note & note) {
+            bool updateNote(Note & note)
+            {
                 UID uid = note.uid;
 
-                wstring & id = note.id;
+                wstring id = note.id.filepath();
 
                 wstring old_id = getNoteID(uid);
 
-                if (old_id != id)
-                    relocateNote(note, old_id);
+                if (old_id != id) relocateNote(note, old_id);
 
                 return true;
             }
 
-            void relocateNote(const Note & note, const wstring & old_id) {
+            void relocateNote(const Note & note, const wstring & old_id)
+            {
                 ctr.removeNote(old_id, note.uid);
                 ctr.addNote(note.id, note.uid);
-                noteLU.insert({note.uid, {note.modified_time, note.id}});
+                noteLU.insert({note.uid, {note.modified_time, note.id.filepath()}});
             }
 
-            wstring getNoteID(const UID & uid) {
+            wstring getNoteID(const UID & uid)
+            {
                 auto result = noteLU.find(uid);
 
-                if (result != noteLU.end())
-                    return result->second.second;
+                if (result != noteLU.end()) return result->second.second;
 
                 auto note = getNote(uid);
 
-                if (note)
-                    return note->id;
+                if (note) return note->id.filepath();
 
                 return wstring(L"");
             }
 
-            Note * getNote(const UID & uid) {
+            Note * getNote(const UID & uid)
+            {
 
                 Note * note = nullptr;
 
@@ -126,10 +132,8 @@ namespace RUMINATE {
                     note = (*iter)->getNote(uid, noteLU);
 
                     if (note) {
-                        for (auto iter2 = databases.begin(); iter2 != databases.end();
-                             iter2++) {
-                            if (iter == iter2)
-                                continue;
+                        for (auto iter2 = databases.begin(); iter2 != databases.end(); iter2++) {
+                            if (iter == iter2) continue;
 
                             (*iter)->addNote(*note);
                         }

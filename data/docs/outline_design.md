@@ -61,13 +61,15 @@ Main Features
 					Query String.
 						See ruminate query langauge
 
+			TextCommand handles updating of note data based on text interface. 
+
 
 			note string buffers used to create / update / remove / retrieve notes
 				note delete
 					action 170 	0b10101010 	= Delete - Not reversible
 				note update
 					action 1 	0b00000001	= Update - Ordered by arrival date. 
-				container brief - returns note [UIDs, Ids] pairs and sub container [Ids] 
+				container brief - returns note  [UIDs, Ids] pairs and sub container [Ids] 
 					container id
 
 			note data is just a buffer segmented as such for both upload download, strings are prepended by a 4byte byte size integer:

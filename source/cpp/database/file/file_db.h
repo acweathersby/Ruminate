@@ -17,41 +17,45 @@
  * 	Containers are literally mapped to file system folders.
  *
  *  Any file can be made into a note. The file store will automatically convert file contents into a rnote.
- *  Rnote files have a header containing UID and time stamp, note body data, and a footer comprising the tags of the note.
- *  The header is the first line in the file
+ *  Rnote files have a header containing UID and time stamp, note body data, and a footer comprising the tags of the
+ * note. The header is the first line in the file
  */
 
 
-namespace RUMINATE {
+namespace RUMINATE
+{
 
     namespace fs = std::filesystem;
-    namespace DB {
+    namespace DB
+    {
 
         static wstring non_rnote_extensions = L".txt.html.md.json.comp";
 
-        static bool acceptedNonRnoteExtensions(const wstring ext, const wstring & extension_list) {
+        static inline bool acceptedNonRnoteExtensions(const wstring ext, const wstring & extension_list)
+        {
             return extension_list.find(ext) != std::wstring::npos;
         }
 
-        template <class NoteType>
-        class FileDB : public NoteDB {
+        template <class NoteType> class FileDB : public NoteDB
+        {
           private:
-            ContainerLU * ctr; //Root Container entry.
+            ContainerLU * ctr; // Root Container entry.
 
             wstring folder;
 
           public:
             /*
-			 * Folder is the file system folder to mount the DB to.
-			 */
+             * Folder is the file system folder to mount the DB to.
+             */
             FileDB(std::wstring & f) : NoteDB(), folder(f) {}
 
             virtual ~FileDB(){};
             std::unordered_map<UID, Note *> notes; // Local note cache.
 
-            virtual void MergeNoteLU(NoteLU & noteLU, ContainerLU & containerLU) {
+            virtual void MergeNoteLU(NoteLU & noteLU, ContainerLU & containerLU)
+            {
 
-                //Look through all files and create UID's for each item.
+                // Look through all files and create UID's for each item.
 
                 std::error_code ec;
 
@@ -60,7 +64,7 @@ namespace RUMINATE {
 
                     unsigned folder_size = folder.size();
 
-                    //Iterate through all obects in folder and -
+                    // Iterate through all obects in folder and -
                     // push file information to cache.
                     // Cache
                     // read any ruminate files and push UID data to ContainerLU cache.
@@ -69,12 +73,12 @@ namespace RUMINATE {
 
                     for (auto & p : iter) {
                         if (p.is_directory()) {
-                            //Load directory information into store.
+                            // Load directory information into store.
 
-                            //Strip path of the any leading . characters
+                            // Strip path of the any leading . characters
                             auto path = p.path().wstring().substr(folder_size);
 
-                            //Use string indexing to precache the container.
+                            // Use string indexing to precache the container.
                             containerLU[path];
 
                             continue;
@@ -88,17 +92,19 @@ namespace RUMINATE {
 
                             UID uid;
 
-                            wstring id = p.path().parent_path().wstring().substr(folder_size) + L"/" + p.path().stem().wstring();
+                            ID id =
+                                p.path().parent_path().wstring().substr(folder_size) + L"/" + p.path().stem().wstring();
 
                             file.open(p.path());
 
                             if (file.is_open()) {
                                 if (acceptedNonRnoteExtensions(p.path().extension().wstring(), non_rnote_extensions)) {
                                     if (file.is_open()) {
-                                        //Get Stored UID
+                                        // Get Stored UID
                                         NoteType note;
 
-                                        note.id = p.path().parent_path().wstring().substr(folder_size) + L"/" + p.path().stem().wstring();
+                                        note.id = p.path().parent_path().wstring().substr(folder_size) + L"/" +
+                                                  p.path().stem().wstring();
 
                                         note.tags.fromBracketedStream(file);
 
@@ -108,10 +114,10 @@ namespace RUMINATE {
                                     }
 
                                 } else {
-                                    //Get Stored UID
+                                    // Get Stored UID
                                     uid = uid << file;
 
-                                    //Turn into real rnote;
+                                    // Turn into real rnote;
                                 }
                                 file.close();
                             }
@@ -121,23 +127,23 @@ namespace RUMINATE {
                             auto result = noteLU.find(uid);
 
                             if (result != noteLU.end()) {
-                                //Update the notes location if the Modified date is newer.
+                                // Update the notes location if the Modified date is newer.
                                 unsigned long long current_time = result->second.first;
 
                                 if (current_time < modified) {
                                     UPDATE = true;
-                                    //remove entry from ContainerLU
-                                    containerLU.removeNote(id, uid);
+                                    // remove entry from ContainerLU
+                                    containerLU.removeNote(id.filepath(), uid);
                                 }
-                                //Otherwise do nothing.
+                                // Otherwise do nothing.
                             } else {
                                 UPDATE = true;
-                                //Update the location and set the uid to sync.
+                                // Update the location and set the uid to sync.
                             }
 
                             if (UPDATE) {
                                 containerLU.addNote(id, uid);
-                                noteLU.insert({uid, {modified, id}});
+                                noteLU.insert({uid, {modified, id.filepath()}});
                             }
                         }
                     }
@@ -153,7 +159,8 @@ namespace RUMINATE {
                 return;
             }
 
-            virtual Note * getNote(UID uid, const NoteLU & lu) {
+            virtual Note * getNote(UID uid, const NoteLU & lu)
+            {
 
                 auto result = lu.find(uid);
 
@@ -162,8 +169,6 @@ namespace RUMINATE {
                     std::ifstream file;
 
                     wstring path = folder + result->second.second + RUMINATE_FILE_EXTENSION;
-
-                    std::wcout << path << endl;
 
                     file.open(path);
 
@@ -180,9 +185,10 @@ namespace RUMINATE {
                 return nullptr;
             }
 
-            virtual bool addNote(Note & note) {
+            virtual bool addNote(Note & note)
+            {
 
-                wstring path = note.id;
+                wstring path = note.id.filepath();
 
                 path = folder + path + wstring(RUMINATE_FILE_EXTENSION);
 
@@ -199,17 +205,17 @@ namespace RUMINATE {
                 return true;
             }
 
-            virtual void close() {
+            virtual void close()
+            {
                 for (auto & n : notes) {
                     Note & note  = *(n.second);
-                    wstring path = note.id;
+                    wstring path = note.id.filepath();
                     path         = folder + path + wstring(RUMINATE_FILE_EXTENSION);
 
                     std::ofstream file;
                     file.open(path);
 
-                    if (file.is_open())
-                        file << note;
+                    if (file.is_open()) file << note;
 
                     file.close();
                 }

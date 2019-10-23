@@ -1,16 +1,19 @@
 #pragma once
+
 #include <string>
 
-namespace RUMINATE {
+namespace RUMINATE
+{
     template <class StringType>
-    static void writeString(std::ostream & stream, const std::basic_string<StringType> & string) {
+    static void writeString(std::ostream & stream, const std::basic_string<StringType> & string)
+    {
         unsigned size = string.size();
         stream.write((char *) &size, sizeof(size));
         stream.write((char *) string.c_str(), size * sizeof(StringType));
     }
 
-    template <class StringType>
-    static void readString(std::istream & stream, std::basic_string<StringType> & string) {
+    template <class StringType> static void readString(std::istream & stream, std::basic_string<StringType> & string)
+    {
         unsigned size = string.size();
 
         stream.read((char *) &size, sizeof(size));
@@ -26,12 +29,14 @@ namespace RUMINATE {
 
 
     template <class StringType>
-    static void readString(std::istream & stream, std::basic_string<StringType> & string, StringType sentinel) {
+    static void readString(std::istream & stream, std::basic_string<StringType> & string, StringType sentinel)
+    {
         char c;
 
+        string.clear();
+
         while (stream.get(c)) {
-            if (c == sentinel)
-                break;
+            if (c == sentinel) break;
             string += c;
         }
     }

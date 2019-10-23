@@ -6,7 +6,7 @@ export default class UID extends ArrayBuffer {
             (candidate instanceof UID)
             || (
                 (typeof candidate == "string")
-                && (temp = (candidate.match(/[a-f\d]{12}\-[a-f\d]{4}\-[a-f\d]{8}\-[a-f\d]{8}/)))
+                && (temp = (candidate.match(/RUMI\-[a-f\d]+\-[a-f\d]+/g)))
                 && temp[0] == candidate
             )
         )
@@ -14,35 +14,29 @@ export default class UID extends ArrayBuffer {
 
     constructor(string_val, offset) {
 
-        super(16);
+        super(12);
 
         const dv = new DataView(this);
 
         if (string_val instanceof UID) {
             const dv2 = new DataView(string_val);
             dv.setBigUint64(0, dv2.getBigUint64(0));
-            dv.setBigUint64(8, dv2.getBigUint64(8));
+            dv.setUint32(8, dv2.getUint32(8));
         } else if (string_val instanceof ArrayBuffer && typeof offset == "number") {
             const dv2 = new DataView(string_val, offset);
             dv.setBigUint64(0, dv2.getBigUint64(0));
-            dv.setBigUint64(8, dv2.getBigUint64(8));
-            
-        }else if(string_val && typeof string_val == "string") {
+            dv.setUint32(8, dv2.getUint32(8));
+        } else if (string_val && typeof string_val == "string") {
             string_val
-                .replace(/\-/g, "")
-                .split("")
-                .reduce((r, v, i) => (i % 2 ? r[i >> 1] += v : r.push(v), r), [])
-                .map((v, i) => dv.setUint8(i, parseInt(v, 16)))
-        } else {
-            dv.setBigUint64(0, BigInt((new Date).valueOf()));
-
-            //Shift over by 2 bytes [16 bits] for a 48bit date string;
-            for (var i = 0; i < 3; i++)
-                dv.setUint16(i << 1, dv.getUint16((i << 1) + 2));
-
-            dv.setUint16(6, Math.random() * 0xFFFFFFFF);
-            dv.setUint32(8, Math.random() * 0xFFFFFFFF);
-            dv.setUint32(12, Math.random() * 0xFFFFFFFF);
+                .split("-")
+                .slice(1, Infinity)
+                .forEach((v,i)=>{
+                    if(i==0){
+                        dv.setBigUint64(0, BigInt("0x"+v));
+                    }else{
+                        dv.setUint32(8, Number("0x"+v));
+                    }
+                })
         }
     }
 
@@ -50,28 +44,22 @@ export default class UID extends ArrayBuffer {
 
     toString() { return this.string; }
 
-    toBuffer(array_buffer, offset){
+    toBuffer(array_buffer, offset) {
         const from = new Uint32Array(this);
-        const to = new Uint32Array(array_buffer, offset, 4);
+        const to = new Uint32Array(array_buffer, offset, 3);
         to[0] = from[0];
         to[1] = from[1];
         to[2] = from[2];
-        to[3] = from[3];
     }
 
     set string(e) { /*empty*/ }
 
     /** Returns a string representation of the UID */
     get string() {
+
         const dv = new DataView(this);
-        return (
-            "" + ("0000" + dv.getUint16(0).toString(16)).slice(-4) +
-            "" + ("0000" + dv.getUint16(2).toString(16)).slice(-4) +
-            "" + ("0000" + dv.getUint16(4).toString(16)).slice(-4) +
-            "-" + ("0000" + dv.getUint16(6).toString(16)).slice(-4) +
-            "-" + ("00000000" + dv.getUint32(8).toString(16)).slice(-8) +
-            "-" + ("00000000" + dv.getUint32(12).toString(16)).slice(-8)
-        )
+
+        return "RUMI-" + dv.getBigUint64(0).toString(16) + "-" + dv.getUint32(8).toString(16);
     }
 
     set length(e) { /*empty*/ }

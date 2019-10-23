@@ -1,22 +1,29 @@
 #pragma once
 
+#include "../string/utf.h"
 #include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
 
 
-namespace RUMINATE {
-    namespace COMMAND {
+namespace RUMINATE
+{
+    namespace COMMAND
+    {
         using std::wstring;
 
         struct TEXT_COMMAND_RESULT_CODES {
             static const wstring generic_msg;
-            virtual const wstring & message() const {
-                return generic_msg;
+            virtual const wstring & message() const { return generic_msg; }
+
+            friend std::wostream & operator<<(std::wostream & stream, const TEXT_COMMAND_RESULT_CODES & result)
+            {
+                return stream << result.message();
             }
 
-            friend std::wostream & operator<<(std::wostream & stream, const TEXT_COMMAND_RESULT_CODES & result) {
+            friend std::ostream & operator<<(std::ostream & stream, const TEXT_COMMAND_RESULT_CODES & result)
+            {
                 return stream << result.message();
             }
         };

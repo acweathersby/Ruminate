@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-SET (CMAKE_CXX_STANDARD 17)
+#SET (CMAKE_CXX_STANDARD 17)
 
 SET (CMAKE_C_FLAGS_INIT                "-std=c99")
 SET (CMAKE_C_FLAGS_DEBUG_INIT          "-O0 -g -Wall")
@@ -9,7 +9,7 @@ SET (CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET (CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 
-SET (CMAKE_CXX_FLAGS_INIT                "-stdlib=libc++ -std=c++17 -fdeclspec -pthread -lstdc++fs")
+SET (CMAKE_CXX_FLAGS_INIT                "-stdlib=libc++ -std=c++17 -fdeclspec -pthread")
 SET (CMAKE_CXX_FLAGS_DEBUG          	 "-O0 -g -Wall")
 SET (CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-O2 -DNDEBUG")
 SET (CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
@@ -21,10 +21,28 @@ set (ruminate_VERSION_MAJOR 0)
 set (ruminate_VERSION_MINOR 1)
 set (ruminate_VERSION_PATCH 0)
 
+set(Boost_INCLUDE_DIRS, "/usr/include/boost")
+set(Boost_LIBRARY_DIRS, "/usr/lib/boost")
+
 ## Set our project name
 project(${PROJECT_NAME})
 
+###USE BOOST LIBRARY
+find_package(Boost
+	# Minimum or EXACT version e.g. 1.67.0
+  1.65      			
+  # Fail with error if Boost is not found
+  REQUIRED             		
+  # Boost libraries by their canonical name
+  COMPONENTS system
+  # e.g. "date_time" for "libboost_date_time"
+  )  
+
+set(Boost_USE_MULTITHREADED ON)
+
+
 list(APPEND CMAKE_CXX_SOURCE_FILE_EXTENSIONS h)
+
 
 ## Compiler Library
 File(GLOB CompilerFiles "compiler/*")
@@ -56,6 +74,7 @@ FILE(GLOB SRCS
 	"ui/*"
 	"utils/*"
 	"localization/*"
+	"server/*"
 ) 
 
 ## Add Include Directories
@@ -68,11 +87,16 @@ include_directories(${PROJECT_NAME} PRIVATE "tags")
 include_directories(${PROJECT_NAME} PRIVATE "ui")
 include_directories(${PROJECT_NAME} PRIVATE "uid")
 include_directories(${PROJECT_NAME} PRIVATE "utils")
+include_directories(${PROJECT_NAME} PRIVATE "server")
+
+if($BOOST_FOUND)
+	include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+endif()
 
 ## Define the executable
 add_executable(${PROJECT_NAME} ${SRCS})
 
-target_link_libraries(${PROJECT_NAME} Compiler FileDB)
+target_link_libraries(${PROJECT_NAME} Compiler FileDB ${Boost_LIBRARIES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "C:\test")
 

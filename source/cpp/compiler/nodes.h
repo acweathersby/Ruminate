@@ -143,7 +143,8 @@ namespace RUMINATE_COMMAND_NODES {
 
         static void * UID_Random(Token & tk, unsigned reduce_size, unsigned bitfield,
                                  int output_offset, void ** output,
-                                 ParseBuffer<char> * allocator) {
+                                 ParseBuffer<char> * allocator) 
+        {
             unsigned start = (unsigned long long) output[output_offset], end = tk.offset;
             try {
                 ((unsigned long long *) output)[output_offset] =
@@ -155,11 +156,13 @@ namespace RUMINATE_COMMAND_NODES {
             return output[output_offset];
         }
 
-        /************
-  /************ Command Nodes */
+        /*
+          Command Nodes 
+        */
         static void * COMMAND_Add(Token & tk, unsigned reduce_size, unsigned bitfield,
                                   int output_offset, void ** output,
-                                  ParseBuffer<char> * allocator) {
+                                  ParseBuffer<char> * allocator) 
+        {
             OptionalNodes<void *, Node *, void *, NOTE_Note_n *> options(
                 bitfield, output_offset, output);
             if (options.b) {
@@ -345,6 +348,14 @@ namespace RUMINATE_COMMAND_NODES {
                                    (((double *) output)[output_offset + 1]));
         }
 
+        static void * QUERY_ComparisonEqualsIdentifier(Token & tk, unsigned reduce_size,
+                                             unsigned bitfield, int output_offset,
+                                             void ** output,
+                                             ParseBuffer<char> * allocator) {
+            return new (*allocator)
+                QUERY_Comparison_n(QUERY_Comparison_n::ID,  (QUERY_Identifier_n *) (output[output_offset + 1]));
+        }
+
         static void * QUERY_ComparisonMore(Token & tk, unsigned reduce_size,
                                            unsigned bitfield, int output_offset,
                                            void ** output,
@@ -404,6 +415,12 @@ namespace RUMINATE_COMMAND_NODES {
 
                 while (string[end - 1] == L' ')
                     end--;
+
+                while (string[start] == L' ')
+                    start++;
+
+                if(start > end)
+                  start = end;
 
                 parse_string * str = new (*allocator)
                     parse_string(string.substr(start, end - start), *allocator);

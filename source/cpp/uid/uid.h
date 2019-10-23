@@ -1,94 +1,113 @@
 #pragma once
-#include <time.h>
-#include <cstdlib>
-#include <time.h>
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <random>
+
 #include "../compiler/uid_nodes.h"
+#include "../utils/stream.h"
+
+#include <codecvt>
+#include <cstdlib>
+#include <iostream>
+#include <random>
+#include <string>
+#include <time.h>
+
 
 namespace RUMINATE
 {
 
-	static unsigned root = 0;
-	static char RUMINATE_MAGIC_NUMBER[5] = "RUMI";
-	/**
-	For Ruminate objects needing a unique identifier.
-	**/
+    static unsigned root                 = 0;
+    static char RUMINATE_MAGIC_NUMBER[5] = "RUMI";
 
-	using std::wstring;
+    using std::wstring;
 
-	static std::random_device rd;
-	static std::mt19937 mt(rd());
-	static std::uniform_real_distribution<float> dist(0, 0xFFFFFFF0);
+    static std::random_device rd;
+    static std::mt19937 mt(rd());
+    static std::uniform_real_distribution<float> dist(0, 0xFFFFFFF0);
 
-	struct UID {
+    /**
+     * For Ruminate objects needing a unique identifier. Primarily used by note objects.
+     *
+     *      Text form of UID
+     *          RUMI-###[EPOCH]###-#[RAND]#
 
-		unsigned magic = *(unsigned *)(&RUMINATE_MAGIC_NUMBER);
+     *      BINARY Packed form of UID
+     *      |0   4   8   12  16|
+            ||...|...|...|...|.|
+     *       [m ][e     ][r ]
+     *        |   |       |
+     *        Magic Number
+     *            |       |
+     *            Epoch Time Stamp In Microseconds - Offset from install date.
+     *                    |
+     *                    Random Hash Value
+     *
+     */
 
-		unsigned long long created_time;
+    struct UID {
 
-		unsigned random = 0;
+        unsigned magic = *(unsigned *) (&RUMINATE_MAGIC_NUMBER);
 
-		UID() {
-			time_t t;
-			time(&t);
-			srand(time(0));
-			created_time = t;
-			random = dist(mt);
-		}
+        unsigned long long created_time;
 
-		UID(unsigned n) {
-			magic = 0;
-			created_time = 0;
-			random = 0;
-		}
+        unsigned random = 0;
 
-		UID(const RUMINATE_COMMAND_NODES::UID_UID_n& uid) {
-			created_time = uid.created;
-			random = uid.random;
-		}
+        UID();
 
+        UID(unsigned);
 
-		friend bool operator == (const UID& a, const UID& b) {
-			return a.created_time == b.created_time && b.random == a.random;
-		}
+        UID(const RUMINATE_COMMAND_NODES::UID_UID_n &);
 
-		friend std::ostream& operator << (std::ostream& stream, const UID& uid) {
-			if(stream.rdbuf() == std::cout.rdbuf()) {
-				stream << std::hex << "RUMI-" <<  uid.created_time << "-" << uid.random;
-			} else {
-				stream.write((char *)(&(uid)), sizeof(uid));
-			}
-			return stream;
-		}
+        wstring toJSONString() const;
 
-		friend UID& operator << (UID& uid, std::istream& stream) {
-			stream.read((char *)(&(uid)), sizeof(uid));
-			return uid;
-		}
+        std::ostream & toJSONString(std::ostream &) const;
 
-		wstring toJSONString() const {
-			wstring string(L"{\"type\":\"RUMI-UID\", \"created_time\":");
-			string += std::to_wstring(created_time);
-			string += wstring(L", \"random\":");
-			string += std::to_wstring(random);
-			string += wstring(L"}");
-			return string;
-		}
-	};
+        friend bool operator==(const UID & a, const UID & b)
+        {
+            return a.created_time == b.created_time && b.random == a.random;
+        }
 
-	static UID NullUID(0);
+        friend std::ostream & operator<<(std::ostream & stream, const UID & uid)
+        {
+            if (stream.rdbuf() == std::cout.rdbuf()) {
+                stream << std::hex << "RUMI-" << uid.created_time << "-" << uid.random;
+            } else {
+                stream << std::hex << "RUMI-" << uid.created_time << "-" << uid.random << "R";
+            }
+            return stream;
+        }
 
-}
+        friend UID & operator<<(UID & uid, std::istream & stream)
+        {
+            // stream.read((char *)(&(uid)), sizeof(uid));
+            char buffer[5];
+
+            stream.read(buffer, 5);
+
+            uid.magic = *(unsigned *) buffer;
+
+            wstring str;
+
+            try {
+                readString(stream, str, L'-');
+                uid.created_time = std::stoull(str, 0, 16);
+
+                readString(stream, str, L'R');
+                uid.random = std::stoul(str, 0, 16);
+            } catch (...) {
+                uid.created_time = 0;
+                uid.random       = 0;
+            }
+
+            return uid;
+        }
+    };
+
+    static UID NullUID(0);
+
+} // namespace RUMINATE
 
 namespace std
 {
-	template <>
-	struct hash<RUMINATE::UID> {
-		size_t operator()(const RUMINATE::UID& uid) const {
-			return (size_t)(uid.created_time ^ uid.random << 2);
-		}
-	};
-}
+    template <> struct hash<RUMINATE::UID> {
+        size_t operator()(const RUMINATE::UID & uid) const { return (size_t)(uid.created_time ^ uid.random << 2); }
+    };
+} // namespace std

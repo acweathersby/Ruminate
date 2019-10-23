@@ -83,7 +83,7 @@
 <> comparison_expression → 
 
       (τis │ τequals │ = │ τthat τis)  number                       ↦r ^QUERY_ComparisonEquals
-    │ (τis │ τequals │ = │ τthat τis)  identifier                   ↦r ^QUERY_ComparisonEquals
+    │ (τis │ τequals │ = │ τthat τis)  identifier                   ↦r ^QUERY_ComparisonEqualsIdentifier
     │ (τis τgreater τthan? │ > │ τgreater) number                   ↦r ^QUERY_ComparisonMore
     │ (τis τless τthan? │ < │ τlesser) number                       ↦r ^QUERY_ComparisonLess
     │ τis? range_expression                                         ↦r ^LAST

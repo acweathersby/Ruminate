@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.1.1",
   "description": "Simple Notes",
-  "main": "source/ruminate.js",
+  "main": "source/js/client/cli/cli.mjs",
   "repository": "https://github.com/acweathersby/ruminate",
   "author": "Anthony C Weathersby",
   "license": "MIT",
@@ -12,7 +12,8 @@
     "graze": "./source/graze/graze.js"
   },
   "scripts": {
-    "start": "electron -r esm ./apps/electron/main.js",
+    "start":"node --experimental-modules ./source/js/client/cli/cli.mjs",
+    "electron": "electron -r esm ./apps/electron/main.js",
     "test": "mocha -r esm test/test.js",
     "compile.junction": "hydrocarbon compile -u --name query_parser -o ./source/compiler/ -t mjs.js ./source/grammar/junction.hcg",
     "compile.junction.test": "hydrocarbon compile -d -u -m ./source/grammar/junction.hcg",
