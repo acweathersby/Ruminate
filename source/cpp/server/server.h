@@ -1,5 +1,5 @@
-#include "../database/include/db_runner.h"
-#include "../text_command/text_command.h"
+#include "database/include/db_runner.h"
+#include "text_command/text_command.h"
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>

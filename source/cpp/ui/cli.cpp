@@ -1,4 +1,4 @@
-#include "./cli.h"
+#include "ui/cli.h"
 
 #include <filesystem>
 #include <iostream>

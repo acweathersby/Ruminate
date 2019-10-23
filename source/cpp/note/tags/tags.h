@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../compiler/compiler.h"
-#include "../string/utf.h"
-#include "../utils/stream.h"
-
-#include "./tag_value.h"
+#include "compiler/compiler.h"
+#include "note/tags/tag_value.h"
+#include "string/utf.h"
+#include "utils/stream.h"
 #include <cstring>
 #include <iostream>
 #include <tuple>

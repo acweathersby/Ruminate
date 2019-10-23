@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../string/utf.h"
+#include "string/utf.h"
 #include <cstring>
 #include <iostream>
 #include <string>

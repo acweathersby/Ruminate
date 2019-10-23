@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../compiler/compiler.h"
-#include "../container/container.h"
-#include "../database/file/file_db.h"
-#include "../note/note.h"
-#include "../query/query.h"
-#include "../server/server.h"
-#include "../string/crdt.h"
-#include "../text_command/text_command.h"
-#include "../uid/uid.h"
+#include "compiler/compiler.h"
+#include "container/container.h"
+#include "database/file/file_db.h"
+#include "note/note.h"
+#include "query/query.h"
+#include "server/server.h"
+#include "string/crdt.h"
+#include "text_command/text_command.h"
+#include "uid/uid.h"
 #include <cstring>
 #include <iostream>
 #include <string>

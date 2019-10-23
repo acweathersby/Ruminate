@@ -5,13 +5,13 @@
 #include <sstream>
 #include <vector>
 
-#include "../compiler/compiler.h"
-#include "../string/crdt.h"
-#include "../string/search.h"
-#include "../tags/tags.h"
-#include "../uid/uid.h"
-#include "../utils/stream.h"
-#include "./id.h"
+#include "compiler/compiler.h"
+#include "note/id/id.h"
+#include "note/tags/tags.h"
+#include "note/uid/uid.h"
+#include "string/crdt.h"
+#include "string/search.h"
+#include "utils/stream.h"
 
 namespace RUMINATE
 {

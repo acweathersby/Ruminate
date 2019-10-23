@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../string/utf.h"
-#include "./note.h"
+#include "note/note.h"
+#include "string/utf.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <codecvt>

@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../note/note_include.h"
-#include "../uid/uid.h"
+#include "note/include.h"
+#include "note/uid/uid.h"
 
 /** Classes for dealing with Notes based on there id (container location) */
 

@@ -1,11 +1,11 @@
-#include "./definitions.h"
 
 #include <csignal>
 #include <cstring>
 #include <iostream>
 #include <string>
 
-#include "./ui/cli.h"
+#include "definitions.h"
+#include "ui/cli.h"
 
 // IMPORTANT - INITIALIZE CRDT SITE. This may need to assigned using some preagreed site index based
 // on client preferences.

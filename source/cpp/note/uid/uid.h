@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../compiler/uid_nodes.h"
-#include "../utils/stream.h"
+#include "compiler/uid_nodes.h"
+#include "utils/stream.h"
 
 #include <codecvt>
 #include <cstdlib>

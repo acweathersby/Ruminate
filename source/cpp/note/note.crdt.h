@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./note.h"
+#include "note/note.h"
 
 
 namespace RUMINATE

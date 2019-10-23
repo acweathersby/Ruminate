@@ -62,14 +62,13 @@ FILE(GLOB SRCS
  
 	"main.cpp"
 	"definitions.h"
-	"database/compiler/compiler.h"
 	"database/include/*"
 	"container/*"
-	"note/*"
-	"query/*"
 	"string/*"
-	"tags/*"
-	"uid/*"
+	"note/*"
+	"note/tags/*"
+	"note/uid/*"
+	"note/id/*"
 	"text_command/*"
 	"ui/*"
 	"utils/*"
@@ -77,15 +76,18 @@ FILE(GLOB SRCS
 	"server/*"
 ) 
 
+SET(BASEPATH "${CMAKE_SOURCE_DIR}")
+
+INCLUDE_DIRECTORIES("${BASEPATH}")
 ## Add Include Directories
 include_directories(${PROJECT_NAME} PRIVATE "container")
 include_directories(${PROJECT_NAME} PRIVATE "database/include")
 include_directories(${PROJECT_NAME} PRIVATE "note")
+include_directories(${PROJECT_NAME} PRIVATE "note/ui")
+include_directories(${PROJECT_NAME} PRIVATE "note/uid")
+include_directories(${PROJECT_NAME} PRIVATE "note/tags")
 include_directories(${PROJECT_NAME} PRIVATE "query")
 include_directories(${PROJECT_NAME} PRIVATE "string")
-include_directories(${PROJECT_NAME} PRIVATE "tags")
-include_directories(${PROJECT_NAME} PRIVATE "ui")
-include_directories(${PROJECT_NAME} PRIVATE "uid")
 include_directories(${PROJECT_NAME} PRIVATE "utils")
 include_directories(${PROJECT_NAME} PRIVATE "server")
 

@@ -5,13 +5,13 @@
 #include <thread>
 #include <vector>
 
-#include "../compiler/compiler.h"
-#include "../database/include/db_runner.h"
-#include "../note/note.h"
-#include "../query/query.h"
-#include "../uid/uid.h"
-#include "./text_command_result.h"
-#include "./text_command_result_codes.h"
+#include "compiler/compiler.h"
+#include "database/include/db_runner.h"
+#include "note/note.h"
+#include "query/query.h"
+#include "text_command/text_command_result.h"
+#include "text_command/text_command_result_codes.h"
+#include "uid/uid.h"
 
 namespace RUMINATE
 {

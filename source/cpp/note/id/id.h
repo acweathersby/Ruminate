@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../string/utf.h"
-#include "../utils/stream.h"
+#include "string/utf.h"
+#include "utils/stream.h"
 
 #include <cstring>
 #include <iostream>

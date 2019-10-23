@@ -1,4 +1,4 @@
-#include "./text_command_result.h"
+#include "text_command/text_command_result.h"
 
 bool RUMINATE::COMMAND::TextCommandResult::READY() { return result != nullptr; }
 

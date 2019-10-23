@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../utils/stream.h"
+#include "string/utf.h"
+#include "utils/stream.h"
 #include <codecvt>
 #include <cstring>
 #include <iostream>
@@ -125,7 +126,7 @@ namespace RUMINATE
             void setVal(long long & intv)
             {
                 int_val = intv;
-                int_val = int_val | (PTRMask ^ (1 << 63));
+                int_val = int_val | (PTRMask ^ ((unsigned long long) 1 << 63));
             }
 
             TagValue & operator=(long long & intv)

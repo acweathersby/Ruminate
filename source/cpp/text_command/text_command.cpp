@@ -1,5 +1,5 @@
-#include "./text_command.h"
-#include "../string/utf.h"
+#include "text_command/text_command.h"
+#include "string/utf.h"
 
 namespace RUMINATE
 {

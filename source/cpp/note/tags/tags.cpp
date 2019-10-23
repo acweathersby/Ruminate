@@ -1,4 +1,4 @@
-#include "./tags.h"
+#include "note/tags/tags.h"
 
 using namespace RUMINATE::TAG;
 
