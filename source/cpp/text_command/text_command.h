@@ -7,6 +7,7 @@
 
 #include "compiler/compiler.h"
 #include "database/include/db_runner.h"
+#include "note/note.basic.h"
 #include "note/note.h"
 #include "query/query.h"
 #include "text_command/text_command_result.h"
@@ -21,6 +22,10 @@ namespace RUMINATE
         using namespace QUERY;
         using namespace DB;
         using namespace NOTE;
+
+        struct COMMAND_TEXT {
+            static const wstring default_note_id;
+        };
 
         /*
          * Text result static objects.

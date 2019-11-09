@@ -36,12 +36,10 @@ namespace RUMINATE
 
         void ThreadRunner(const wchar_t * s, DBRunner * d, TextCommandResult * r)
         {
-            std::cout << "query start" << endl;
-            std::cout << *s << std::endl;
-            std::cout << *s << std::endl;
-            std::cout << *s << std::endl;
 
             const std::wstring string(s);
+
+            std::wcout << string << endl;
 
             DBRunner & db = *d;
 
@@ -49,7 +47,7 @@ namespace RUMINATE
 
             delete[] s;
 
-            std::cout << string << endl;
+            std::cout << string.size() << endl;
 
             auto buffer = RUMINATE::COMPILER::compileWString(string);
 
@@ -81,8 +79,8 @@ namespace RUMINATE
 
                 if (add_node.hasUID()) {
 
-                    // Try to find a matching note with UID signature. If none exist, DO NOT               } else if
-                    // (add_node.hasContainer())  create a new note. UID MUST be a real UID value already present in the
+                    // Try to find a matching note with UID signature. If none exist, DO NOT
+                    // create a new note. UID MUST be a real UID value already present in the
                     // DB. If none exist, the user MUST supply an ADD command utilizing the Container Format in order to
                     // create a new note. This allows arbitrary UID values to be presented to the DB without corrupting
                     // the internal UID state of the DB.
@@ -112,18 +110,34 @@ namespace RUMINATE
 
                     QUERY::filterContainer(*add_node.ctr, db, results, 500, out_buffer);
 
-                    if (results == 1) {
-                        Note * note = db.getNote(out_buffer[0]);
+                    if (results <= 1) {
+                        Note * note = nullptr;
+
+                        if (results == 1)
+                            // The note is existing and must be retrieved from the db runner
+                            note = db.getNote(out_buffer[0]);
+
+                        if (results == 0) {
+                            // The note must be created.
+                            wstring str;
+
+                            if (add_node.ctr)
+                                str = add_node.ctr->toString();
+                            else
+                                str = COMMAND_TEXT::default_note_id;
+
+                            note = db.createNote<BasicNote>(str);
+
+                            result.addUID(note->uid);
+                        }
 
                         if (note) {
                             UpdateNote(*note, *add_node.data, db);
                             result.result = &add_success;
-                        } else {
+                        } else
                             result.result = &add_failure_no_uid_match;
-                        }
-                    } else {
+                    } else
                         result.result = &add_failure_too_many_results;
-                    }
                 }
 
             }; break;
@@ -196,6 +210,6 @@ namespace RUMINATE
             }
 
             cout << result.size() << endl;
-        }
-    } // namespace COMMAND
+        } // namespace COMMAND
+    }     // namespace COMMAND
 } // namespace RUMINATE

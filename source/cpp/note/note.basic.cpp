@@ -60,8 +60,6 @@ const wstring BasicNote::toJSONString() const
 
     string += L"\",\"body\":\"";
 
-    string += L",\"id\":\"";
-
     string += id.toJSONString();
 
     string += boost::algorithm::replace_all_copy(body, "\n", "\\n");
@@ -101,4 +99,8 @@ std::ostream & BasicNote::toJSONString(std::ostream & stream) const
 }
 
 
-void BasicNote::updateBody(const RUMINATE_COMMAND_NODES::parse_string & body_string) { body.assign(body_string); }
+void BasicNote::updateBody(const RUMINATE_COMMAND_NODES::parse_string & body_string)
+{
+    std::wcout << "Setting new body string" << body_string << std::endl;
+    body.assign(body_string);
+}

@@ -40,6 +40,16 @@ namespace RUMINATE
                 }
             }
 
+            void updateDatabases(Note & note)
+            {
+                for (auto db : databases) db->addNote(note);
+            }
+            /*
+                        void removeFromDatabases(Note & note)
+                        {
+                            for (auto db : databases) db->deleteNote(note);
+                        }
+            */
           public:
             DBRunner() {}
 
@@ -53,8 +63,8 @@ namespace RUMINATE
 
             int addDatabase(NoteDB * db)
             {
-                for (auto iter = databases.begin(); iter != databases.end(); iter++)
-                    if (*iter == db) return -1;
+                for (auto dbptr : databases)
+                    if (dbptr == db) return -1;
 
                 databases.push_back(db);
 
@@ -75,8 +85,11 @@ namespace RUMINATE
             bool deleteNote(Note & note)
             {
                 ctr.removeUID(note.uid);
+
                 noteLU.erase(note.uid);
-                // Remove from databases.
+
+                //  removeFromDatabases(note);
+
                 return true;
             }
 
@@ -90,7 +103,24 @@ namespace RUMINATE
 
                 if (old_id != id) relocateNote(note, old_id);
 
+                updateDatabases(note);
+
                 return true;
+            }
+
+            // Creates note and adds to local cache, but does not add note to databases.
+            // Requires subsequent call to updateNote to push note data upstream.
+            template <class NoteType> NoteType * createNote(wstring & id)
+            {
+                static_assert(std::is_base_of<Note, NoteType>::value, "Class not derived of Note");
+
+                NoteType * note = new NoteType();
+
+                note->id = id;
+
+                ctr.addNote(note->id, note->uid);
+
+                return note;
             }
 
             void relocateNote(const Note & note, const wstring & old_id)

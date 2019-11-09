@@ -9,6 +9,7 @@
 
 #define NaNMask 0x7FF
 #define PTRMask 0xFFF0000000000000
+#define NULLMask 0xFFFFFFFFFFFFFFFF
 
 namespace RUMINATE
 {
@@ -19,11 +20,13 @@ namespace RUMINATE
         using std::ostream;
         using std::wstring;
 
-        enum class TYPES : unsigned char { DOUBLE = 0, STRING = 1, INT };
 
         class TagValue
         {
+          private:
+            enum class TYPES : unsigned char { DOUBLE = 0, STRING = 1, INT, NUL };
 
+          public:
             union {
                 void * ptr_val;
                 long long int_val;
@@ -34,6 +37,8 @@ namespace RUMINATE
 
             TYPES getType() const
             {
+                if (int_val == NULLMask) return TYPES::NUL;
+
                 if (!isnan(dbl_val)) return TYPES::DOUBLE;
 
                 if ((int_val & PTRMask) == PTRMask) return TYPES::STRING;
@@ -43,14 +48,27 @@ namespace RUMINATE
 
             void * getPTR() const { return (void *) (int_val & ~PTRMask); }
 
+            void clearPTR()
+            {
+                if (hasValue() && getType() == TYPES::STRING) {
+                    delete ((wstring *) *this);
+                    int_val = NULLMask;
+                }
+            }
+
           public:
+            TagValue() { int_val = NULLMask; /* Null Value */ }
+
             /**** Operator Overloads ****/
+
+            bool hasValue() const { return int_val != NULLMask; }
 
             // Double
             void setVal(const double & dbl) { dbl_val = dbl; }
 
             TagValue & operator=(double & dbl)
             {
+                clearPTR();
                 setVal(dbl);
                 return *this;
             }
@@ -99,7 +117,7 @@ namespace RUMINATE
             friend bool operator<=(double d, TagValue & v) { return d == v || d < v; }
             friend bool operator<=(TagValue & v, double d) { return v == d || v < d; }
 
-
+            operator bool() const { return hasValue(); }
             // String
             void setVal(wstring * str)
             {
@@ -110,6 +128,17 @@ namespace RUMINATE
             TagValue & operator=(wstring * str)
             {
                 setVal(str);
+
+                return *this;
+            }
+
+            TagValue & operator=(wstring & str)
+            {
+                if (getType() == TYPES::STRING)
+                    ((wstring *) *this)->assign(str);
+                else
+                    *this = new std::wstring(str);
+
                 return *this;
             }
 
@@ -125,6 +154,8 @@ namespace RUMINATE
             // Integer
             void setVal(long long & intv)
             {
+                clearPTR();
+
                 int_val = intv;
                 int_val = int_val | (PTRMask ^ ((unsigned long long) 1 << 63));
             }
@@ -191,8 +222,6 @@ namespace RUMINATE
                 } else {
                     stream << std::to_string((double) val);
                 }
-
-                stream << ";";
 
                 return stream;
             }

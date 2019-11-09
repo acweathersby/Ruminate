@@ -2,40 +2,26 @@
 
 using namespace RUMINATE::TAG;
 
-void TagContainer::addTag(wstring id)
+Tag & TagContainer::getTag(wstring & id)
 {
+    for (auto & tag : tags)
+        if (tag.id == id) return tag;
+
     Tag t;
     t.id = id;
     tags.push_back(t);
     count++;
+
+    return getTag(id);
 }
 
-void TagContainer::addTag(wstring id, double val)
-{
-    Tag t;
-    t.id  = id;
-    t.val = val;
-    tags.push_back(t);
-    count++;
-}
+void TagContainer::addTag(wstring id) { getTag(id); }
 
-void TagContainer::addTag(wstring id, long long val)
-{
-    Tag t;
-    t.id  = id;
-    t.val = val;
-    tags.push_back(t);
-    count++;
-}
+void TagContainer::addTag(wstring id, double val) { getTag(id).val = val; }
 
-void TagContainer::addTag(wstring id, wstring str)
-{
-    Tag t;
-    t.id  = id;
-    t.val = new wstring(str); // <<<<<!!!!!!!MEMORYLEAK!!!!!!! <<<<
-    tags.push_back(t);
-    count++;
-}
+void TagContainer::addTag(wstring id, long long val) { getTag(id).val = val; }
+
+void TagContainer::addTag(wstring id, wstring val) { getTag(id).val = val; }
 
 void TagContainer::removeTag(wstring) {}
 
@@ -44,9 +30,10 @@ void TagContainer::fromBracketedStream(std::istream & stream)
     // Only consume characters if a particular set of characters is found. { tag_name : tag_val [, ...] }
     unsigned root = stream.tellg();
 
-    char t = stream.get();
+    char t = stream.peek();
 
     if (t == '{') {
+        stream.get();
         int c = stream.get();
         while (stream.good() && c != '}') {
             // First part is text data. Ignore white space.
@@ -104,8 +91,12 @@ const wstring TagContainer::toJSONString() const
         // stream.write((char *) &sentinal_start, sizeof(sentinal_start));
         if (!start) string += L",";
         string += L"\"" + tag.id + L"\"";
-        string += L":\"";
-        string += (wstring) tag.val + L"\"";
+
+        if (tag.val.hasValue()) {
+            string += L":\"";
+            string += (wstring) tag.val + L"\"";
+        }
+
         start = false;
     }
 
@@ -124,10 +115,14 @@ std::ostream & TagContainer::toJSONString(std::ostream & stream) const
         // stream.write((char *) &sentinal_start, sizeof(sentinal_start));
         if (!start) stream << ",";
 
-        stream << "\"" << tag.id << "\""
-               << ":";
+        stream << "\"" << tag.id << "\"";
 
-        tag.val.toJSONString(stream);
+        stream << ":";
+        if (tag.val.hasValue()) {
+            tag.val.toJSONString(stream);
+        } else {
+            stream << "\"\"";
+        }
 
         start = false;
     }
@@ -144,7 +139,7 @@ void TagContainer::update(const RUMINATE_COMMAND_NODES::NOTE_TagList_n & tag_lis
         RUMINATE_COMMAND_NODES::NOTE_Tag_n & tag = **iter;
 
         if (tag.shouldRemove()) {
-        } else if (tag.hasStringValue()) {
+        } else if (tag.hasStringValue() && tag.val->size() > 0) {
             addTag(wstring(*tag.key), wstring(*tag.val));
         } else if (tag.hasNumberValue()) {
             addTag(wstring(*tag.key), tag.num_val);

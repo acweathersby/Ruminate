@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 
 namespace RUMINATE
@@ -14,7 +15,7 @@ namespace RUMINATE
 
     template <class StringType> static void readString(std::istream & stream, std::basic_string<StringType> & string)
     {
-        unsigned size = string.size();
+        unsigned size = string.size() + 1;
 
         stream.read((char *) &size, sizeof(size));
 

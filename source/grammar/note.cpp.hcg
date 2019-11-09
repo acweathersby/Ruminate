@@ -6,17 +6,20 @@
 
 <> goal → note
 
-<> note → [type? Query::container_clause? \; tags? \; string?]			↦c ^NOTE_Note
+<> note → [type? Query::container_clause? \; tags? \; body_string?]			↦c ^NOTE_Note
 
 <> type → n_number
 
 <> tags → tag 														↦r ^NOTE_TagList
 	│ tags , tag													↦r ^NOTE_TagList
 
-<> tag → string \= string 												↦r ^NOTE_TagString
-	│ string 														↦r ^NOTE_Tag
+<> tag → tag_string \= tag_string 									↦r ^NOTE_TagString
+	│ tag_string \= n_number 										↦r ^NOTE_TagNumber
+	│ tag_string 													↦r ^NOTE_Tag
 
-<> string → n_string_data_val	 									↦r ^NOTE_String
+<> tag_string → n_string_data_val	 								↦r ^NOTE_String
+
+<> body_string → n_string_data_val	 								↦r ^NOTE_String
 
 <> n_string_data_val → n_string_data_val n_string_symbols           ↦r ^StringData
     │ n_string_symbols                                              ↦r ^StringData
@@ -24,10 +27,12 @@
 <> n_string_symbols → θany                                          ↦r ^StringData
     │ θsym                                                          ↦r ^StringData
     │ θop                                                           ↦r ^StringData
+    │ θob                                                           ↦r ^StringData
+    │ θcb                                                           ↦r ^StringData
     │ θid                                                           ↦r ^StringData
     │ θnum                                                          ↦r ^StringData
     │ θws 															↦r ^StringData
     │ θnl 															↦r ^StringData
 
-<> n_number → θnum                                                 ↦r ^Number
+<> n_number → θnum                                                  ↦r ^Number
 

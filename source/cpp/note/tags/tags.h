@@ -31,6 +31,7 @@ namespace RUMINATE
 
             unsigned char count = 0;
 
+            Tag & getTag(wstring &);
             void addTag(wstring);
             void addTag(wstring, double);
             void addTag(wstring, long long);
@@ -60,11 +61,17 @@ namespace RUMINATE
                 // stream.write((char *) &ctr.count, sizeof(ctr.count));
                 stream << "{";
 
+                bool FIRST = true;
+
                 for (auto tag : ctr.tags) {
                     // stream.write((char *) &sentinal_start, sizeof(sentinal_start));
+                    if (!FIRST) stream << ";";
                     stream << tag.id;
-                    stream << ":";
-                    stream << tag.val;
+                    if (tag.val) {
+                        stream << ":";
+                        stream << tag.val;
+                    }
+                    FIRST = false;
                 }
 
                 stream << "}";

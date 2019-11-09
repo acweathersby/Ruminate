@@ -38,56 +38,38 @@ function ProcessTags(tag_string_list) {
 		p = typeof t == "string" ? t.split(":") : [t + ""],
 		tag = { v: undefined, d: false },
 		tag.v = (p.length > 1)
-			? isNaN(p[1])
-				? p[1].trim()
-				: parseFloat(p[1].trim())
-			: undefined,
+		? isNaN(p[1])
+		? p[1].trim()
+		: parseFloat(p[1].trim())
+		: undefined,
 	        [p[0].trim().toLowerCase(), tag]
 	)));
 }
 
 export default class Note {
-	constructor(ruminate, uid, id, tags, body, refs, modified, NEED_SYNC = false) {
-
-		const cr_string = ruminate.crdtString;
-
-		if(body && body.length > 0){
-			if(typeof body == "string"){
-				cr_string.insert(body);
-			}
-			else{
-				cr_string.fromBuffer(body);
-			}
-		}
-
-		this[RUMINATE_REFERENCE] = ruminate;
+	constructor(note_data, ruminate_engine = {}, NEED_SYNC = false) {
+		this.uid = new UID(note_data.uid);
+		this.id = note_data.id;
+		this[RUMINATE_REFERENCE] = ruminate_engine;
 		this[RUMINATE_NOTE_SYNC_LIST] = [];
 		this[RUMINATE_NOTE_NEED_UPDATE] = false;
-		this[RUMINATE_NOTE_TAGS] = tags;
-		this[RUMINATE_NOTE_BODY] = {
-			uid,
-			id,
-			modified,
-			tags,
-			cr_string,
-			refs
-		}
+		this[RUMINATE_NOTE_TAGS] = note_data.tags;
+		this[RUMINATE_NOTE_BODY] = note_data.body;
 		if (NEED_SYNC)
 			CHANGED(this)
 	}
 
-	destroy(){
-		if(this[RUMINATE_NOTE_BODY].cr_string)
+	destroy() {
+		if (this[RUMINATE_NOTE_BODY].cr_string)
 			this[RUMINATE_NOTE_BODY].cr_string.destroy();
 	}
 
 	/****************** Basic Properties *************************/
 
-	get created() { return this[RUMINATE_NOTE_BODY].uid.date_created.valueOf() }
-	get createdDateObj() { return this[RUMINATE_NOTE_BODY].uid.date_created }
+	get created() { return this.uid.date_created.valueOf() }
+	get createdDateObj() { return this.uid.date_created }
 	get modified() { return this[RUMINATE_NOTE_BODY].modified }
-	get uid() { return this[RUMINATE_NOTE_BODY].uid }
-	get id() { return this[RUMINATE_NOTE_BODY].id }
+	//get id() { return this[RUMINATE_NOTE_BODY].id }
 	async delete(index, length) {}
 
 	/****************** Synchronizing *************************/
@@ -130,22 +112,36 @@ export default class Note {
 	[RUMINATE_NOTE_PREPARE_FOR_SERVER]() {
 
 		if (this[RUMINATE_NOTE_NEED_UPDATE]) {
-//			const list = [];
+			//			const list = [];
 
-//			for (const t of this[RUMINATE_NOTE_TAGS].entries())
-//				list.push(`${t[1].d?"!":""}${t[0]}${t[1].v?":"+t[1].v:""}`)
+			//			for (const t of this[RUMINATE_NOTE_TAGS].entries())
+			//				list.push(`${t[1].d?"!":""}${t[0]}${t[1].v?":"+t[1].v:""}`)
 
-//			this[RUMINATE_NOTE_BODY].tags = list;
+			//			this[RUMINATE_NOTE_BODY].tags = list;
 			this[RUMINATE_NOTE_NEED_UPDATE] = false;
 		}
 
 		return this[RUMINATE_NOTE_BODY];
 	}
 
+	/****************** Sync Functions ***************/
+
+	updatedTagData(){
+		return "" ;//this.getTags();
+	}
+
+	updatedBodyData(){
+		return this.body;
+	}
+
+	updatedIdData(){
+		return this.id;
+	}
+
 	/****************** BODY *************************/
 
 	get body() {
-		return this[RUMINATE_NOTE_BODY].cr_string.value;
+		return this[RUMINATE_NOTE_BODY];
 	}
 
 	insert(string, offset = 0) {
@@ -166,28 +162,7 @@ export default class Note {
 	}
 
 	set body(str) {
-		const note = this[RUMINATE_NOTE_BODY];
-
-		let
-			NEED_SYNC_UPDATE_LOCAL = false,
-			offset = note.cr_string.length;
-
-		//Get Minimum changes to note
-		for (const diff of jsdiff.diffChars(note.body, str).reverse()) {
-			if (diff.added) {
-				this.insert(offset, diff.value);
-				NEED_SYNC_UPDATE_LOCAL = true;
-			} else if (diff.removed) {
-				this.delete(offset, diff.count);
-				NEED_SYNC_UPDATE_LOCAL = true;
-			} else
-				offset -= diff.value.length;
-			//insert into string
-		}
-
-		//update store with new note changes. 
-		if (NEED_SYNC_UPDATE_LOCAL)
-			CHANGED(this);
+		this[RUMINATE_NOTE_BODY] = str;
 	}
 
 	/****************** TAGS *************************/
@@ -285,6 +260,7 @@ export default class Note {
 
 	// render the note's message data into a string output
 	async render(handler, set = new Set) {
+
 		const
 			note = this[RUMINATE_NOTE_BODY],
 			ruminate = this[RUMINATE_REFERENCE];
@@ -308,11 +284,13 @@ export default class Note {
 			var strings = [],
 				start = 0,
 				body = this.body;
-			for (const junction of reducer(whind(note.cr_string.value))) {
+			for (const junction of reducer(whind(body))) {
 
 				strings.push(body.slice(start, junction.start))
 
 				start = junction.end;
+
+				console.log(junction)
 
 				for (const note of await ruminate.retrieve(junction.query)) {
 
@@ -322,7 +300,6 @@ export default class Note {
 					if (note)
 						strings.push(await note.render(handler, new Set(set)));
 				}
-
 			}
 
 			strings.push(body.slice(start));

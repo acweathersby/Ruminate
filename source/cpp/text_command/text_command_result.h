@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -24,6 +25,7 @@ namespace RUMINATE
 
           private: // MEMBERS
             bool ready = false;
+
 
           public: // MEMBERS
             enum class ResultTypes { UNDEFINED, ADD, DELETE, RETRIEVE };
@@ -58,6 +60,8 @@ namespace RUMINATE
 
             // Return the number of notes retrieved from the text command.
             unsigned size();
+
+            void addUID(const UID &);
 
             void addUIDs(const RUMINATE_COMMAND_NODES::UID_List_n & list);
 

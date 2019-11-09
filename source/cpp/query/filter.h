@@ -117,7 +117,7 @@ namespace RUMINATE
             };
             case NodeType::Or: {
                 QUERY_Or_n * Or = (QUERY_Or_n *) node;
-                return filter(Or->left, note) || filter(Or->right, note);
+                return (filter(Or->left, note) || filter(Or->right, note));
             };
             case NodeType::SizeStatement: {
                 return compareSize((QUERY_Size_n *) node, note);

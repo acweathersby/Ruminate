@@ -58,15 +58,11 @@ namespace RUMINATE
 
                 std::istream istr(&in_buffer);
 
-                std::string str;
+                std::string str(std::istreambuf_iterator<char>(istr), {});
 
-                istr >> str;
+                wstring wstr = converter.from_bytes(str.substr(0, size - 1));
 
-                wstring wstr = converter.from_bytes(str);
-
-                std::wcout << wstr << endl;
-
-                RUMINATE::COMMAND::runStringCommand(wstr.substr(0, wstr.size() - 1), runner, &result);
+                RUMINATE::COMMAND::runStringCommand(wstr, runner, &result);
 
                 boost::asio::post(io_context, boost::bind(&TCPConnection::wait_for_result, shared_from_this()));
             };

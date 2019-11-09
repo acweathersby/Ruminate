@@ -16,7 +16,7 @@ graze
 
 ```
 
-Methodes - 
+Methods - 
 	Lookup Note
 	Add Note
 	Edit Note

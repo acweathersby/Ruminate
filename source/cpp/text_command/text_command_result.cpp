@@ -4,6 +4,8 @@ bool RUMINATE::COMMAND::TextCommandResult::READY() { return result != nullptr; }
 
 unsigned RUMINATE::COMMAND::TextCommandResult::size() { return uids.size(); }
 
+void RUMINATE::COMMAND::TextCommandResult::addUID(const UID & uid) { uids.push_back(uid); }
+
 void RUMINATE::COMMAND::TextCommandResult::addUIDs(const QueryResult & list)
 {
 

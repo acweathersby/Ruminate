@@ -2,8 +2,6 @@
 
 @IGNORE θws θnl 
 
-@IMPORT ./gnql.hcg as r
-
 @SYMBOL (( ))
 
 ↦ junction 	{ this.start=env.start; this.end = lex.off; this.query=$$sym2; this.action=$$sym4; }
@@ -15,7 +13,7 @@
 	│ items string_data(+) 		↦r {$sym1 }
 	│ items data_insert_point 	↦r { $$sym1.push($$sym2), $$sym1 }					
 
-<> data_insert_point → \(( ↦ {env.start = lex.off} r::RNQL \)) ( \[  data_string(*,) \] ↦r{ $sym2 } )?	↦c=>junction
+<> data_insert_point → \(( ↦ {env.start = lex.off} data_string \)) ( \[  data_string(*,) \] ↦r{ $sym2 } )?	↦c=>junction
 
 <> data_string → ( string_data_val(*") )
 

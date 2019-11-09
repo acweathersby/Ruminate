@@ -1,4 +1,5 @@
 #include "definitions.h"
+#include "text_command/text_command.h"
 #include "text_command/text_command_result_codes.h"
 
 #ifdef LOCALE_EN_US
@@ -26,6 +27,8 @@ const std::wstring RUMINATE::COMMAND::REMOVE_FAILURE_NO_RESULTS::msg =
     L"The REMOVE command  failed. The query do match any notes.";
 
 const std::wstring RUMINATE::COMMAND::TEXT_COMMAND_FAILURE::msg = L"The text command was invalid.";
+
+const std::wstring RUMINATE::COMMAND::COMMAND_TEXT::default_note_id = L"/temp/unnamed";
 
 
 #endif

@@ -190,7 +190,11 @@ namespace RUMINATE
 
                 wstring path = note.id.filepath();
 
+                std::filesystem::path fs_path(folder + note.id.container());
+
                 path = folder + path + wstring(RUMINATE_FILE_EXTENSION);
+
+                std::filesystem::create_directory(fs_path);
 
                 std::ofstream file;
 
