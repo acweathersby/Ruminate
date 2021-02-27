@@ -4,7 +4,7 @@
 		"name": "main",
 		"folder_exclude_patterns": [".git", "node_modules", "docs", "ide"],
 		"binary_folder_patterns": ["build"],
-		"path": "."
+		"path": "../"
 	}],
 	"setting":
 	{
