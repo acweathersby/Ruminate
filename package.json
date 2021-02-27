@@ -38,7 +38,7 @@
     "codemirror": "^5.48.2",
     "commander": "^3.0.0",
     "diff": "^4.0.1",
-    "electron": "^6.0.0",
+    "electron": "^9.4.0",
     "jsdiff": "^1.1.1",
     "terser": "^4.2.0"
   },
