@@ -1,188 +1,44 @@
 # RUMINATE NOTES
 
-#### seriously, an experimental work-in-progress
+## Note Database, Query, and Composition Framework
 
-For those quick, daydreaming ideas that quickly float off, and the rest. 📓
+Ruminate preseents a set of systems tuned to the task of taking, storing, and retrieving notes.
+Notes in the context of ruminate represent a short set of sentences, paragraphs, and short form text data that can be quickly written by a user and referenced later as is or through the dynamic inclusion of the note in other works, including other Ruminate notes. 
 
+Ruminate provides resources to store notes in long and short term storage solutions, such as databases or text files, or in system memory. A query langauge provides ways to retrieve notes through means other than basic keyword searches or hiearachal catagories such as folders. 
 
-version 0.*.* - The console miester
+The storage of Ruminate data is in CRDT (cuasauly ralational data type) structures, providing a natural means of concurrent editing of note data, either through the act of a singlue user accessing the same note on different devices, or through multiple users interacting within the same note simultaneously. 
 
-#usage
-```bash
+# Features
 
-yarn install graze
+## version 1.0 - July 2021
 
-graze 
+- Base Note Structure 
+	- Notes can be titled, tagged  
+	- Linking of notes into other notes.
+- Query language and query engine
+-	 Container Queries
+- CRDT Storage
+- File System Storage
+	- JSON file based note server
 
-```
+## version 2.0 - Oct 2021
 
-Methods - 
-	Lookup Note
-	Add Note
-	Edit Note
-	Delete Note
-
-Note structure
-	Note Body
-	Note Title
-	Note Tags
-	Note Ref Count
-	Note UID
-	Note Refs
-
-Adding Note
-	Use Query To Identify note 
-	Check to see if the host is refered in any of claim's references
-	If passed ref test insert note, update claim ref count. Add claim to the existing notes references.
-
-
-Note Structure. Notes maintain UID references references to the 
-
-
-### Query Grammr
-
-**`container_clause [(? | :f | :filter  ) filter_clause]? [(: | :s | :sort )  sort_clause]?`**
-
-#### ```container_clause```
-[( wild_card | container_name ) \.] note_name
-
-##### ```container_name | note_name```
-(wild_card | text_phrase )
-
-#### ```filter_clause```
-(OR | or | Or | ||)
-(AND | and | And | &&)
-(JUX = text_phrase )
-
-#### ```sort_clause```
-TAG_NAME (Ascending | Descending)?
-Created (Ascending | Descending)?
-Modified (Ascending | Descending)?
-
-API 
-createUID
-
-Graze Server API:
-
-	storeNote
-	retrieveNote
-	removeNote
-	query
-	implode
-
-
-Graze Runtime
-
-	properties:
-
-		note_count : number of notes stored in the current store. 
-
-		cache : references to notes that have been retrieved from store. 
-
-		sort_indexes: 
-
-				create_time : 1
-				modify_time : 2
-				id : 3
-				tags : 4
-				body : 5
-
-
-	methods:
-
-		createUID - 
-
-			Returns a UID value
-
-		createNote -
-			args => note_id : string [, note_tags : array of strings || csv string[, body : string[, UID]]]
-
-			Creates a new note with a new UID, setting creation time stamp to moment of call. At this point, this note is NOT 
-			stored within a data store. Either the notes store/save method must be called, or the note must be passed to graze.store()
-			If UID is supplied, this must be a UID value unique to the store, otherwise, a new note will not be created and the 
-
-			return new Note.
-
-		retrieve - 
-			args => collection or note name : string | uid [,   query : string]
-
-			Retrieves a single note or a note collection. This function accepts a UID, the string name of the desired note, or a list of UID's, or the empty string.
-			An optional query string can be supplied to further reduce the results. This function may return all notes if not supplied with any arguments, so use with caution. 
-
-		remove -
-
-			arg => note : Note | Array[, +]
-
-			Removes a note from the store. Accepts an array of notes, or multiple arguments of notes. Removes the notes from the store. Notes are note fully removed unless the 
-			reference parameter is set to zero, ie, there are no references to that note. Other wise, only the note's removed flag is set and the note can no longer be retrieved from the store. 
-
-		store - 
-			args => note : Note | Array[, +]
-
-			Stores note(s) in the data store, or updates the stored copy with the new value;
-
-Note Container
-
-	Stores a collection of notes. Notes can be indexed by index location
-
-	properties:
-
-		length: number of notes in the container. 
-
-	methods:
-
-		sort:	Returns a new container with nodes sorted according to argument
-				argument can either be a graze.sort_index value or a function
-
-
-Note
-	properties:
-		
-		uid: 128bit string number.  
-		modify-date: UNIX TIME STAMP
-		creation-date: UNIX TIME STAMP
-		id: string - docs.test.me
-		tags: string - csv tag names. could be auto generated
-		body: string or line list or some appropriate data structure. 
-		refs: array of UIDS of referred notes - virtaul 
-
-	methods:
-
-	 	store/save 	: async - saves the note's data to the backing server. returns true if the save was successfull, or returns false. 
-	 	render 		: async - render the note's message data into string output, transforming reducing any note references. 
- 					Accepts a transformer function argument that's used to customize the transformation process. 
-
-Things to keep in mind:
-- Auto updating linked notes.
-- Pinning rendered note data.
-- Refing notes to ensure deletion does not create dead links.
-- Query langauge support sorting. 
-- Determining Default Store 
-	- Couch DB
-	- Mongo DB
-	- Something else?
-- Deduplication
-- Hard Refs vs Soft refs. 
-- Perfomance measuring. What and where to start measuring. 
-	- failure modes
-		- too many notes to handle queries?
-		- max note size?
-- Clipboard note system. 
-	- stuff goes in, gets rendered, comes back out.
-- Plugin for note insertion, how, what apps?
- 	- Sublime
- 	- Firefox
- 	- Chrome
- 	- VSCode
- 	- EDGE Chromium
-- Better UI for notes
+- Website
+- Database backed storage
+	- Self hosting DB driven note server that can be installed as a service
+- Reference UI implementation
 	- Auto-complete query
 	- Seamless MD based rendering
 	- Cross Note Editing
-- User Land Caching for speed ups.
-- Eventing to handle document updates.
-- Export / Import Systems
-- Web page. Created with Graze, of course
-- Different rendering systesm. 
-- CRDTs ;)
-- Container Queries
+- Dynamic note insertion engine
+	- Pinning rendered note data.
+	- Importing of note data into other file types. 
+	- Export of notes from documents using note block syntax. 
+
+## version 3.0 - Dec 2021
+
+- API documentation
+- User Documentation
+
+
