@@ -12,7 +12,7 @@
     "graze": "./source/graze/graze.js"
   },
   "scripts": {
-    "start":"node --experimental-modules ./source/js/client/cli/cli.mjs",
+    "start": "node --experimental-modules ./source/js/client/cli/cli.mjs",
     "electron": "electron -r esm ./apps/electron/main.js",
     "test": "mocha -r esm test/test.js",
     "compile.junction": "hydrocarbon compile -u --name query_parser -o ./source/js/compiler/ -t mjs.js ./source/grammar/junction.hcg",
@@ -27,14 +27,12 @@
     "build_wasm": "./scripts/debian/build_wasm.sh"
   },
   "dependencies": {
-    "@candlefw/charcoal": "latest",
-    "@candlefw/glow": "latest",
-    "@candlefw/html": "candlefw/html",
-    "@candlefw/lantern": "latest",
-    "@candlefw/observer": "^1.0.1-0",
-    "@candlefw/radiate": "latest",
-    "@candlefw/whind": "latest",
-    "@candlefw/wick": "latest",
+    "@candlelib/charcoal": "*",
+    "@candlelib/glow": "*",
+    "@candlelib/lantern": "*",
+    "@candlelib/radiate": "*",
+    "@candlelib/wind": "*",
+    "@candlelib/wick": "*",
     "codemirror": "^5.48.2",
     "commander": "^3.0.0",
     "diff": "^4.0.1",
@@ -43,11 +41,7 @@
     "terser": "^4.2.0"
   },
   "devDependencies": {
-    "@candlefw/hydrocarbon": "latest",
-    "chai": "^4.2.0",
-    "esm": "^3.2.25",
-    "mocha": "latest",
-    "rollup": "^1.18.0",
-    "rollup-plugin-node-resolve": "^5.2.0"
+    "@candlelib/hydrocarbon": "*",
+    "@candlelib/cure": "*"
   }
 }
