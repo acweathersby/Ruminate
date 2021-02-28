@@ -19,9 +19,13 @@ namespace RUMINATE
         static wchar_t uber_buffer[100000];
 
         struct OP_ID {
+
           private:
+
             static const unsigned SITE_MASK  = 0xF8000000;
+
             static const unsigned CLOCK_MASK = ~SITE_MASK;
+
             unsigned data                    = 0;
 
           public:
@@ -62,73 +66,89 @@ namespace RUMINATE
         };
 
 
-        struct ASCII {
+       
+        struct Encoding {
 
-            char val;
+            unsigned  getCodePoint() const {};
 
-            void setFromWChar(wchar_t c) { val = c & 0xFF; }
+            void setCodePoint(const unsigned c) {};
 
-            void setFromChar(char c) { val = c; }
+            bool isDeleteOperation() const {};
+
+            unsigned byteSize() const {};
+
+            bool isDelete() const {};
+        };
+
+        struct ASCII : public Encoding {
+
+            unsigned char val;
+
+            unsigned getCodePoint() const { return val; }
+
+            void setCodePoint(const unsigned c) { val = (c & 127); }
+
+            bool isDeleteOperation() const {  }
 
             unsigned byteSize() const { return 1; }
 
-            wchar_t getWChar() const { return (wchar_t) val; }
-
-            char getChar() const { return val; }
-
-            bool isDelete() const { return (0 == val) ? true : false; }
-
-            static const unsigned max_size() { return 1; }
-
-            unsigned unsignedValue() const { return (unsigned) val; }
+            bool isDelete() const { return 0 == val; }
         };
 
-        template <class Encoding> struct OPChar {
+        struct UTF8 : Encoding {
 
-            Encoding data;
+            unsigned char byte1;
+            unsigned char byte2;
+            unsigned char byte3;
+            unsigned char byte4;
 
-            void setFromWChar(wchar_t c) { data.setFromWChar(c); }
+            unsigned getCodePoint() const { };
 
-            void setFromChar(char c) { data.setFromChar(c); }
+            void setCodePoint(const unsigned c) {  };
 
-            wchar_t getWChar() const { return data.getWChar(); }
+            bool isDeleteOperation() const {  };
 
-            char getChar() const { return data.getChar(); }
+            unsigned byteSize() const {  }
 
-            bool isDeleteOperation() const { return 0 == data.unsignedValue(); }
-
-            unsigned byteSize() const { return data.byteSize(); }
-
-            static const unsigned max_size() { return sizeof(Encoding); }
+            bool isDelete() const {  }
         };
 
-        template <class MetaStamp, class Operator> struct CharOp {
 
-            MetaStamp id     = MetaStamp();
-            MetaStamp origin = MetaStamp();
-            Operator data    = Operator();
+        template <class Encoding> struct OpCharacter {
 
-            CharOp() {}
+            typedef OpCharacter<Encoding> OpChar;
 
-            CharOp(unsigned ref)
-            {
+            OP_ID id        = OP_ID();
+            OP_ID origin    = OP_ID();
+            Encoding data   = Encoding();
+
+            OpCharacter() {}
+
+            OpCharacter(unsigned ref) {
                 id.setSite(ref >> 4);
                 id.setClock(ref & 0xF);
             }
 
-            static const unsigned max_size() { return sizeof(MetaStamp) * 2 + sizeof(Operator); }
+            static OpChar fromBuffer(char * buffer, unsigned offset){ 
+                OpCharacter<Encoding> * op = ((void *)(buffer[offset]));
+                return &op;
+            }   
+
+            void toBuffer(char * buffer, unsigned offset) {
+                memcpy(this, buffer[offset], byteSize());
+            }
+
+            static const unsigned max_size() { return sizeof(OP_ID) * 2 + sizeof(Encoding); }
 
             unsigned toUnsigned() const { return (unsigned) ((id.site() & 0xF) | id.clock() << 4); }
 
             bool isDeleteOperation() const { return data.isDeleteOperation(); }
 
-            unsigned byteSize() const { return data.byteSize() + sizeof(MetaStamp) * 2; }
+            unsigned byteSize() const { return data.byteSize() + sizeof(OP_ID) * 2; }
 
-            void setValue(wchar_t val) { data.setFromWChar(val); }
+            unsigned getCodePoint(const unsigned cp) const { return data.getCodePoint(); };
 
-            wchar_t getValue() const { return data.getWChar(); }
-
-            wchar_t getWChar() const { return data.getWChar(); }
+            void setCodePoint(const unsigned c) { data.setCodePoint(c); };
 
             void setIDSite(const unsigned v) { id.setSite(v); }
 
@@ -146,17 +166,17 @@ namespace RUMINATE
 
             unsigned getOriginClock() const { return origin.clock(); }
 
-            bool isOrigin(const CharOp<MetaStamp, Operator> & op) const
+            bool isOrigin(const OpChar & op) const
             {
                 return (op.getIDClock() == getOriginClock() && op.getIDSite() == getOriginSite());
             }
 
-            bool isSame(const CharOp<MetaStamp, Operator> & op) const
+            bool isSame(const OpChar & op) const
             {
                 return ((int) op.getIDClock() - (int) getIDClock() + (int) op.getIDSite() - (int) getIDSite()) == 0;
             }
 
-            friend std::ostream & operator<<(std::ostream & os, const CharOp<MetaStamp, Operator> & op)
+            friend std::ostream & operator<<(std::ostream & os, const OpChar & op)
             {
                 if (op.isDeleteOperation())
                     return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"DEL\"}";
@@ -166,20 +186,20 @@ namespace RUMINATE
             }
 
             /***** Compares the ids site and clock value *****/
-            friend bool operator==(const CharOp<MetaStamp, Operator> & a, const CharOp<MetaStamp, Operator> & b)
+            friend bool operator==(const OpChar & a, const OpChar & b)
             {
                 return a.isSame(b);
             }
 
             /***** Compares the ids site and clock value *****/
-            friend bool operator<(const CharOp<MetaStamp, Operator> & a, const CharOp<MetaStamp, Operator> & b)
+            friend bool operator<(const OpChar & a, const OpChar & b)
             {
                 return a.getIDClock() < b.getIDClock() ||
                        (a.getIDClock() == b.getIDClock() && a.getIDSite() < b.getIDSite());
             }
 
             /***** Compares the ids site and clock value *****/
-            friend bool operator>(const CharOp<MetaStamp, Operator> & a, const CharOp<MetaStamp, Operator> & b)
+            friend bool operator>(const OpChar & a, const OpChar & b)
             {
                 return a.getIDClock() > b.getIDClock() ||
                        (a.getIDClock() == b.getIDClock() && a.getIDSite() > b.getIDSite());
@@ -189,7 +209,9 @@ namespace RUMINATE
             //		CharOp<MetaStamp, Operator>& operator= (char& c ){ return  * ( CharOp<MetaStamp, Operator> * ) &c;}
         };
 
-        template <class Operator> struct OPBuffer {
+        template <class Encoding> struct OPBuffer {
+
+            typedef OpCharacter<Encoding> OpChar;
 
             unsigned byte_length = 0;
 
@@ -203,7 +225,7 @@ namespace RUMINATE
 
             bool CLONED = false;
 
-            Operator last;
+            OpChar last;
 
             OPBuffer()
             {
@@ -275,12 +297,12 @@ namespace RUMINATE
 
             inline bool atBeginning() const { return op_marker <= 0; }
 
-            Operator current() const { return *((Operator *) &data[op_marker]); }
+            OpChar current() const { return *((OpChar *) &data[op_marker]); }
 
-            Operator next()
+            OpChar next()
             {
 
-                Operator curr = current();
+                OpChar curr = current();
 
                 if (atEnd()) {
                     return last;
@@ -327,7 +349,7 @@ namespace RUMINATE
                 Inserts given Operator into buffer at the current op_marker.
                 Operators following Operator are shifted up the buffer by current().byteSize()
             */
-            bool insert(Operator & op)
+            bool insert(OpChar & op)
             {
 
                 if (maxSizeReached(op.byteSize()) && !expand(size << 1))
@@ -359,9 +381,6 @@ namespace RUMINATE
             {
 
                 unsigned op_size = current().byteSize();
-
-                if (maxSizeReached(op_size) && !expand(size << 1))
-                    return false; // Unable to allocate enough space to expand buffer.
 
                 char * a = &data[op_marker];
                 char * b = &data[op_marker + op_size];
@@ -415,8 +434,12 @@ namespace RUMINATE
         };
 
 
-        template <class CharOperation, class Buffer> class OPString
+        template <class Buffer> class OPString
         {
+            public:
+            typedef OPString<Buffer> OpString;
+            
+            typedef typename Buffer::OpChar OpChar;
 
           private:
             Buffer ops;
@@ -434,8 +457,8 @@ namespace RUMINATE
           public:
             OPString(unsigned s = 0) : ops(8192), sites(s + 1), site(s)
             {
-                CharOperation op;
-                op.setValue(' ');
+                OpChar op;
+                op.setCodePoint(' ');
                 op.setIDSite(s);
                 op.setIDClock(clock);
                 op.setOriginSite(s);
@@ -448,14 +471,14 @@ namespace RUMINATE
             unsigned size() { return length; }
 
           private:
-            CharOperation findOpAtIndex(unsigned index)
+            OpChar findOpAtIndex(unsigned index)
             {
 
                 int offset = -1;
 
-                CharOperation prev_op;
+                OpChar prev_op;
 
-                for (CharOperation op = ops.current(); !ops.atEnd(); op = ops.next()) {
+                for (OpChar op = ops.current(); !ops.atEnd(); op = ops.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else {
@@ -471,16 +494,16 @@ namespace RUMINATE
             }
 
 
-            unsigned insertOp(CharOperation & op, unsigned short_circuit = 0)
+            unsigned insertOp(OpChar & op, unsigned short_circuit = 0)
             {
 
                 // If the op is new (root of the tree) insert
-                for (CharOperation origin_candidate = ops.reset().current(); !ops.atEnd();
+                for (OpChar origin_candidate = ops.reset().current(); !ops.atEnd();
                      origin_candidate               = ops.next()) {
 
                     if (op.isOrigin(origin_candidate)) {
 
-                        CharOperation peer_candidate = ops.next();
+                        OpChar peer_candidate = ops.next();
 
                         if (op.isDeleteOperation())
                         // Delete Operations immediatelly follow there origin operation. This ensures that it's effect
@@ -530,11 +553,9 @@ namespace RUMINATE
             bool remove(unsigned index, unsigned length)
             {
 
-                unsigned i = 0;
-
-                for (; i < length; i++) {
-                    CharOperation source_op = findOpAtIndex(index--);
-                    CharOperation op;
+                for (unsigned i = 0; i < length; i++) {
+                    OpChar source_op = findOpAtIndex(index--);
+                    OpChar op;
 
                     if (source_op.isDeleteOperation()) std::cout << "DELETE" << std::endl;
 
@@ -548,8 +569,6 @@ namespace RUMINATE
                     if (!insertOp(op)) return false;
 
                     length--;
-
-                    source_op = op;
                 }
 
                 return true;
@@ -558,15 +577,13 @@ namespace RUMINATE
             bool insert(unsigned index, const std::wstring & str)
             {
 
-                unsigned i = 0;
-
-                CharOperation source_op = findOpAtIndex(index);
+                OpChar source_op = findOpAtIndex(index);
 
                 unsigned str_len = str.length();
 
-                for (; i < str_len; i++) {
+                for (unsigned i = 0; i < str_len; i++) {
 
-                    CharOperation op;
+                    OpChar op;
 
                     op.setValue(str[i]);
 
@@ -585,7 +602,7 @@ namespace RUMINATE
                 return true;
             }
 
-            friend std::ostream & operator<<(std::ostream & stream, const OPString<CharOperation, Buffer> & string)
+            friend std::ostream & operator<<(std::ostream & stream, const OpString & string)
             {
                 return stream.write((char *) &string.site, sizeof(string.site))
                            .write((char *) &string.sites, sizeof(string.sites))
@@ -594,7 +611,7 @@ namespace RUMINATE
                        << string.ops;
             }
 
-            friend OPString<CharOperation, Buffer> & operator<<(OPString<CharOperation, Buffer> & string,
+            friend OPString & operator<<(OpString & string,
                                                                 std::istream & stream)
             {
                 stream.read((char *) &string.site, sizeof(string.site));
@@ -608,7 +625,7 @@ namespace RUMINATE
             void fromFileStream(std::ifstream & stream)
             {
 
-                CharOperation source_op = findOpAtIndex(0);
+                OpChar source_op = findOpAtIndex(0);
 
                 while (stream.good()) {
 
@@ -619,8 +636,8 @@ namespace RUMINATE
                     unsigned data_size = stream.gcount();
                     //*
                     for (int i = 0; i < data_size; i++) {
-                        CharOperation op;
-                        op.setValue((wchar_t) buffer[i]);
+                        OpChar op;
+                        op.setCodePoint((wchar_t) buffer[i]);
                         op.setIDSite(site);
                         op.setIDClock(clock++);
                         op.setOriginSite(source_op.getIDSite());
@@ -641,9 +658,9 @@ namespace RUMINATE
                     ops.reset();
                 }
 
-                CharOperation prev_op;
+                OpChar prev_op;
 
-                for (CharOperation op = ops.current(); !ops.atEnd(); op = ops.next()) {
+                for (OpChar op = ops.current(); !ops.atEnd(); op = ops.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else {
@@ -671,9 +688,9 @@ namespace RUMINATE
 
                 Buffer ops_ = ops.clone();
 
-                CharOperation prev_op;
+                OpChar prev_op;
 
-                for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
+                for (OpChar op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else {
@@ -706,10 +723,10 @@ namespace RUMINATE
 
             void destroy() { delete this; }
 
-            OPString<CharOperation, Buffer> & split()
+            OpString & split()
             {
 
-                OPString<CharOperation, Buffer> & string = *new OPString<CharOperation, Buffer>(sites++);
+                OpString & string = *new OpString(sites++);
 
                 ops.copy(string.ops);
 
@@ -718,7 +735,7 @@ namespace RUMINATE
                 return string;
             }
 
-            bool merge(OPString<CharOperation, Buffer> & other)
+            bool merge(OpString & other)
             {
 
                 if (other.site == site || &other == this) return false;
@@ -727,7 +744,7 @@ namespace RUMINATE
 
                 Buffer ops_ = other.ops.clone();
 
-                for (CharOperation op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
+                for (OpChar op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
                     if (insertOp(op)) result = true;
                 }
 
@@ -743,7 +760,7 @@ namespace RUMINATE
             */
             unsigned offsetToRef(unsigned offset)
             {
-                const CharOperation & op = findOpAtIndex(offset);
+                const OpChar & op = findOpAtIndex(offset);
 
                 return op.toUnsigned();
             }
@@ -758,11 +775,11 @@ namespace RUMINATE
 
                 unsigned offset = 0;
 
-                CharOperation comp_op(ref);
+                OpChar comp_op(ref);
 
-                CharOperation prev_op;
+                OpChar prev_op;
 
-                for (CharOperation op = ops.reset().current(); !ops.atEnd(); op = ops.next()) {
+                for (OpChar op = ops.reset().current(); !ops.atEnd(); op = ops.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else if (ref == op) {
