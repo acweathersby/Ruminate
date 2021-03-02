@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstring>
-#include "../uid/uid.h"
+#include "../note/uid/uid.h"
 #include "../note/note.h"
-#include "../tags/tags.h"
+#include "../note/tags/tags.h"
 #include "../container/container.h"
 #include "../database/include/base.h"
 

@@ -5,7 +5,7 @@
 #include "../database/include/db_runner.h"
 #include "../note/note.h"
 #include "../string/search.h"
-#include "../uid/uid.h"
+#include "../note/uid/uid.h"
 #include <cstring>
 //#include "./container.h"
 
