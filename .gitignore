@@ -97,3 +97,6 @@ emsdk/
 
 #IDE project directory
 ide/
+
+# Test Binaries
+*.test
