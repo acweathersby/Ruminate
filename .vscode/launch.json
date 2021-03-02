@@ -4,18 +4,32 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "Build and Test CRDT",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
-            "args": [],
-            "stopAtEntry": true,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            //"preLaunchTask": "Build C Python Module"
+            "program": "${fileDirname}/${fileBasenameNoExtension}.test",
+            "linux": {
+                "args": [],
+                "stopAtEntry": false, // If you want it to stop at entry, put a breakpoint there
+                "cwd": "${workspaceFolder}",
+                "environment": [],
+                "filterStdout": false,
+                "externalConsole": false,
+                "MIMode": "lldb",
+                "preLaunchTask": "Build CRDT Test Module",
+                "presentation": {
+                    "hidden": false,
+                    "group": "testing",
+                    "order": 1
+                },
+                "logging": {
+                    "programOutput": true,
+                    "engineLogging": false
+                },
+                "internalConsoleOptions": "neverOpen",
+            }
         }
     ]
 }

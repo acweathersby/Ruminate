@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/source/cpp/",
+                "${workspaceFolder}/source/cpp/string/",
+                "${workspaceFolder}/source/cpp/note/",
+                "${workspaceFolder}/source/cpp/database/",
+                "${workspaceFolder}/source/cpp/localization/",
+                "${workspaceFolder}/source/cpp/query/",
+                "${workspaceFolder}/source/cpp/server/",
+                "${workspaceFolder}/source/cpp/ui/",
+                "${workspaceFolder}/source/cpp/utils/",
+                "${workspaceFolder}/source/cpp/text_command/",
+                "/usr/include/c++/"
+            ],
+            "browse": {},
+            "defines": [],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
