@@ -69,15 +69,13 @@ namespace RUMINATE
        
         struct Encoding {
 
-            unsigned  getCodePoint() const {};
+            unsigned  getCodePoint() const { return 0; };
 
             void setCodePoint(const unsigned c) {};
 
-            bool isDeleteOperation() const {};
+            bool isDeleteOperation() const { return false; };
 
-            unsigned byteSize() const {};
-
-            bool isDelete() const {};
+            unsigned byteSize() const { return 0; };
         };
 
         struct ASCII : public Encoding {
@@ -88,13 +86,14 @@ namespace RUMINATE
 
             void setCodePoint(const unsigned c) { val = (c & 127); }
 
-            bool isDeleteOperation() const {  }
+            bool isDeleteOperation() const { return val == 0;  }
 
             unsigned byteSize() const { return 1; }
-
-            bool isDelete() const { return 0 == val; }
         };
 
+        /**
+         * Frame over a variable length UTF8 sequence
+         */
         struct UTF8 : Encoding {
 
             unsigned char byte1;
@@ -108,9 +107,40 @@ namespace RUMINATE
 
             bool isDeleteOperation() const {  };
 
-            unsigned byteSize() const {  }
+            unsigned byteSize() const {  };
+        };
 
-            bool isDelete() const {  }
+        /**
+         * Frame over a variable length UTF16 sequence
+         */
+        struct UTF16 : Encoding {
+
+            unsigned short low;
+            unsigned short high;
+
+            unsigned getCodePoint() const { };
+
+            void setCodePoint(const unsigned c) {  };
+
+            bool isDeleteOperation() const {  };
+
+            unsigned byteSize() const {  };
+        };
+
+        /**
+         * Fixed length UTF32 codepoint
+         */
+        struct UTF32 : Encoding {
+
+            unsigned codepoint;
+
+            unsigned getCodePoint() const { };
+
+            void setCodePoint(const unsigned c) {  };
+
+            bool isDeleteOperation() const {  };
+
+            unsigned byteSize() const {  }
         };
 
 
@@ -146,9 +176,9 @@ namespace RUMINATE
 
             unsigned byteSize() const { return data.byteSize() + sizeof(OP_ID) * 2; }
 
-            unsigned getCodePoint(const unsigned cp) const { return data.getCodePoint(); };
+            unsigned getCodePoint() const { return data.getCodePoint(); };
 
-            void setCodePoint(const unsigned c) { data.setCodePoint(c); };
+            void setCodePoint(const unsigned cp) { data.setCodePoint(cp); };
 
             void setIDSite(const unsigned v) { id.setSite(v); }
 
@@ -181,7 +211,7 @@ namespace RUMINATE
                 if (op.isDeleteOperation())
                     return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\"DEL\"}";
                 return os << "{\"id\":" << op.id << ",\"origin\":" << op.origin << ",\"value\":\""
-                          << (char) op.getValue() << "\"}";
+                          << (char) op.getCodePoint() << "\"}";
                 return os;
             }
 
@@ -288,10 +318,13 @@ namespace RUMINATE
 
             bool maxSizeReached(unsigned allocation_amount) const { return byte_length + allocation_amount >= size; }
 
+            inline bool atLastOp() const
+            {
+                return op_marker + current().byteSize() >= byte_length;
+            }
+
             inline bool atEnd() const
             {
-                // std::cout << "At end? "<< ((op_marker >= byte_length) ? "TRUE" : "FALSE") <<" count: " << count << "
-                // current size: " << size << " marker:" << op_marker << "byte_length: " << byte_length << std::endl;
                 return op_marker >= byte_length;
             }
 
@@ -347,7 +380,8 @@ namespace RUMINATE
 
             /*
                 Inserts given Operator into buffer at the current op_marker.
-                Operators following Operator are shifted up the buffer by current().byteSize()
+                Operators following Operator are shifted up the buffer by the byte size
+                of the operator
             */
             bool insert(OpChar & op)
             {
@@ -355,18 +389,20 @@ namespace RUMINATE
                 if (maxSizeReached(op.byteSize()) && !expand(size << 1))
                     return false; // Unable to allocate enough space to expand buffer.
 
-                char * a = &data[op_marker];
+                unsigned insert_location = op_marker;
+
+                char * insert_location_pointer = &data[insert_location];
 
                 unsigned op_size = op.byteSize();
                 //*
-                if (!atEnd()) {
-                    std::memmove(&data[op_marker + op_size], a, byte_length - op_marker);
+                if (!atLastOp()) { // Shift all values following the insertion site by op_size bytes
+                    std::memmove(&data[insert_location], insert_location_pointer, byte_length - insert_location);
                 }
                 //*/
 
                 count++;
 
-                std::memcpy(a, &op, op_size);
+                std::memcpy(insert_location_pointer, &op, op_size);
 
                 byte_length += op_size;
 
@@ -414,7 +450,7 @@ namespace RUMINATE
                     if (op.count > 1)
                         do {
                             os << "," << c.next();
-                        } while (!c.atEnd());
+                        } while (!c.atLastOp());
                 }
 
                 return os << "]";
@@ -447,7 +483,7 @@ namespace RUMINATE
             unsigned clock = 0;
 
             unsigned sites = 0;
-
+            // 
             int offset = 80000;
 
             idsite site = 0;
@@ -476,9 +512,11 @@ namespace RUMINATE
 
                 int offset = -1;
 
+                ops.reset();
+
                 OpChar prev_op;
 
-                for (OpChar op = ops.current(); !ops.atEnd(); op = ops.next()) {
+                for (OpChar op = ops.current(); !ops.atLastOp(); op = ops.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else {
@@ -506,7 +544,7 @@ namespace RUMINATE
                         OpChar peer_candidate = ops.next();
 
                         if (op.isDeleteOperation())
-                        // Delete Operations immediatelly follow there origin operation. This ensures that it's effect
+                        // Delete Operations immediately follow there origin operation. This ensures that it's effect
                         // applies BEFORE any other Operation, maintaining the relation [A <=deletes= B]. Since this
                         // operation must remain idempotent, any number of delete operations on a single origin
                         // operation must be ignored after the first one that is observed.
@@ -574,6 +612,26 @@ namespace RUMINATE
                 return true;
             }
 
+        private:
+            bool insertCodePointAfterEstablishingOrigin(OpChar& source_op, OpChar& new_op, unsigned code_point)
+            {
+                OpChar op;
+
+                op.setCodePoint(code_point);
+                op.setIDSite(site);
+                op.setIDClock(clock++);
+                op.setOriginSite(source_op.getIDSite());
+                op.setOriginClock(source_op.getIDClock());
+
+                if (!insertOp(op)) return false;
+
+                length++;
+
+                new_op = op;
+                
+                return true;
+            }
+        public:
             bool insert(unsigned index, const std::wstring & str)
             {
 
@@ -581,24 +639,29 @@ namespace RUMINATE
 
                 unsigned str_len = str.length();
 
+                OpChar new_op;
+
                 for (unsigned i = 0; i < str_len; i++) {
+                    
+                    insertCodePointAfterEstablishingOrigin(source_op,new_op, str[i]);
 
-                    OpChar op;
-
-                    op.setValue(str[i]);
-
-                    op.setIDSite(site);
-                    op.setIDClock(clock++);
-                    op.setOriginSite(source_op.getIDSite());
-                    op.setOriginClock(source_op.getIDClock());
-
-                    if (!insertOp(op)) return false;
-
-                    length++;
-
-                    source_op = op;
+                    source_op = new_op;
                 }
 
+                return true;
+            }
+
+            bool insert(unsigned index, unsigned code_point)
+            {
+
+                OpChar source_op = findOpAtIndex(index);
+
+                OpChar new_op;
+      
+                insertCodePointAfterEstablishingOrigin(source_op, new_op, code_point);
+
+                //source_op = new_op;
+                
                 return true;
             }
 
@@ -660,7 +723,7 @@ namespace RUMINATE
 
                 OpChar prev_op;
 
-                for (OpChar op = ops.current(); !ops.atEnd(); op = ops.next()) {
+                for (OpChar op = ops.current(); !ops.atLastOp(); op = ops.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else {
@@ -690,7 +753,7 @@ namespace RUMINATE
 
                 OpChar prev_op;
 
-                for (OpChar op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
+                for (OpChar op = ops_.reset().current(); !ops_.atLastOp(); op = ops_.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else {
@@ -744,7 +807,7 @@ namespace RUMINATE
 
                 Buffer ops_ = other.ops.clone();
 
-                for (OpChar op = ops_.reset().current(); !ops_.atEnd(); op = ops_.next()) {
+                for (OpChar op = ops_.reset().current(); !ops_.atLastOp(); op = ops_.next()) {
                     if (insertOp(op)) result = true;
                 }
 
@@ -779,7 +842,7 @@ namespace RUMINATE
 
                 OpChar prev_op;
 
-                for (OpChar op = ops.reset().current(); !ops.atEnd(); op = ops.next()) {
+                for (OpChar op = ops.reset().current(); !ops.atLastOp(); op = ops.next()) {
                     if (op.isDeleteOperation()) {
                         offset -= (unsigned) op.isOrigin(prev_op);
                     } else if (ref == op) {
