@@ -23,7 +23,7 @@ namespace RUMINATE
         using std::vector;
         using std::wstring;
 
-        typedef CharOp<OP_ID, OPChar<ASCII>> ASCII_OP;
+        typedef OpCharacter<OP_ID, OPChar<ASCII>> ASCII_OP;
         typedef OPString<ASCII_OP, OPBuffer<ASCII_OP>> JSCRDTString;
 
         class Note
