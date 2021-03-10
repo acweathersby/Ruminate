@@ -2,12 +2,12 @@
 
 ## Note Database, Query, and Composition Framework
 
-Ruminate preseents a set of systems tuned to the task of taking, storing, and retrieving notes.
+Ruminate presents a set of systems tuned to the task of taking, storing, and retrieving notes.
 Notes in the context of ruminate represent a short set of sentences, paragraphs, and short form text data that can be quickly written by a user and referenced later as is or through the dynamic inclusion of the note in other works, including other Ruminate notes. 
 
 Ruminate provides resources to store notes in long and short term storage solutions, such as databases or text files, or in system memory. A query langauge provides ways to retrieve notes through means other than basic keyword searches or hiearachal catagories such as folders. 
 
-The storage of Ruminate data is in CRDT (cuasauly ralational data type) structures, providing a natural means of concurrent editing of note data, either through the act of a singlue user accessing the same note on different devices, or through multiple users interacting within the same note simultaneously. 
+The storage of Ruminate data is in CRDT ( conflict-free replicated data type) structures, providing a natural means of concurrent editing of note data, either through the act of a singlue user accessing the same note on different devices, or through multiple users interacting within the same note simultaneously. 
 
 # Features
 
