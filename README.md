@@ -7,7 +7,7 @@ Notes in the context of ruminate represent a short set of sentences, paragraphs,
 
 Ruminate provides resources to store notes in long and short term storage solutions, such as databases or text files, or in system memory. A query langauge provides ways to retrieve notes through means other than basic keyword searches or hiearachal catagories such as folders. 
 
-The storage of Ruminate data is in CRDT ( conflict-free replicated data type) structures, providing a natural means of concurrent editing of note data, either through the act of a singlue user accessing the same note on different devices, or through multiple users interacting within the same note simultaneously. 
+Ruminate notes are stored in CRDT ( conflict-free replicated data type) structures, providing a natural means of concurrent editing of note data, either through the act of a single user accessing the same note on different devices, or through multiple users interacting within the same note simultaneously. 
 
 # Features
 
