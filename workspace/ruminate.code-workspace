@@ -5,6 +5,6 @@
 		}
 	],
 	"settings": {
-		
+		"clang-format.executable": "/usr/bin/clang-format-10"
 	}
 }

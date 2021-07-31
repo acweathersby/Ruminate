@@ -1,8 +1,8 @@
 {
   "name": "ruminate",
   "type": "module",
-  "version": "0.1.1",
-  "description": "Simple Notes",
+  "version": "0.0.1",
+  "description": "Dynamic Note Framework",
   "main": "source/js/client/cli/cli.mjs",
   "repository": "https://github.com/acweathersby/ruminate",
   "author": "Anthony C Weathersby",
@@ -27,21 +27,11 @@
     "build_wasm": "./scripts/debian/build_wasm.sh"
   },
   "dependencies": {
-    "@candlelib/charcoal": "*",
-    "@candlelib/glow": "*",
-    "@candlelib/lantern": "*",
-    "@candlelib/radiate": "*",
-    "@candlelib/wind": "*",
-    "@candlelib/wick": "*",
-    "codemirror": "^5.48.2",
     "commander": "^3.0.0",
     "diff": "^4.0.1",
-    "electron": "^6.0.0",
+    "electron": "^12.0.0",
     "jsdiff": "^1.1.1",
     "terser": "^4.2.0"
   },
-  "devDependencies": {
-    "@candlelib/hydrocarbon": "*",
-    "@candlelib/cure": "*"
-  }
+  "devDependencies": {}
 }
