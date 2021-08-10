@@ -2,16 +2,20 @@
 
 ## Note Database, Query, and Composition Framework
 
-Ruminate presents a set of systems tuned to the task of taking, storing, and retrieving notes.
-Notes in the context of ruminate represent a short set of sentences, paragraphs, and short form text data that can be quickly written by a user and referenced later as is or through the dynamic inclusion of the note in other works, including other Ruminate notes. 
+Ruminate presents a set of systems tuned to the task of creating, storing, sharing, and composing notes.
 
-Ruminate provides resources to store notes in long and short term storage solutions, such as databases or text files, or in system memory. A query langauge provides ways to retrieve notes through means other than basic keyword searches or hiearachal catagories such as folders. 
+A note is any short (less then 10000 characters) of text and textual data that can be quickly written by a 
+user and referenced later as it was made, or through dynamic composition within other notes, or other text
+based media. 
+
+Ruminate is designed to make storage and retrieval of notes trivial, by allowing the choice of storage medium
+and transmission medium to be aligned with the goals and use cases of the end user. 
 
 Ruminate notes are stored in CRDT ( conflict-free replicated data type) structures, providing a natural means of concurrent editing of note data, either through the act of a single user accessing the same note on different devices, or through multiple users interacting within the same note simultaneously. 
 
 # Features
 
-## version 1.0 - July 2021
+## version 1.0 - AUG 2021
 
 - Base Note Structure 
 	- Notes can be titled, tagged  
@@ -22,7 +26,7 @@ Ruminate notes are stored in CRDT ( conflict-free replicated data type) structur
 - File System Storage
 	- JSON file based note server
 
-## version 2.0 - Oct 2021
+## version 2.0 - DEC 2021
 
 - Website
 - Database backed storage
@@ -36,7 +40,7 @@ Ruminate notes are stored in CRDT ( conflict-free replicated data type) structur
 	- Importing of note data into other file types. 
 	- Export of notes from documents using note block syntax. 
 
-## version 3.0 - Dec 2021
+## version 3.0 - FEB 2021
 
 - API documentation
 - User Documentation
