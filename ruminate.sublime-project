@@ -1,0 +1,33 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+		},
+		{
+			"name": "library",
+			"path": "./crates/lib",
+		},
+		{
+			"name": "web-prototype",
+			"path": "./crates/web-prototype",
+		}
+	],
+	"debugger_configurations":
+	[
+	],
+	"settings":
+	{
+		"LSP":
+		{
+			"clangd":
+			{
+				"enabled": true,
+			},
+			"rust-analyzer":{
+				"enabled" :true,
+			},
+		},
+		"rust_syntax_checking": true,
+	},
+}

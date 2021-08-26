@@ -1,10 +1,12 @@
 {
 	"folders": [
 		{
-			"path": "../"
+			"path": "../",
+			"name": "Ruminate Root"
+		},
+		{
+			"path": "../crates/lib",
+			"name": "Ruminate Library"
 		}
-	],
-	"settings": {
-		"clang-format.executable": "/usr/bin/clang-format-10"
-	}
+	]
 }

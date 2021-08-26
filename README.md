@@ -13,6 +13,8 @@ and transmission medium to be aligned with the goals and use cases of the end us
 
 Ruminate notes are stored in CRDT ( conflict-free replicated data type) structures, providing a natural means of concurrent editing of note data, either through the act of a single user accessing the same note on different devices, or through multiple users interacting within the same note simultaneously. 
 
+Ruminate is designed to integrate with and be integrated in a variety of software and APIs
+
 # Features
 
 ## version 1.0 - AUG 2021
@@ -44,5 +46,6 @@ Ruminate notes are stored in CRDT ( conflict-free replicated data type) structur
 
 - API documentation
 - User Documentation
+
 
 

@@ -1,0 +1,11 @@
+[package]
+name = "lib_ruminate"
+version = "0.0.1"
+edition = "2018"
+
+[lib]
+crate-type = ["lib"]
+path = "src/lib.rs"
+
+[dependencies]
+rand = "0.8.4"

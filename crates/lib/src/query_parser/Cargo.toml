@@ -1,0 +1,12 @@
+[package]
+name = "query_parser"
+version = "0.0.1"
+edition = "2018"
+
+[lib]
+name = "query_parser"
+crate-type = ["lib"]
+path = "./lib.rs"
+
+[dependencies]
+candlelib_hydrocarbon = { path = "/home/work/projects/lib_candle_library/hydrocarbon/source/hc_rust" }
