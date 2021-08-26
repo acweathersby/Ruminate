@@ -28,7 +28,7 @@ where
     pub fn new(site: u32) -> CRDTString<T> {
         let mut vec: Vec<(OPID, T)> = Vec::new();
 
-        vec.push((OPID::new(0, 0), T::default()));
+        //vec.push((OPID::new(0, 0), T::default()));
         //Do some shit to make sure site value is correct
         CRDTString {
             ops: vec,
@@ -64,31 +64,62 @@ where
         let ops_len: usize = self.ops.len();
 
         if ops_len == 0 {
-            self.ops.push(candidate);
-
-            return ops_len;
+            if parent_clock == OPID::get_null_op() {
+                self.ops.push(candidate);
+            }
+            return 0;
         } else {
-            for i in cached_index..ops_len {
-                if self.ops[i].0 == parent_clock {
-                    let mut peer_position = i + 1;
+            let mut i = cached_index;
+            let parent_clock_is_null = parent_clock == OPID::get_null_op();
+            let mut peer_position = 0;
 
-                    if T::is_delete(op) {
-                        //Only need to store one delete per operation.
-                        if peer_position < ops_len && T::is_delete(self.ops[peer_position].1) {
-                            return peer_position;
-                        }
+            if parent_clock_is_null {
+                i = 0;
+            } else {
+                while i < ops_len {
+                    if self.ops[i].0 == parent_clock {
+                        break;
+                    }
+                    i += 1;
+                }
+                peer_position = i + 1;
+            }
+
+            if i < ops_len || parent_clock_is_null {
+                if T::is_delete(op) {
+                    //Delete operations are insert BEFORE their target.
+                    //Only one delete operation per target is allowed.
+
+                    if i > 0 && T::is_delete(self.ops[i - 1].1) {
+                        return i;
                     } else {
-                        while peer_position < ops_len {
-                            let (peer_id, peer_op) = self.ops[peer_position];
+                        self.ops.insert(i, candidate);
+                        return i + 1;
+                    }
+                } else {
+                    let mut cursor = peer_position;
 
-                            if peer_id == candidate_id {
-                                return peer_position;
-                            } else if peer_id < candidate_id && !T::is_delete(peer_op) {
-                                break;
-                            }
+                    while cursor < ops_len {
+                        let (mut peer_id, peer_op) = self.ops[cursor];
 
-                            peer_position += 1;
+                        if T::is_delete(peer_op) {
+                            //Consider the following object as
+                            //the insert the candidate, but do not
+                            // advance the cursor until after consideration
+                            // to ensure the delete operation is left in place
+                            // immediately before its target.
+                            cursor += 1;
+
+                            peer_id = self.ops[cursor].0;
                         }
+
+                        if peer_id == candidate_id {
+                            return cursor;
+                        } else if peer_id < candidate_id {
+                            break;
+                        }
+                        cursor += 1;
+                        peer_position = cursor;
                     }
 
                     if peer_position < ops_len {
@@ -96,9 +127,8 @@ where
                     } else {
                         self.ops.push(candidate)
                     }
-
-                    return peer_position;
                 }
+                return peer_position;
             }
         }
 
@@ -108,13 +138,18 @@ where
     fn get_op_at_index(&self, index: usize) -> (OPID, usize) {
         let len = self.ops.len();
         let mut i = 0 as usize;
-        let mut counter = 0 as usize;
+        let mut counter: i32 = 0;
+
+        if len == 0 {
+            return (OPID::get_null_op(), 0);
+        }
 
         while i < len {
             let (op, command) = self.ops[i];
             if T::is_delete(command) {
                 counter -= 1;
-            } else if counter == index {
+                i += 1; // Skip over the delete operation's target
+            } else if counter as usize == index {
                 return (op, i);
             }
             counter += 1;
@@ -125,12 +160,11 @@ where
 
     pub fn delete(&mut self, index: usize, num_of_deletions: u32) {
         for i in 0..num_of_deletions {
-            let adjusted_index = i as usize + index;
+            let adjusted_index = index;
 
             //Need to make sure all removals match against an OPID
             //Stop when this is not true.
             let (mut parent_op, op_index) = self.get_op_at_index(adjusted_index);
-
             if op_index < usize::MAX {
                 let new_op_id = self.latest.increment();
                 let operation: T = T::delete_command();
@@ -143,17 +177,17 @@ where
     }
 
     pub fn insert(&mut self, index: usize, string: &[T]) {
-        let (mut parent_op, mut op_index) = self.get_op_at_index(index);
+        let (mut par_id, mut op_index) = self.get_op_at_index(index);
 
         if op_index < usize::MAX {
             for operation in string {
-                let new_op_id = self.latest.increment();
+                let new_id = self.latest.increment();
 
-                op_index = self.insert_op(parent_op, (new_op_id, *operation), op_index);
+                op_index = self.insert_op(par_id, (new_id, *operation), op_index);
 
-                self.latest = new_op_id;
+                self.latest = new_id;
 
-                parent_op = self.latest;
+                par_id = self.latest;
             }
         }
     }
@@ -161,36 +195,72 @@ where
     pub fn vector(&self) -> Vec<T> {
         let mut vec: Vec<T> = Vec::with_capacity(self.ops.len());
 
-        for (_, operation) in self.ops.iter() {
-            vec.push(*operation)
+        let mut i: usize = 0;
+
+        let len = self.ops.len();
+
+        while i < len {
+            let (_, operation) = self.ops[i];
+
+            if T::is_delete(operation) {
+                //Skip the next operation since
+                //it has been deleted.
+                i += 1
+            } else {
+                vec.push(operation)
+            }
+
+            i += 1
         }
 
         vec
     }
 
     pub fn export(&self, since: u32, site: u32) -> Vec<(OPID, OPID, T)> {
-        let mut i: usize = 1;
-
         let mut vec: Vec<(OPID, OPID, T)> = Vec::with_capacity(self.ops.len());
 
         for i in 0..self.ops.len() {
-            let (op, data) = self.ops[i];
+            let (id, op) = self.ops[i];
 
-            if op.get_site() == site && op.get_clock() > since {
-                for j in (0..=(i - 1)).rev() {
-                    let (par_op, command) = self.ops[j];
+            if id.get_site() == site && id.get_clock() > since {
+                if T::is_delete(op) {
+                    // A delete operation will always push it's target
+                    // to the output vec before it is pushed to the same
+                    // vec to ensure a target can does exist when merging
+                    let (parent_id, parent_op) = self.ops[i + 1];
 
-                    if !T::is_delete(command) && par_op < op {
-                        vec.push((par_op, op, data));
-                        break;
-                    }
+                    vec.push((
+                        self.get_parent_opid(parent_id, i as i32),
+                        parent_id,
+                        parent_op,
+                    ));
+
+                    vec.push((parent_id, id, op));
+                } else if i == 0 {
+                    vec.push((OPID::get_null_op(), id, op));
+                } else {
+                    vec.push((self.get_parent_opid(id, i as i32), id, op));
                 }
             }
         }
         return vec;
     }
 
-    pub fn import(&mut self, data: Vec<(OPID, OPID, T)>) {}
+    fn get_parent_opid(&self, child_id: OPID, child_index: i32) -> OPID {
+        let mut j: i32 = child_index - 1;
+
+        while j > -1 {
+            let (par_id, op) = self.ops[j as usize];
+
+            if !T::is_delete(op) && par_id < child_id {
+                return par_id;
+            }
+
+            j -= 1;
+        }
+
+        OPID::get_null_op()
+    }
 }
 
 #[cfg(test)]
@@ -205,34 +275,39 @@ mod tests {
             candidate == 8
         }
     }
+
     #[test]
     fn test_crdt_string() {
         let mut stringA: CRDTString<u8> = CRDTString::new(1);
         let mut stringB: CRDTString<u8> = CRDTString::new(2);
         let mut stringC: CRDTString<u8> = CRDTString::new(3);
 
-        stringA.insert(0, "AAAA".as_bytes());
-        stringB.insert(0, "BBBB".as_bytes());
-
-        stringA.merge(&stringB, 2, 0);
-
-        println!("{:?}", String::from_utf8(stringA.vector()));
-        println!("{:?}", String::from_utf8(stringB.vector()));
-
-        stringA.insert(0, "D2D2".as_bytes());
-        stringB.insert(2, "C2C2".as_bytes());
-
-        println!("{:?}", String::from_utf8(stringA.vector()));
-        println!("{:?}", String::from_utf8(stringB.vector()));
+        stringA.insert(0, " AA".as_bytes());
+        stringB.insert(0, " 12".as_bytes());
 
         stringA.merge(&stringB, 2, 0);
         stringB.merge(&stringA, 1, 0);
 
-        stringC.merge(&stringA, 1, 0);
-        stringC.merge(&stringB, 2, 0);
+        stringA.insert(0, " D2 ".as_bytes());
+        stringA.delete(0, 2);
 
-        println!("{:?}", String::from_utf8(stringA.vector()));
-        println!("{:?}", String::from_utf8(stringB.vector()));
-        println!("{:?}", String::from_utf8(stringC.vector()));
+        stringB.insert(2, " D1 ".as_bytes());
+        stringB.delete(0, 2);
+
+        stringA.merge(&stringB, 2, 0);
+        stringB.merge(&stringA, 1, 0);
+
+        assert_eq!(
+            String::from_utf8(stringB.vector()),
+            String::from_utf8(stringA.vector())
+        );
+
+        stringC.merge(&stringB, 2, 0);
+        stringC.merge(&stringA, 1, 0);
+
+        assert_eq!(
+            String::from_utf8(stringC.vector()),
+            String::from_utf8(stringA.vector())
+        );
     }
 }
