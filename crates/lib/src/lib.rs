@@ -11,22 +11,4 @@
  * github.com/acweathersby/ruminate/LICENSE.md
  */
 //---
-mod primitives;
-
-/// Place Holder Function
-///
-/// Temporary function for language orientation
-pub fn placeholder() -> u32 {
-    50
-}
-
-#[cfg(test)]
-
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_placeholder_unit() {
-        assert_eq!(placeholder(), 50);
-    }
-}
+pub mod primitives;

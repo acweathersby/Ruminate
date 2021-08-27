@@ -1,5 +1,5 @@
 [package]
-name = "lib_ruminate"
+name = "lib-ruminate"
 version = "0.0.1"
 edition = "2018"
 
@@ -9,3 +9,4 @@ path = "src/lib.rs"
 
 [dependencies]
 rand = "0.8.4"
+wasm-bindgen = "0.2.75"

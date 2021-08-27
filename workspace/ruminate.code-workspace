@@ -7,6 +7,9 @@
 		{
 			"path": "../crates/lib",
 			"name": "Ruminate Library"
+		},
+		{
+			"path": "../crates/web-prototype"
 		}
 	]
 }

@@ -1,0 +1,78 @@
+import "@radiate";
+import init, * as ruminate from "/pkg/ruminate_prototype.js";
+
+await init();
+
+ruminate.initialize();
+
+const handle = ruminate.create_note();
+
+console.log("handle " + handle);
+
+ruminate.insert_text(handle, 0, "Hello World");
+
+let text = ruminate.get_text(handle);
+
+console.log({text:text});
+
+let notes = [{handle:handle}, {handle:ruminate.create_note()}, {handle:ruminate.create_note()}];
+
+export default <div id="app">
+
+  <head>
+  </head>
+
+
+  <container id="note_list" data={ notes } >
+      <div>
+        Note: {handle} clock { ruminate.get_clock(handle) }
+
+        <style>
+          root {
+            width:90%;
+            margin:5%;
+            background-color:purple;
+            color:white;
+            padding:5px;
+            box-sizing:border-box;
+          }
+        </style>
+      </div>
+  </container>
+
+  <div id="note_view">
+    <h4>Main Editor View of Note here</h4>
+    <br>
+    {text}
+  </div>
+
+  <style type="text/css">
+    body {
+      font-family: "sans-serif";
+    }
+
+    root {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+    }
+
+    #note_list {
+      width: 30%;
+      position: relative;
+      height: 100vh;
+      background-color: rgb(100, 100, 100);
+    }
+
+    #note_view {
+      position: relative;
+      background-color: rgb(220, 220, 220);
+      padding: 50px;
+      width: 70%;
+      height: 100vh;
+      box-sizing: border-box;
+      left: 0;
+    }
+  </style>
+
+</div>;

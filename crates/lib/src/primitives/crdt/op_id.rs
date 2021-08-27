@@ -51,7 +51,7 @@ impl OPID {
         self.data == other.data
     }
 
-    /** Test whether this OPID should come after other */
+    /** Test whether this OPID should be ordered after other */
     pub fn follows(&self, other: &Self) -> bool {
         (self.data - other.data) == 1
     }

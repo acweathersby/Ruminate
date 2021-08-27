@@ -1,141 +1,146 @@
+use js_sys::{JsString, Number};
+use lib_ruminate::primitives::crdt::{CRDTDelete, CRDTString, ASCII_CRDT};
+use lib_ruminate::primitives::uuid::UUID;
+use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
+use wasm_bindgen::JsValue;
+use web_sys::console::*;
 
-#[wasm_bindgen(start)]
-pub fn start() -> Result<(), JsValue> {
-    let document = web_sys::window().unwrap().document().unwrap();
-    let canvas = document.get_element_by_id("canvas").unwrap();
-    let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
+// Normally these objects would be replaced with a table
+// mechanism, but that process will be deferred until a
+// later point.
+struct Store {
+    uuid_to_local_id: HashMap<UUID, u32>,
+    local_id_to_uuid: HashMap<u32, UUID>,
+    local_crdt_strings: HashMap<u32, ASCII_CRDT>,
+}
 
-    let context = canvas
-        .get_context("webgl2")?
-        .unwrap()
-        .dyn_into::<WebGl2RenderingContext>()?;
+static mut global_store: Option<Store> = None;
 
-    let vert_shader = compile_shader(
-        &context,
-        WebGl2RenderingContext::VERTEX_SHADER,
-        r##"#version 300 es
- 
-        in vec4 position;
-
-        void main() {
-        
-            gl_Position = position;
-        }
-        "##,
-    )?;
-
-    let frag_shader = compile_shader(
-        &context,
-        WebGl2RenderingContext::FRAGMENT_SHADER,
-        r##"#version 300 es
-    
-        precision highp float;
-        out vec4 outColor;
-        
-        void main() {
-            outColor = vec4(1, 1, 1, 1);
-        }
-        "##,
-    )?;
-    let program = link_program(&context, &vert_shader, &frag_shader)?;
-    context.use_program(Some(&program));
-
-    let vertices: [f32; 9] = [-0.7, -0.7, 0.0, 0.7, -0.7, 0.0, 0.0, 0.7, 0.0];
-
-    let position_attribute_location = context.get_attrib_location(&program, "position");
-    let buffer = context.create_buffer().ok_or("Failed to create buffer")?;
-    context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-
-    // Note that `Float32Array::view` is somewhat dangerous (hence the
-    // `unsafe`!). This is creating a raw view into our module's
-    // `WebAssembly.Memory` buffer, but if we allocate more pages for ourself
-    // (aka do a memory allocation in Rust) it'll cause the buffer to change,
-    // causing the `Float32Array` to be invalid.
-    //
-    // As a result, after `Float32Array::view` we have to be very careful not to
-    // do any memory allocations before it's dropped.
+#[wasm_bindgen]
+pub fn initialize() {
     unsafe {
-        let positions_array_buf_view = js_sys::Float32Array::view(&vertices);
-
-        context.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            &positions_array_buf_view,
-            WebGl2RenderingContext::STATIC_DRAW,
-        );
-    }
-
-    let vao = context
-        .create_vertex_array()
-        .ok_or("Could not create vertex array object")?;
-    context.bind_vertex_array(Some(&vao));
-
-    context.vertex_attrib_pointer_with_i32(0, 3, WebGl2RenderingContext::FLOAT, false, 0, 0);
-    context.enable_vertex_attrib_array(position_attribute_location as u32);
-
-    context.bind_vertex_array(Some(&vao));
-
-    let vert_count = (vertices.len() / 3) as i32;
-    draw(&context, vert_count);
-
-    Ok(())
-}
-
-fn draw(context: &WebGl2RenderingContext, vert_count: i32) {
-    context.clear_color(0.0, 0.0, 0.0, 1.0);
-    context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-
-    context.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vert_count);
-}
-
-pub fn compile_shader(
-    context: &WebGl2RenderingContext,
-    shader_type: u32,
-    source: &str,
-) -> Result<WebGlShader, String> {
-    let shader = context
-        .create_shader(shader_type)
-        .ok_or_else(|| String::from("Unable to create shader object"))?;
-    context.shader_source(&shader, source);
-    context.compile_shader(&shader);
-
-    if context
-        .get_shader_parameter(&shader, WebGl2RenderingContext::COMPILE_STATUS)
-        .as_bool()
-        .unwrap_or(false)
-    {
-        Ok(shader)
-    } else {
-        Err(context
-            .get_shader_info_log(&shader)
-            .unwrap_or_else(|| String::from("Unknown error creating shader")))
+        global_store = Some(Store {
+            uuid_to_local_id: HashMap::new(),
+            local_id_to_uuid: HashMap::new(),
+            local_crdt_strings: HashMap::new(),
+        })
     }
 }
 
-pub fn link_program(
-    context: &WebGl2RenderingContext,
-    vert_shader: &WebGlShader,
-    frag_shader: &WebGlShader,
-) -> Result<WebGlProgram, String> {
-    let program = context
-        .create_program()
-        .ok_or_else(|| String::from("Unable to create shader object"))?;
+static mut nonce: u32 = 0;
 
-    context.attach_shader(&program, vert_shader);
-    context.attach_shader(&program, frag_shader);
-    context.link_program(&program);
+#[wasm_bindgen]
+pub fn create_note() -> u32 {
+    // This will generate a new UUID that will be used to reference
+    // This note from here on out. For local uses, this UUID is mapped
+    // to a nonce.
 
-    if context
-        .get_program_parameter(&program, WebGl2RenderingContext::LINK_STATUS)
-        .as_bool()
-        .unwrap_or(false)
-    {
-        Ok(program)
-    } else {
-        Err(context
-            .get_program_info_log(&program)
-            .unwrap_or_else(|| String::from("Unknown error creating program object")))
+    let site: u32 = 1;
+
+    let note_local_id = unsafe {
+        nonce += 1;
+        nonce
+    };
+
+    dev_log("Creating note uuid");
+
+    let note_uuid = UUID::new(site);
+
+    dev_log("Registering note uuid into local cache");
+
+    if let Some(store) = unsafe { global_store.as_mut() } {
+        store.uuid_to_local_id.insert(note_uuid, note_local_id);
+        store.local_id_to_uuid.insert(note_local_id, note_uuid);
+    }
+
+    dev_log(&format!(
+        "{:?} created with local id {:?}",
+        note_uuid, note_local_id
+    ));
+
+    dev_log("Creating ASCII CRDT string for note");
+
+    if let Some(store) = unsafe { global_store.as_mut() } {
+        store
+            .local_crdt_strings
+            .insert(note_local_id, ASCII_CRDT::new(site));
+    }
+
+    dev_log("Returning local note handle");
+
+    return note_local_id;
+}
+
+pub fn get_tags() -> JsValue {
+    JsValue::from(Number::from(0))
+}
+
+pub fn set_tag() {}
+
+#[wasm_bindgen]
+pub fn get_note_clock(note_local_id: u32) -> f64 {
+    if let Some(store) = unsafe { global_store.as_mut() } {
+        if let Some(data) = store.local_crdt_strings.get_mut(&note_local_id) {
+            return data.get_local_clock().get_clock() as f64;
+        }
+    }
+    return -1.0;
+}
+
+#[wasm_bindgen]
+pub fn insert_text(note_local_id: u32, insert_index: u32, string: String) -> bool {
+    let bytes = string.as_bytes();
+
+    dev_log("Selecting note data from store");
+
+    if let Some(store) = unsafe { global_store.as_mut() } {
+        if let Some(data) = store.local_crdt_strings.get_mut(&note_local_id) {
+            dev_log("Inserting text into note:");
+            dev_log(&format!("String Length {:?}:", string.len()));
+            dev_log(&format!("String Contents {:?}:", string));
+            data.insert(insert_index as usize, bytes);
+
+            return true;
+        } else {
+            dev_log("Unable to retrieve note data");
+        }
+    }
+
+    false
+}
+
+#[wasm_bindgen]
+pub fn delete_text() -> JsValue {
+    JsValue::from(Number::from(0))
+}
+
+#[wasm_bindgen]
+pub fn get_text(note_local_id: u32) -> String {
+    if let Some(store) = unsafe { global_store.as_mut() } {
+        if let Some(data) = store.local_crdt_strings.get(&note_local_id) {
+            dev_log("Retrieving note contents");
+            if let Ok(note_string) = String::from_utf8(data.vector()) {
+                return note_string;
+            }
+        }
+    }
+
+    dev_log("Unable to retrieve note data");
+    "test".into()
+}
+
+pub fn dev_log(message: &str) {
+    unsafe {
+        log_1(&JsString::from("Ruminate Dev Log: ".to_owned() + message));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_something() {
+        print!("hello world")
     }
 }

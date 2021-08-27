@@ -1,11 +1,38 @@
 use rand::random;
-use std::time::SystemTime;
+use std::hash::Hash;
 const RUMI_MAGIC_NUMBER: u32 = 0x52_55_3F_3B;
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(inline_js = r#"
+export function performance_now(){
+    return Date.now();
+}"#)]
+extern "C" {
+    fn performance_now() -> f64;
+}
+
+#[cfg(target_arch = "wasm32")]
+fn get_u64_timestamp() -> u64 {
+    performance_now() as u64
+}
+
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+fn get_u64_timestamp() -> u64 {
+    use std::time::SystemTime;
+
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(time) => time.as_micros() as u64,
+        Err(_) => 0,
+    }
+}
 
 /**
 A universal unique identifier for ruminate primitives
  */
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct UUID {
     created_time: u64,
     magic: u32,
@@ -13,13 +40,10 @@ pub struct UUID {
 }
 
 impl UUID {
-    fn new(site_u32_id: u32) -> UUID {
+    pub fn new(site_u32_id: u32) -> UUID {
         let rand: u32 = random();
         UUID {
-            created_time: match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-                Ok(time) => time.as_micros() as u64,
-                Err(_) => 0,
-            },
+            created_time: get_u64_timestamp(),
             magic: RUMI_MAGIC_NUMBER,
             random: rand ^ site_u32_id,
         }
@@ -29,18 +53,6 @@ impl UUID {
 impl Default for UUID {
     fn default() -> Self {
         Self::new(0)
-    }
-}
-
-impl PartialEq for UUID {
-    fn eq(&self, other: &Self) -> bool {
-        self.created_time == other.created_time
-            && self.magic == other.magic
-            && self.random == other.random
-    }
-
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
     }
 }
 

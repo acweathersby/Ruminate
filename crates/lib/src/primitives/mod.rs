@@ -1,2 +1,2 @@
-mod crdt;
-mod uuid;
+pub mod crdt;
+pub mod uuid;
