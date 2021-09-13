@@ -12,3 +12,4 @@
  */
 //---
 pub mod primitives;
+pub mod tables;

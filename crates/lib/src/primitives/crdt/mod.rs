@@ -27,7 +27,7 @@ where
     T: Copy + Clone + Default + Debug + CRDTDelete,
 {
     pub fn new(site: u32) -> CRDTString<T> {
-        let mut vec: Vec<(OPID, T)> = Vec::new();
+        let vec: Vec<(OPID, T)> = Vec::new();
 
         //vec.push((OPID::new(0, 0), T::default()));
         //Do some shit to make sure site value is correct
@@ -225,7 +225,7 @@ where
         let mut vec: Vec<(OPID, OPID, T)> = Vec::with_capacity(self.ops.len());
 
         for i in 0..self.ops.len() {
-            let (id, op) = self.ops[i];
+            let (id, op) = self.ops[[i];
 
             if id.get_site() == site && id.get_clock() > since {
                 if T::is_delete(op) {
@@ -268,19 +268,21 @@ where
     }
 }
 
+impl CRDTDelete for u8 {
+    fn delete_command() -> Self {
+        8 // ASCII Backspace
+    }
+
+    fn is_delete(candidate: Self) -> bool {
+        candidate == 8
+    }
+}
+
+pub type ASCII_CRDT = CRDTString<u8>;
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    impl CRDTDelete for u8 {
-        fn delete_command() -> Self {
-            8 // ASCII Backspace
-        }
-
-        fn is_delete(candidate: Self) -> bool {
-            candidate == 8
-        }
-    }
-
     #[test]
     fn test_crdt_string() {
         let mut stringA: CRDTString<u8> = CRDTString::new(1);
@@ -316,15 +318,3 @@ mod tests {
         );
     }
 }
-
-impl CRDTDelete for u8 {
-    fn delete_command() -> Self {
-        8 // ASCII Backspace
-    }
-
-    fn is_delete(candidate: Self) -> bool {
-        candidate == 8
-    }
-}
-
-pub type ASCII_CRDT = CRDTString<u8>;

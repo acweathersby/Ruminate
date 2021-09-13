@@ -29,10 +29,35 @@
 Site UUID - Globally unique site built from user information + device information. 
 Site Name - Human friendly name for a site
 
+Links are references to linking information
+
 # Language Server?
 
+# Tables
 
-#How to use:
+## Tags
+
+> # HASH TABLE
+
+tag_strings -> tag_string > tag_hash
+
+## Note
+
+note_uuid -> note_uuid > note_id
+
+note_data -> note_id > note_crdt #volatile
+
+note_tag_meta -> note_id > tag_hash
+
+note_link_meta -> note_uuid | note_link_id > note_link_data ; note_link_meta  #volatile
+
+## Site
+
+site_id > site_uuid > local_site_id
+
+site_name > site_uuid > site_friendly_name_string
+
+## Query
 
 
 
