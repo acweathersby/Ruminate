@@ -1,40 +1,54 @@
+// #[allow(non_camel_case_types)]
 use super::primitives::crdt::ASCII_CRDT;
-///
 ///
 use super::primitives::uuid::UUID;
 use std::collections::HashMap;
 
-type note_local_id = u32;
+pub type NoteLocalID = u32;
 
-type note_uuid = UUID;
+pub type NoteUUID = UUID;
 
-type note_link_id = u32;
+pub type NoteLinkID = u32;
 
-type note_link_meta = NoteMeta;
+pub type NoteLinkMeta = NoteMeta;
 
-type note_internal_crdt = ASCII_CRDT;
+pub type NoteInternalCRDT = ASCII_CRDT;
 
-type tag_hash = u128;
+pub type TagHash = u128;
 
-type tag_string = String;
+pub type TagString = String;
 
-type site_local_id = u32;
+pub type SiteLocalID = u32;
 
-type site_uuid = UUID;
+pub type SiteUUID = UUID;
 
-type site_name = String;
+pub type SiteName = String;
 
 // Normally these objects would be replaced with a table
 // mechanism, but that process will be deferred until a
 // later point.
-struct Store {
-    tag_string_to_tag_hash: HashMap<tag_string, tag_hash>,
-    tag_hash_to_note: HashMap<tag_hash, note_local_id>,
-    note_uuid_to_local_id: HashMap<note_uuid, note_local_id>,
-    note_data: HashMap<note_local_id, note_internal_crdt>,
-    note_tag_meta: HashMap<note_local_id, NoteMeta>,
-    site_uuid_to_local_site: HashMap<site_local_id, site_uuid>,
-    site_uuid_to_name: HashMap<site_local_id, site_name>,
+pub struct Store {
+    pub tag_string_to_tag_hash: HashMap<TagString, TagHash>,
+    pub tag_hash_to_note: HashMap<TagHash, NoteLocalID>,
+    pub note_uuid_to_local_id: HashMap<NoteUUID, NoteLocalID>,
+    pub note_data: HashMap<NoteLocalID, NoteInternalCRDT>,
+    pub note_tag_meta: HashMap<NoteLocalID, NoteMeta>,
+    pub site_uuid_to_local_site: HashMap<SiteLocalID, SiteUUID>,
+    pub site_uuid_to_name: HashMap<SiteLocalID, SiteName>,
+}
+
+impl Store {
+    pub fn new() -> Self {
+        Store {
+            tag_string_to_tag_hash: HashMap::new(),
+            tag_hash_to_note: HashMap::new(),
+            note_uuid_to_local_id: HashMap::new(),
+            note_data: HashMap::new(),
+            note_tag_meta: HashMap::new(),
+            site_uuid_to_local_site: HashMap::new(),
+            site_uuid_to_name: HashMap::new(),
+        }
+    }
 }
 
 static mut global_store: Option<Store> = None;
