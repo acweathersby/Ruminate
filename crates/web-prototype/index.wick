@@ -1,31 +1,46 @@
 import "@radiate";
-import init, * as ruminate from "/pkg/ruminate_prototype.js";
+
+import init, { 
+    initialize, 
+create_note, 
+get_text, 
+insert_text, 
+delete_text, 
+get_clock
+ } from "/pkg/ruminate_prototype.js";
+import { get_text_diffs } from "/web/assets/js/text_handler.js";
 
 await init();
 
-ruminate.initialize();
+initialize();
 
-const handle = ruminate.create_note();
+const handle = create_note();
 
-console.log("handle " + handle);
+insert_text(handle, 0, "Hello World");
 
-ruminate.insert_text(handle, 0, "Hello World");
+let text = get_text(handle);
 
-let text = ruminate.get_text(handle);
+let old = text;
 
-console.log({text:text});
+let notes = [{handle:handle}, {handle:create_note()}, {handle:create_note()}];
 
-let notes = [{handle:handle}, {handle:ruminate.create_note()}, {handle:ruminate.create_note()}];
+function $update_note(text){ 
+  
+  for(const [type, index, val] of get_text_diffs(old, text)){
+    if(type == 1){
+        insert_text(handle, index, val);
+    }else{
+        delete_text(handle, index, 1);
+    }
+  } 
+  old = text;
+}
 
 export default <div id="app">
 
-  <head>
-  </head>
-
-
   <container id="note_list" data={ notes } >
       <div>
-        Note: {handle} clock { ruminate.get_clock(handle) }
+        Note: {handle} clock { get_clock(handle) }
 
         <style>
           root {
@@ -43,7 +58,7 @@ export default <div id="app">
   <div id="note_view">
     <h4>Main Editor View of Note here</h4>
     <br>
-    {text}
+    <textarea value={text}></textarea>
   </div>
 
   <style type="text/css">

@@ -1,7 +1,9 @@
+use std::iter::FromIterator;
+
 use js_sys::{JsString, Number};
-use lib_ruminate::primitives::crdt::{CRDTDelete, CRDTString, ASCII_CRDT};
-use lib_ruminate::primitives::uuid::UUID;
-use std::collections::HashMap;
+use lib_ruminate::store::*;
+use lib_ruminate::*;
+use log::{LevelFilter, Metadata, Record};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 use web_sys::console::*;
@@ -9,101 +11,94 @@ use web_sys::console::*;
 // Normally these objects would be replaced with a table
 // mechanism, but that process will be deferred until a
 // later point.
-struct Store {
-    uuid_to_local_id: HashMap<UUID, u32>,
-    local_id_to_uuid: HashMap<u32, UUID>,
-    local_crdt_strings: HashMap<u32, ASCII_CRDT>,
+
+static mut GLOBAL_STORE: Option<Store> = None;
+
+struct JSLogger;
+
+impl log::Log for JSLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        unsafe {
+            let string = format!("{} - {}", record.level(), record.args());
+            log_1(&JsString::from(string.to_owned()));
+        };
+    }
+
+    fn flush(&self) {}
 }
 
-static mut global_store: Option<Store> = None;
+static LOGGER: JSLogger = JSLogger;
 
 #[wasm_bindgen]
 pub fn initialize() {
-    unsafe {
-        global_store = Some(Store {
-            uuid_to_local_id: HashMap::new(),
-            local_id_to_uuid: HashMap::new(),
-            local_crdt_strings: HashMap::new(),
-        })
+    if let Ok(_) = log::set_logger(&LOGGER) {
+        log::set_max_level(LevelFilter::Debug);
     }
-}
 
-static mut nonce: u32 = 0;
+    unsafe { GLOBAL_STORE = Some(store_create()) }
+}
 
 #[wasm_bindgen]
 pub fn create_note() -> u32 {
-    // This will generate a new UUID that will be used to reference
-    // This note from here on out. For local uses, this UUID is mapped
-    // to a nonce.
-
-    let site: u32 = 1;
-
-    let note_local_id = unsafe {
-        nonce += 1;
-        nonce
-    };
-
-    dev_log("Creating note uuid");
-
-    let note_uuid = UUID::new(site);
-
-    dev_log("Registering note uuid into local cache");
-
-    if let Some(store) = unsafe { global_store.as_mut() } {
-        store.uuid_to_local_id.insert(note_uuid, note_local_id);
-        store.local_id_to_uuid.insert(note_local_id, note_uuid);
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        return note_create(store);
     }
-
-    dev_log(&format!(
-        "{:?} created with local id {:?}",
-        note_uuid, note_local_id
-    ));
-
-    dev_log("Creating ASCII CRDT string for note");
-
-    if let Some(store) = unsafe { global_store.as_mut() } {
-        store
-            .local_crdt_strings
-            .insert(note_local_id, ASCII_CRDT::new(site));
-    }
-
-    dev_log("Returning local note handle");
-
-    return note_local_id;
+    return 0;
 }
 
 pub fn get_tags() -> JsValue {
     JsValue::from(Number::from(0))
 }
 
-pub fn set_tag() {}
-
 #[wasm_bindgen]
-pub fn get_note_clock(note_local_id: u32) -> f64 {
-    if let Some(store) = unsafe { global_store.as_mut() } {
-        if let Some(data) = store.local_crdt_strings.get_mut(&note_local_id) {
-            return data.get_local_clock().get_clock() as f64;
+pub fn add_tag(note_local_id: u32, tag_string: String) -> u32 {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Ok(id) = tag_add(store, note_local_id, &tag_string) {
+            return id;
         }
     }
-    return -1.0;
+    return 0;
+}
+
+#[wasm_bindgen]
+pub fn remove_tag(note_local_id: u32, tag_string: String) -> bool {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Ok(_) = tag_remove(store, note_local_id, &tag_string) {
+            return true;
+        }
+    }
+    return false;
+}
+
+#[wasm_bindgen]
+pub fn get_tag_string(tag_local_id: u32) -> Result<String, JsValue> {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Some(string) = tag_get_string_from_tag(store, tag_local_id) {
+            return Ok(string);
+        }
+    }
+    Err("Could not get tag string".into())
+}
+
+#[wasm_bindgen]
+pub fn get_tag_ids(note_local_id: u32) -> Vec<u32> {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Some(a) = tag_get_tags_from_note(store, note_local_id) {
+            return Vec::from_iter(a.iter().map(|tag| *tag));
+        }
+    }
+    return vec![];
 }
 
 #[wasm_bindgen]
 pub fn insert_text(note_local_id: u32, insert_index: u32, string: String) -> bool {
-    let bytes = string.as_bytes();
-
-    dev_log("Selecting note data from store");
-
-    if let Some(store) = unsafe { global_store.as_mut() } {
-        if let Some(data) = store.local_crdt_strings.get_mut(&note_local_id) {
-            dev_log("Inserting text into note:");
-            dev_log(&format!("String Length {:?}:", string.len()));
-            dev_log(&format!("String Contents {:?}:", string));
-            data.insert(insert_index as usize, bytes);
-
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Ok(_) = note_insert_text(store, note_local_id, insert_index as usize, &string) {
             return true;
-        } else {
-            dev_log("Unable to retrieve note data");
         }
     }
 
@@ -111,31 +106,23 @@ pub fn insert_text(note_local_id: u32, insert_index: u32, string: String) -> boo
 }
 
 #[wasm_bindgen]
-pub fn delete_text() -> JsValue {
-    JsValue::from(Number::from(0))
-}
-
-#[wasm_bindgen]
-pub fn get_text(note_local_id: u32) -> String {
-    if let Some(store) = unsafe { global_store.as_mut() } {
-        if let Some(data) = store.local_crdt_strings.get(&note_local_id) {
-            dev_log("Retrieving note contents");
-            if let Ok(note_string) = String::from_utf8(data.vector()) {
-                return note_string;
-            }
+pub fn delete_text(note_local_id: u32, insert_index: u32, count: u32) -> bool {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Ok(_) = note_delete_text(store, note_local_id, insert_index as usize, count) {
+            return true;
         }
     }
-
-    dev_log("Unable to retrieve note data");
-    "test".into()
+    false
 }
-
-pub fn dev_log(message: &str) {
-    unsafe {
-        log_1(&JsString::from("Ruminate Dev Log: ".to_owned() + message));
+#[wasm_bindgen]
+pub fn get_text(note_local_id: u32) -> Result<String, JsValue> {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Some(string) = note_get_text(store, note_local_id) {
+            return Ok(string);
+        }
     }
+    Err("Could not get note text".into())
 }
-
 #[cfg(test)]
 mod tests {
 

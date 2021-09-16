@@ -3,6 +3,40 @@
 - NOTE
 - QUERY
 
+# Core Technologies
+
+## Idempotent notes
+
+## CRDT Text Storage
+
+Notes are stored in causal relation data structures that provide inherit mechanisms
+for handling concurrent note updates, unlimited histories, and trivial merging of
+note data from different sources.
+
+## Query Language Linking
+
+Ruminate utilizes a powerful query language to define connections between notes. These
+connection are created ad hoc and can be used to integrate one note into any number of
+other notes. 
+
+> As of now the query language is a traditional procedural language, though research
+> is ongoing in developing AI models that can provide a more intuitive natural language
+> processing query system.
+
+## Built In Syntax Management System.
+
+## Integration with other. 
+
+## Language Agnostic.
+
+
+
+
+
+
+
+
+
 # Core Note DB Columns
 
 `UUID` - Main Identifier Of Note (128bit, atomic)
@@ -22,7 +56,7 @@
 `[local_key, string_data, EPOCH_STAMP]`
 
 # Content - A crCRDT String storing the note's contents
-`[local_key, ccCRDT]`
+`[local_key, crCRDT]`
 
 # Core Meta Information
 

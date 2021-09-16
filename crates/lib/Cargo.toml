@@ -10,3 +10,4 @@ path = "src/lib.rs"
 [dependencies]
 rand = "0.8.4"
 wasm-bindgen = "0.2.75"
+log = "0.4.14"

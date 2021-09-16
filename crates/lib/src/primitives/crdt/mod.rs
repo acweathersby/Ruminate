@@ -1,8 +1,8 @@
 pub mod op_id;
 
+use log::debug;
 use op_id::OPID;
 use std::fmt::Debug;
-
 /**
 Store CRDT data in an opaque buffer and provides
 operations to retrieve, modify, and slice data
@@ -191,6 +191,8 @@ where
                 par_id = self.latest;
             }
         }
+
+        debug!(target:"tag actions", "Inserted [{:?}] operators into CRDT. Clock is now [{:?}]", string.len(), self.latest);
     }
 
     pub fn vector(&self) -> Vec<T> {
@@ -225,7 +227,7 @@ where
         let mut vec: Vec<(OPID, OPID, T)> = Vec::with_capacity(self.ops.len());
 
         for i in 0..self.ops.len() {
-            let (id, op) = self.ops[[i];
+            let (id, op) = self.ops[i];
 
             if id.get_site() == site && id.get_clock() > since {
                 if T::is_delete(op) {
@@ -283,8 +285,34 @@ pub type ASCII_CRDT = CRDTString<u8>;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use log::{LevelFilter, Metadata, Record};
+
+    struct SimpleLogger;
+
+    impl log::Log for SimpleLogger {
+        fn enabled(&self, metadata: &Metadata) -> bool {
+            true
+        }
+
+        fn log(&self, record: &Record) {
+            println!("{} - {}", record.level(), record.args());
+        }
+
+        fn flush(&self) {}
+    }
+    static LOGGER: SimpleLogger = SimpleLogger;
+
+    fn init_logging() {
+        if let Ok(_) = log::set_logger(&LOGGER) {
+            log::set_max_level(LevelFilter::Debug);
+        }
+    }
+
     #[test]
     fn test_crdt_string() {
+        init_logging();
+
         let mut stringA: CRDTString<u8> = CRDTString::new(1);
         let mut stringB: CRDTString<u8> = CRDTString::new(2);
         let mut stringC: CRDTString<u8> = CRDTString::new(3);
