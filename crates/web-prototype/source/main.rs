@@ -1,6 +1,8 @@
 use std::iter::FromIterator;
 
+use js_sys::WebAssembly::Table;
 use js_sys::{JsString, Number};
+use lib_ruminate::primitives::uuid::UUID;
 use lib_ruminate::store::*;
 use lib_ruminate::*;
 use log::{LevelFilter, Metadata, Record};
@@ -50,8 +52,50 @@ pub fn create_note() -> u32 {
     return 0;
 }
 
-pub fn get_tags() -> JsValue {
-    JsValue::from(Number::from(0))
+#[wasm_bindgen]
+pub fn get_local_id_from_uuid(uuid_string: String) -> JsValue {
+    if let Ok(uuid) = UUID::from(&uuid_string) {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            if let Some(local_id) = note_get_local_id_from_uuid(store, uuid) {
+                return JsValue::from(local_id);
+            }
+        }
+    }
+    JsValue::UNDEFINED
+}
+
+#[wasm_bindgen]
+pub fn get_note_uuid_string(note_local_id: u32) -> JsValue {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Some(uuid) = note_get_uuid_from_local_id(store, note_local_id) {
+            return JsValue::from(uuid.to_string());
+        }
+    }
+    JsValue::UNDEFINED
+}
+
+#[wasm_bindgen]
+pub fn get_tags() -> Result<Box<[JsValue]>, JsValue> {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        let tags = tag_get_tags(store);
+        let out = Vec::from_iter(
+            tags.iter()
+                .flat_map(|v| (vec![JsValue::from(&v.1), JsValue::from(v.0)])),
+        );
+        return Ok(out.into_boxed_slice());
+    }
+    return Err(JsValue::UNDEFINED);
+}
+
+#[wasm_bindgen]
+pub fn get_notes_from_tag(tag_string: String) -> Result<Box<[JsValue]>, JsValue> {
+    if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+        if let Some(note_ids) = tag_get_notes(store, &tag_string) {
+            let out = Vec::from_iter(note_ids.iter().map(|&v| JsValue::from(v.clone())));
+            return Ok(out.into_boxed_slice());
+        }
+    }
+    return Err(JsValue::UNDEFINED);
 }
 
 #[wasm_bindgen]

@@ -31,10 +31,12 @@ where
 
         //vec.push((OPID::new(0, 0), T::default()));
         //Do some shit to make sure site value is correct
-        CRDTString {
+        let mut crdt = CRDTString {
             ops: vec,
             latest: OPID::new(site, 0),
-        }
+        };
+
+        crdt
     }
 
     /// Merge one foreign CRDT string with this one, returning
@@ -62,6 +64,7 @@ where
     ) -> usize {
         // Hunt down origin operator
         let (candidate_id, op) = candidate;
+
         let ops_len: usize = self.ops.len();
 
         if ops_len == 0 {
@@ -166,11 +169,14 @@ where
             //Need to make sure all removals match against an OPID
             //Stop when this is not true.
             let (mut parent_op, op_index) = self.get_op_at_index(adjusted_index);
+
             if op_index < usize::MAX {
                 let new_op_id = self.latest.increment();
                 let operation: T = T::delete_command();
 
                 self.insert_op(parent_op, (new_op_id, operation), 0);
+
+                // self.latest = new_op_id;
             } else {
                 break;
             }
@@ -178,7 +184,11 @@ where
     }
 
     pub fn insert(&mut self, index: usize, string: &[T]) {
-        let (mut par_id, mut op_index) = self.get_op_at_index(index);
+        let (mut par_id, mut op_index) = if index == 0 {
+            (OPID::get_null_op(), 0)
+        } else {
+            self.get_op_at_index(index - 1)
+        };
 
         if op_index < usize::MAX {
             for operation in string {
@@ -344,5 +354,26 @@ mod tests {
             String::from_utf8(stringC.vector()),
             String::from_utf8(stringA.vector())
         );
+    }
+
+    use std::str::FromStr;
+
+    #[test]
+    fn string_deletion_and_addition() {
+        init_logging();
+
+        let mut stringA: CRDTString<u8> = CRDTString::new(1);
+
+        stringA.insert(0, "Hello World".as_bytes());
+        stringA.delete(0, 11);
+        stringA.insert(0, "dddd".as_bytes());
+        stringA.delete(0, 4);
+        stringA.insert(0, "a".as_bytes());
+
+        if let Ok(string) = String::from_str("a") {
+            if let Ok(strA) = String::from_utf8(stringA.vector()) {
+                assert_eq!(string, strA);
+            }
+        }
     }
 }

@@ -48,6 +48,37 @@ impl UUID {
             random: rand ^ site_u32_id,
         }
     }
+
+    pub fn from(string_uuid: &String) -> Result<UUID, ()> {
+        let parts: Vec<&str> = string_uuid.split("_").collect();
+        let A = u64::from_str_radix(parts[0].as_ref(), 10);
+        let B = u32::from_str_radix(parts[1].as_ref(), 10);
+        let C = u32::from_str_radix(parts[2].as_ref(), 10);
+        if let Ok(created_time) = A {
+            if let Ok(magic) = B {
+                if let Ok(random) = C {
+                    return Ok(UUID {
+                        created_time,
+                        magic,
+                        random,
+                    });
+                }
+            }
+        };
+        return Err(());
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut string: String = "".to_string();
+
+        string += &self.created_time.to_string();
+        string += "_";
+        string += &self.magic.to_string();
+        string += "_";
+        string += &self.random.to_string();
+
+        string
+    }
 }
 
 impl Default for UUID {

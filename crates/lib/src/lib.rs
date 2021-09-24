@@ -94,12 +94,22 @@ pub fn note_create(store: &mut Store) -> NoteLocalID {
 }
 
 //Returns a notes UUID from its local id
-pub fn note_get_uuid_from_local_id(store: &mut Store, note_local_id: NoteLocalID) -> NoteUUID {
-    return UUID::new(0);
+pub fn note_get_uuid_from_local_id(
+    store: &mut Store,
+    note_local_id: NoteLocalID,
+) -> Option<NoteUUID> {
+    if let Some(uuid) = store.note_local_id_to_uuid.get(&note_local_id) {
+        return Some(uuid.to_owned());
+    }
+    None
 }
 
-pub fn note_get_local_id_from_uuid(store: &mut Store, note_local_id: NoteLocalID) -> NoteUUID {
-    return UUID::new(0);
+pub fn note_get_local_id_from_uuid(store: &mut Store, note_uuid: NoteUUID) -> Option<NoteLocalID> {
+    if let Some(local_id) = store.note_uuid_to_local_id.get(&note_uuid) {
+        return Some(local_id.to_owned());
+    }
+
+    None
 }
 
 pub fn note_get_crdt<'a>(
@@ -273,7 +283,7 @@ pub fn tag_remove(
     return Ok(());
 }
 
-pub fn tag_get_notes(store: &mut Store, tag: TagString) -> Option<Vec<NoteLocalID>> {
+pub fn tag_get_notes(store: &mut Store, tag: &str) -> Option<Vec<NoteLocalID>> {
     debug!(target:"tag actions", "Retrieving note list from Tag [{:?}] ", tag);
     if let Ok(string) = String::from_str(tag) {
         if let Some(tag_local_id) = store.tag_string_to_id.get(&string) {
@@ -306,7 +316,6 @@ pub fn tag_get_string_from_tag(store: &mut Store, tag_local_id: TagLocalID) -> O
     if let Some(tag_string) = store.tag_id_to_string.get(&tag_local_id) {
         return Some(tag_string.clone());
     }
-
     None
 }
 
