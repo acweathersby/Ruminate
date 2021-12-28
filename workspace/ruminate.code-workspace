@@ -2,14 +2,15 @@
 	"folders": [
 		{
 			"path": "../",
-			"name": "Ruminate Root"
+			"name": "Root"
 		},
 		{
-			"path": "../crates/lib",
-			"name": "Ruminate Library"
+			"path": "../lib",
+			"name": "Library"
 		},
 		{
-			"path": "../crates/web-prototype"
+			"path": "../app",
+			"name": "App"
 		}
 	]
 }

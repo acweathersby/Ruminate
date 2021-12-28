@@ -1,0 +1,5 @@
+import "@radiate";
+
+export default <div id="app">
+    Hello World
+</div>

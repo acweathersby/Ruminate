@@ -90,3 +90,12 @@ ide/
 
 # Lock files
 *.lock
+
+# Wick temporary folders
+
+.wick-temp/
+
+
+# Rust build folder
+
+target/

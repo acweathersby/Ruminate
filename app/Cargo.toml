@@ -1,0 +1,13 @@
+[package]
+name = "ruminate-app"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lib-ruminate = { path = "../lib/" }
+getrandom = { version = "0.2.3", features = ["js"] }
+log = "0.4.14"
+
+

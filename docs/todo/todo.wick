@@ -1,0 +1,77 @@
+#! candle.wick app
+
+import {todos, categories} from "@store|persist";
+
+// If the value of todos is undefined, the following
+// "assignment-call" will initialize the store.
+
+todos([{
+    task:"test", 
+    category:"", 
+}]);
+
+categories([
+    "",
+    "UI/UX",
+    "query",
+    "editor",
+    "plugin",
+])
+
+let temp_store = "";
+let temp_title = "";
+let temp_category = "";
+
+function addTodo(){
+    if(temp_store && temp_category){
+        todos.push({task:temp_store, category:temp_category, completed:false})
+        todos = todos;
+        temp_store = "";
+        temp_category = "";
+    }
+}
+
+export default <div>
+    <h1>Ideas</h1>
+    <div class=input>
+    <h2>Category</h2>
+    <container element=select id="category" data={categories} value={temp_category}>
+        <option value={value}>{ value[0].toUpperCase() + value.slice(1) }</option>
+    </container>
+    <h2>Ideas</h2>
+    <textarea type=text value={temp_store}></textarea>
+    <div><button onclick=addTodo>Submit</button></div>
+    </div>
+    <container data={todos}>
+        <div class=todo class={completed; "completed"}><h3>{category}</h3><p>{task}</p><input type=checkbox value={completed}></div>
+    </container>    
+</div>;
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@475&family=Jost&display=swap');
+
+    body {
+        font-family:Inter, arial, sans-serif;
+        background:#e7e7e7;
+        font-size:12px;
+    }
+    root {
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .todo {
+        width:500px;
+        padding:20px;
+        margin:5px;
+        border-radius:10px;
+        background:#EEEEEE;
+
+    }
+
+    .todo.completed{
+        text-decoration:line-through
+    }
+</style>
+

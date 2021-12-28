@@ -1,0 +1,153 @@
+# Ruminate Query Language
+
+@IGNORE g:sp g:nl
+
+# Special Search / Filter Types
+
+f:tagnode       { { t_TAG, id:$2, val:$3, order:$4 } }
+f:creatednode   { { t_CREATED,     val:$2,    order: $3 } }
+f:modifiednode  { { t_MODIFIED,    val:$2,    order: $3 } }
+f:sizenode      { { t_SIZE,        val:$2,    order: $3 } }
+
+f:andnode       { { t_AND,  left:$1,   right:$3  } }
+f:ornode        { { t_OR,  left:$1,   right:$3 } }
+f:notnode       { { t_NOT,  left:$2   } } 
+f:matchnode     { { t_MATCH, value:$1   } } 
+
+<> RNQL > start
+
+<> start > query_body
+
+<> query_body > [ container_clause? filter_clause? sort_clause? ]       f:r { { t_QueryBody, container:$1, filter:$2, sort:$3 } }
+
+## Container Clause
+
+<> container_clause >  \/ ? [ container_identifier(*) identifier? ]     f:r { { t_ContainerClause, path:$2, container:$3 } }
+
+<> container_identifier > identifier \/                                 f:r { $1 }
+
+## Filter Clause ############################################################################################
+
+<> filter_clause > 
+    ( \? :? | t:f :? | t:filter :? | t:Filter | t:FILTER :? )  
+        and_expression                                                 f:r { $2 }      
+
+<> and_expression > or_expression
+    | or_expression \&& and_expression                                   
+                                                                        f:r=>andnode
+    | or_expression t:AND and_expression                                 
+                                                                        f:r=>andnode
+    | or_expression t:And and_expression                                 
+                                                                        f:r=>andnode
+    | or_expression t:and and_expression                                 
+                                                                        f:r=>andnode
+
+<> or_expression > not_expression
+    | not_expression \|| or_expression                                   
+                                                                        f:r=>ornode
+    | not_expression t:OR or_expression                                  
+                                                                        f:r=>ornode
+    | not_expression t:Or or_expression                                  
+                                                                        f:r=>ornode
+    | not_expression t:or or_expression                                  
+                                                                        f:r=>ornode
+
+<> not_expression > wrapped_expression
+    | t:NOT wrapped_expression                                           
+                                                                        f:r=>notnode
+    | t:Not wrapped_expression                                           
+                                                                        f:r=>notnode
+    | t:not wrapped_expression                                           
+                                                                        f:r=>notnode
+    | \!   wrapped_expression                                           
+                                                                        f:r=>notnode
+
+<> wrapped_expression > \( statement \)                                 
+                                                                        f:r {$2}
+    | sentence                                                          
+                                                                        f:r=>matchnode
+    | tk:identifier_part                                                        
+                                                                        f:r=>matchnode
+    | statement 
+
+## Sort Clause ############################################################################################
+
+<> sort_clause > 
+    ( \| | t:s \: ? | t:sort \: ? | t:SORT \: ? | t:Sort \: ? ) statement(*\, )  
+
+<> statement > created_statement
+    | modified_statement
+    | size_statement
+    | tag_statement
+
+<> created_statement > 
+
+    (t:created | t:CREATED) comparison_expression? order?              
+                                                                        f:r=>creatednode
+
+<> modified_statement > 
+
+    (t:modifier | t:MODIFIED) comparison_expression? order?            
+                                                                        f:r=>modifiednode
+
+<> size_statement > 
+
+    ( t:size | t:SIZE) comparison_expression order?                    
+                                                                        f:r=>sizenode
+
+<> tag_statement >  
+
+    \# identifier comparison_expression? order?                     
+                                                                        f:r=>tagnode
+    
+<> comparison_expression > 
+
+      (t:is | t:equals | = | t:that t:is )  g:num                        
+                                                                        f:r { { t_EQUALS_QUANTITATIVE, val: f64($2) } }
+    | (t:is | t:equals | = | t:that t:is )  identifier                   
+                                                                        f:r { { t_EQUALS_QUALITATIVE, val: $2 } }
+    | (t:is t:greater t:than? | > | t:greater) g:num                    
+                                                                        f:r { { t_GREATERTHAN, val: f64($2) } }
+    | (t:is t:less t:than? | < | t:lesser) g:num                        
+                                                                        f:r { { t_LESSTHAN, val: f64($2) } }
+    | t:is? range_expression                                            
+                                                                       
+    | t:is? date_expression                                             
+                                                                        
+
+<> range_expression > (t:from) g:num 
+    ( (t:to | - | t:TO | t:To | t:through ) g:num f:r { $2 })?          
+                                                                        f:r { { t_RANGE, left: f64($1), right: f64($2) } }
+    
+<> date_expression > (t:on | t:date) (string_data | g:num) 
+    ( (t:to | -| t:TO | t:To ) (string_data | g:num) f:r { $2 })?      
+                                                                        f:r { { t_DATE,  from: str($2), to:str($3) }}
+
+<>order > (t:DES | t:des | t:descending | t:DESCENDING | t:down | \> )     
+                                                                        f:r { { t_ORDER, val:f64(-1) } }
+    | (t:ASC | t:asc | t:ascending | t:ASCENDING | t:up | \< )             
+                                                                        f:r { { t_ORDER, val:f64(1) } }
+
+<> identifier > identifier_part(+)                                  
+                                                                        f:r { { t_IDENTIFIERS, ids:$1 } }
+
+<> identifier_part > wild_card                                              
+    | tk:string_data
+
+<> sentence > \" tk:string_data \"                                  
+                                                                        f:r {$2}
+    | \' tk:string_data \'                                          
+                                                                        f:r {$2}
+
+<> string_data > string_symbols string_data_val(*)                
+
+<> wild_card > \*
+
+<> string_data_val > string_symbols 
+    | escaped_value
+    | g:sp
+
+<> escaped_value > \\ string_symbols                                
+
+<> string_symbols > g:num | g:sym | g:id
+

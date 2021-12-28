@@ -1,0 +1,14 @@
+[package]
+name = "lib-ruminate"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["lib"]
+path = "src/lib.rs"
+
+[dependencies]
+rand = "0.8.4"
+wasm-bindgen = "0.2.75"
+log = "0.4.14"
+hctk = {path="/home/work/projects/lib_hydrocarbon_tk/packages/rt_rust"}
