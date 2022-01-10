@@ -12,24 +12,39 @@ f:sizenode      { { t_SIZE,        val:$2,    order: $3 } }
 f:andnode       { { t_AND,  left:$1,   right:$3  } }
 f:ornode        { { t_OR,  left:$1,   right:$3 } }
 f:notnode       { { t_NOT,  left:$2   } } 
-f:matchnode     { { t_MATCH, value:$1   } } 
+f:matchnode     { { t_MATCH, value:str($1)   } } 
 
 <> RNQL > start
 
 <> start > query_body
 
-<> query_body > [ container_clause? filter_clause? sort_clause? ]       f:r { { t_QueryBody, container:$1, filter:$2, sort:$3 } }
+<> query_body > [ ( \[ container_clause \] f:r{$2} )? filter_clause? sort_clause? ]       f:r { { t_QueryBody, container:$1, filter:$2, sort:$3 } }
 
 ## Container Clause
 
-<> container_clause >  \/ ? [ container_identifier(*) identifier? ]     f:r { { t_ContainerClause, path:$2, container:$3 } }
+<> container_clause >  ( container_identifier \/ (*) f:r{ { t_PathPart, ids:$1, dividers:i32($2) }  } )(+)      f:r { { t_ContainerClause, path:$1, PATH_ONLY:bool($2) } }       
 
-<> container_identifier > identifier \/                                 f:r { $1 }
+<> container_identifier > container_identifier_part(+)                                  
+                                                                        
+<> container_identifier_part > container_wild_card                                              
+    | container_string_data
+
+<> container_string_data > container_string_data_val(*\" )                                               f:r { { t_TextFrag, val:$1 } }
+
+<> container_wild_card > \*                                                                              f:r { { t_WildCard } }
+
+<> container_string_data_val > container_string_symbols 
+    | container_escaped_value
+
+<> container_escaped_value > \\ string_symbols                                
+
+<> container_string_symbols > g:sp | g:nums | g:num | g:ids | g:sym | g:id
+
+
 
 ## Filter Clause ############################################################################################
 
-<> filter_clause > 
-    ( \? :? | t:f :? | t:filter :? | t:Filter | t:FILTER :? )  
+<> filter_clause >  t:filter   
         and_expression                                                 f:r { $2 }      
 
 <> and_expression > or_expression
@@ -72,8 +87,7 @@ f:matchnode     { { t_MATCH, value:$1   } }
 
 ## Sort Clause ############################################################################################
 
-<> sort_clause > 
-    ( \| | t:s \: ? | t:sort \: ? | t:SORT \: ? | t:Sort \: ? ) statement(*\, )  
+<> sort_clause > t:sort statement(+\, )  
 
 <> statement > created_statement
     | modified_statement
@@ -102,13 +116,13 @@ f:matchnode     { { t_MATCH, value:$1   } }
     
 <> comparison_expression > 
 
-      (t:is | t:equals | = | t:that t:is )  g:num                        
+      (t:is | t:equals | = | t:that t:is )  g:nums                        
                                                                         f:r { { t_EQUALS_QUANTITATIVE, val: f64($2) } }
     | (t:is | t:equals | = | t:that t:is )  identifier                   
                                                                         f:r { { t_EQUALS_QUALITATIVE, val: $2 } }
-    | (t:is t:greater t:than? | > | t:greater) g:num                    
+    | (t:is t:greater t:than? | > | t:greater) g:nums                    
                                                                         f:r { { t_GREATERTHAN, val: f64($2) } }
-    | (t:is t:less t:than? | < | t:lesser) g:num                        
+    | (t:is t:less t:than? | < | t:lesser) g:nums                        
                                                                         f:r { { t_LESSTHAN, val: f64($2) } }
     | t:is? range_expression                                            
                                                                        
@@ -128,18 +142,18 @@ f:matchnode     { { t_MATCH, value:$1   } }
     | (t:ASC | t:asc | t:ascending | t:ASCENDING | t:up | \< )             
                                                                         f:r { { t_ORDER, val:f64(1) } }
 
-<> identifier > identifier_part(+)                                  
-                                                                        f:r { { t_IDENTIFIERS, ids:$1 } }
+<> identifier > identifier_part(+\" )                                  
+                                                                        f:r { { t_IDENTIFIER, ids:$1 } }
 
 <> identifier_part > wild_card                                              
-    | tk:string_data
+    | string_data
 
-<> sentence > \" tk:string_data \"                                  
+<> sentence > \" string_data \"                                  
                                                                         f:r {$2}
-    | \' tk:string_data \'                                          
+    | \' string_data \'                                          
                                                                         f:r {$2}
 
-<> string_data > string_symbols string_data_val(*)                
+<> string_data > string_symbols string_data_val(*\" )                      f:r { str($1) + str($2)  }
 
 <> wild_card > \*
 
@@ -149,5 +163,5 @@ f:matchnode     { { t_MATCH, value:$1   } }
 
 <> escaped_value > \\ string_symbols                                
 
-<> string_symbols > g:num | g:sym | g:id
+<> string_symbols > g:nums | g:ids | g:id
 

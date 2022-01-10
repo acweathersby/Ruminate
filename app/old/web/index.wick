@@ -1,0 +1,169 @@
+import "@radiate";
+import tagbucket from "./web/components/bucket.wick";
+
+import init, { 
+  initialize, 
+  create_note, 
+  get_text, 
+  insert_text, 
+  delete_text, 
+  get_clock,
+  get_tags,
+  add_tag,
+  remove_tag
+} from "/pkg/ruminate_prototype.js";
+import { 
+  get_text_diffs, 
+  get_hierarchy_list, 
+  convertText 
+  } from "/web/assets/js/text_handler.js";
+
+import note from "./web/components/note/note.wick";
+
+await init();
+initialize();
+
+let notes = [];
+
+
+
+let prime_handle = -1;
+let text = "";
+let old = "";
+let test = "";
+let tags = get_hierarchy_list(get_tags);
+
+function $update_note(text){ 
+  if(prime_handle >= 0){
+    for(const [type, index, val] of get_text_diffs(old, text)){
+
+      if(type == 1){
+          insert_text(prime_handle, index, val);
+      }else{
+          delete_text(prime_handle, index, 1);
+      }
+    } 
+
+    old = text;
+
+    test = get_text(prime_handle);
+
+    const result = convertText(test);
+
+    if(result){
+      "@#output".innerHTML = "";
+      "@#output".appendChild(result);
+    };
+  }
+}
+
+function $update_view(prime_handle){ 
+  if(prime_handle >= 0){
+    const val = get_text(prime_handle);
+    old = val;
+    text = val;
+  }
+}
+
+function create_new_note(){
+  const note = create_note();
+  if(note == 1){
+    insert_text(note, 0, "# Hello World\n This is a test @[2] for this note \n```js\ntest block\n```\n");
+    add_tag(note, "/title/The Pernasium of the coloseum");
+  }else {
+    insert_text(note, 0, "# Gabooga");
+    add_tag(note, "/title/The Pernasium of the coloseum" + note);
+  }
+  tags = get_hierarchy_list(get_tags)
+  notes.push({id:note});
+  notes = notes.slice(); // Inform WICK the array has been modified.
+}
+
+create_new_note()
+create_new_note()
+
+export default <div id="app">
+
+  <button onclick={create_new_note()}>Create Note</button>
+  <container id="note_list" data={ notes } >
+      <div onclick={ prime_handle = handle } >
+        Note: {handle} clock
+        <style>
+
+          root:hover{
+            cursor: pointer
+          }
+
+          root {
+            width:90%;
+            margin:5%;
+            padding:5px;
+            box-sizing:border-box;
+            border: 1px solid;
+            border-radius: 2px;
+          }
+        </style>
+      </div>
+  </container>
+
+  <container ele="div" id="note_view" data={ notes } >
+      <note/>
+  </container>
+
+  <div id="tag_list_view">
+    <container data={tags}>
+      <tagbucket/>
+    </container>
+  </div>
+
+  <style type="text/css">
+    body {
+      font-family: "serif";
+      font-size: 12px;
+    }
+
+    p {
+      margin: 8px;
+    }
+
+    code {
+      position: relative;
+      padding: 5px;
+      display: block;
+      border-radius: 2px;
+      background-color: #cccccc;
+    }
+
+    root {
+      color:rgb(80, 80, 88);
+      display: flex;
+      height: 100vh;
+      width: 100%;
+    }
+
+    #note_list {
+      width: 30%;
+      position: relative;
+      height: 100vh;
+      background-color: #ded9d6;
+      border-right: 1px solid #cccccc;
+    }
+
+    #note_view {
+      position: relative;
+      background-color: #ece8e6;
+      padding: 50px;
+      width: 70%;
+      height: 100vh;
+      box-sizing: border-box;
+      left: 0;
+    }
+
+    #note_view textarea {
+      outline:none;
+      border:none;
+      background:none
+    }
+  </style>
+
+</div>;

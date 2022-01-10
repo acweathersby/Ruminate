@@ -1,0 +1,28 @@
+import * as rm from "/pkg/ruminate_prototype.js";
+import * as txt from "/web/assets/js/text_handler.js";
+
+import {id} from "@model";
+
+import header from "./header.wick";
+import paragraph from "./paragraph.wick";
+import codeblock from "./codeblock.wick";
+import cursor from "./cursor.wick";
+
+let data = txt.construct_edit_tree(id);
+
+export default <note> 
+    <container {data}>
+        <div use-empty >Empty</div>
+        <header use-if={m.type=="header"}/>
+        <paragraph use-if={m.type=="paragraph"}/>
+        <codeblock use-if={m.type=="code-block"}/>
+        <cursor use-if={m.type=="cursor"}/>
+    </container>
+
+    <style>
+        root *{
+            outline:none;
+        }
+
+    </style>
+</note>

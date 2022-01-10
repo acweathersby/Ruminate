@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="generator" content="@candlelib/wick-0.16.1"> 
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    
+    <style id="wick-boiler-plate">
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+        position:absolute; 
+        top:0;
+        left:0; 
+        width:100%;
+        padding:0;
+        margin:0; border:none;
+    }
+    
+    li { list-style:none }
+    
+    a { text-decoration:none }
+    
+    </style>
+
+    <style id="radiate">
+
+        .radiate-app-view {
+            position:unset;
+            width:unset;
+            height:unset;
+        }
+
+        .radiate-page {
+            width:100%;
+        }
+
+        .radiate-hide {
+            opacity:0;
+        }
+
+        radiate-modals {
+            position:fixed;
+            width:100%;
+            top:0;
+            left:0;
+            z-index:100000;
+        }
+
+        radiate-modals iframe{
+            border: none;
+            width:100vh;
+            height:100vh;
+        }
+    </style>
+
+    <style id="wick-app-style">
+    
+                .WkMgrFcwSMi26kRH{
+                    font-family:arial , sans-serif;
+                    width:100%;
+                    display:flex;
+                    min-height:100vh;
+                    background:#f9f9f9;
+                    font-size:14px
+                }
+                
+                .WkMgrFcwSMi26kRH .main{
+                    height:100%;
+                    width:70%;
+                    margin:20px 80px
+                }
+                
+                .WkMgrFcwSMi26kRH .leftsb{
+                    background:#ffffff;
+                    width:15%
+                }
+                
+                .WkMgrFcwSMi26kRH .rightsb{
+                    background:#ffffff;
+                    width:15%;
+                    padding:10px
+                }
+                
+                .WkMgrFcwSMi26kRH .rightsb ul{
+                    margin:0;
+                    padding:0;
+                    padding-left:10px;
+                    display:flex;
+                    width:100%;
+                    flex-basis:fit-content;
+                    flex-direction:row;
+                    justify-content:space-between;
+                    flex-flow:wrap
+                }
+                
+                .WkMgrFcwSMi26kRH .rightsb li{
+                    width:50%;
+                    margin:8px 0
+                }
+                
+                .WkMgrFcwSMi26kRH .note{
+                    width:100%
+                }
+                
+                .WkMgrFcwSMi26kRH .note-body{
+                    background:#ffffff;
+                    padding:80px;
+                    border-radius:10px
+                }
+                
+                .WkMgrFcwSMi26kRH .note-header{
+                    padding-left:20px
+                }
+                
+                .WkMgrFcwSMi26kRH .search{
+                    width:100%
+                }
+                
+                .WkMgrFcwSMi26kRH .search-input{
+                    width:100%;
+                    background:#f0f0f0;
+                    font-size:1.2em;
+                    border:none;
+                    padding:10px 20px;
+                    border-radius:20px
+                }
+    </style>
+  </head>
+  <body>
+    <script> document.body.classList.toggle("radiate-init"); </script>
+
+    <div id="app" class="WkMgrFcwSMi26kRH wk-c-0">
+      <div class="leftsb wk-claim-0">
+      </div>
+      <div class="main wk-claim-0">
+        <div class="search wk-claim-0">
+          <input class="search-input wk-claim-0" type="text" placeholder="test"/>
+        </div>
+        <div class="note wk-claim-0">
+          <div class="note-header wk-claim-0">
+            <h3 class="note-path wk-claim-0">A/B/C
+            </h3>
+            <h1 class="note-title wk-claim-0">Welcome To Ruminate
+            </h1>
+          </div>
+          <div class="note-body wk-claim-0">
+            <p class="wk-claim-0"> "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?" 
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="rightsb wk-claim-0">
+        <section class="wk-claim-0">
+          <h4 class="wk-claim-0">Publish
+          </h4>
+          <ul class="wk-claim-0">
+            <li class="wk-claim-0">medium
+            </li>
+            <li class="wk-claim-0">facebook
+            </li>
+            <li class="wk-claim-0">devto
+            </li>
+            <li class="wk-claim-0">reddit
+            </li>
+            <li class="wk-claim-0">netlify
+            </li>
+          </ul>
+        </section>
+        <section class="wk-claim-0">
+          <h4 class="wk-claim-0">Link
+          </h4>
+        </section>
+      </div>
+    </div>
+
+    <script type=module id="wick-init-script">
+      
+				import {radiate} from "./src/pack.js";
+                
+    const w = wick;
+
+    w.rt.appendPresets({"repo":[["McW5jR9wc","./src/pack.js",0]]});
+
+    
+      w.rt.rC(class WkMgrFcwSMi26kRH extends w.rt.C{
+      
+          async async_init(  ){this.rt.context.api.McW5jR9wc.module.init();}
+      
+          init_interfaces( c ){
+      
+              c.lookup_function_table = [c.u0];
+      
+              c.attr = new Map(
+      
+                  [["init",{ val:undefined, meta:574619648, module:"McW5jR9wc" }]]
+              );
+          }
+      });
+    
+				radiate.default();
+    </script>
+  </body>
+</html>

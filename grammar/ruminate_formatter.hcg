@@ -7,45 +7,47 @@
 
 <> note > line(+)
 
+        f:r { { t_Markdown, lines: $1 } }
+
 <> line > 
         code_block
 
         | 
 
         line_header section_line_content?
-        
-        f:r { new env.SectionNode($1[0], $1[1], [...$1.slice(2), ...$2]) }
+
+        f:r { { t_Line, header:$1, content:$2 } }
 
 
 <> code_block > g:nl \``` text? code_line(*) code_block_sentinel
 
-        f:r { new env.SectionNode("code-block", { data:$3 }, $4 ) }
+        f:r { { t_CodeBlock, syntax:str($2), data:$3 } }
 
 <> line_header > 
 
     g:nl ( \###### | \##### | \#### | \### | \## | \# )
 
-        f:r { ["header", {level:$2.length}] }
+        f:r { { t_Header, val:str($2) } }
 
     |   g:nl (( \* | g:num \) f:r{$1} ) g:sp f:r{$1})(+)
 
-        f:r { ["bullet-header", {level:$2} ] }
+        f:r { { t_BulletHeader, level:str($2) } }
 
     |   g:nl (( \> ) g:sp)(+)
 
-        f:r {  [ "quote", {level:$2} ] }
+        f:r { { t_Quote, level:str($2) } }
     
     |   g:nl \#######
 
-        f:r { ["paragraph", null, ["text", {text:$2 || ""} ] ] }
+        f:r { { t_Paragraph, text: str($2) } }
 
     |   g:nl \````
 
-        f:r { [ "paragraph", null, ["text", {text:$2 || ""} ] ] }
+        f:r { { t_Paragraph, text: str($2) } }
 
     |   g:nl
 
-        f:r { [ "paragraph", null ] }
+        f:r { { t_Paragraph, text: str("") } }
 
 <> code_block_sentinel >
 
@@ -60,7 +62,7 @@
 
         g:nl code_line_text?
 
-        f:r { ["text", {text:$2 || ""} ] }
+        f:r { { t_Text, text: str($2) } }
 
 <> code_line_text > 
     (   g:num 
@@ -83,9 +85,9 @@
 
 <> note_insertion >
 
-    \@[ g:num \]
+    \@{ code_line_text \}
 
-        f:r { ["note-insertion", {query_id:$2}] }
+        f:r { { t_Query, query: str($2) } }
 
 <> text > 
     (   g:num 
@@ -94,25 +96,25 @@
     |   g:sym
     )(+\" )
 
-        f:r { ["text", {text:$1}] }
+        f:r { { t_Text, text: str($1) } }
 
 <> format_markerA > 
 
         \*
 
-        f:r { ["format-marker-A"] }
+        f:r { { t_MarkerA } }
 
 <> format_markerB > 
 
         \_
 
-        f:r { ["format-marker-B"] }
+        f:r { { t_MarkerB } }
 
 <> format_markerC > 
 
         \`
 
-        f:r { ["format-marker-C"] }
+        f:r { { t_MarkerC } }
         
         
 

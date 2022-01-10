@@ -11,21 +11,7 @@
   "bin": {
     "graze": "./source/graze/graze.js"
   },
-  "scripts": {
-    "start": "node --experimental-modules ./source/js/client/cli/cli.mjs",
-    "electron": "electron -r esm ./apps/electron/main.js",
-    "test": "mocha -r esm test/test.js",
-    "compile.junction": "hydrocarbon compile -u --name query_parser -o ./source/js/compiler/ -t mjs.js ./source/grammar/junction.hcg",
-    "compile.junction.test": "hydrocarbon compile -d -u -m ./source/grammar/junction.hcg",
-    "compile.query.js": "hydrocarbon compile -u --name query_parser -o ./source/js/compiler/ -t mjs.js ./source/grammar/command_string.cpp.hcg",
-    "compile.query.cpp": "hydrocarbon compile -u --name query_parser --cpp -o ./source/cpp/compiler/ -t cpp ./source/grammar/command_string.cpp.hcg",
-    "compile.query.test": "hydrocarbon compile -d -u -m ./source/grammar/command_string.cpp.hcg",
-    "test.watch": "mocha -r esm -w test/test.js",
-    "build": "rollup --config ./build/config/config.js",
-    "build.watch": "rollup --config ./build/config/config.js --watch",
-    "build_test_data": "node ./test/data/data_builder.js",
-    "build_wasm": "./scripts/debian/build_wasm.sh"
-  },
+  "scripts": {},
   "dependencies": {
     "hctoolkit": "^0.0.15"
   },

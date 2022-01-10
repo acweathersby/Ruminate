@@ -1,7 +1,7 @@
 /**
  * Ruminate Library
  *
- * Copyright 2021 Anthony C Weathersby
+ * Copyright 2022 Anthony C Weathersby
  *
  * All rights reserved
  *
@@ -10,10 +10,6 @@
  * If license was not provided with this distribution then refer to
  * github.com/acweathersby/ruminate/LICENSE.md
  */
-//
-// First rule of ruminate: 0 shall be NULL
-// Second rule of ruminate: local site shall always be 1
-
 //Query System
 pub mod query;
 
@@ -25,7 +21,7 @@ use std::{collections::HashSet, iter::FromIterator, result::Result, str::FromStr
 
 use log::debug;
 use primitives::uuid::UUID;
-use store::*;
+use store::store::*;
 
 type NotePackage = (
     NoteUUID,
@@ -67,7 +63,9 @@ pub fn store_get_uuid_from_site_id(store: &mut Store, site_local_id: SiteUUID) -
 
 //----------- NOTES
 
-//Creates a new new note and returns the local id for that note.
+///
+/// Creates a new new note and returns the local id for that note.
+///
 pub fn note_create(store: &mut Store) -> NoteLocalID {
     //Create the CRDT Base structure and note UUID
 
@@ -91,7 +89,9 @@ pub fn note_create(store: &mut Store) -> NoteLocalID {
         .note_local_id_to_uuid
         .insert(new_note_local_id, new_note_uuid);
 
-    store.note_data.insert(new_note_local_id, new_note_data);
+    store
+        .note_id_to_note_content
+        .insert(new_note_local_id, new_note_data);
 
     return new_note_local_id;
 }
@@ -119,7 +119,7 @@ pub fn note_get_crdt<'a>(
     store: &'a mut Store,
     note_local_id: NoteLocalID,
 ) -> Option<&'a mut NoteInternalCRDT> {
-    match store.note_data.get_mut(&note_local_id) {
+    match store.note_id_to_note_content.get_mut(&note_local_id) {
         Some(boxed_crdt) => return Some(boxed_crdt.as_mut()),
         None => return None,
     }

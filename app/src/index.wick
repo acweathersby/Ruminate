@@ -1,0 +1,124 @@
+import "@radiate";
+import {init} from "./ts/app.ts";
+
+function onload(){
+    init();
+}
+
+export default <div id="app">
+    <div class=leftsb></div>
+    <div class=main>
+        <div class=search>
+            <input class=search-input type=text placeholder="test">
+        </div>
+        <div class=note>
+
+        <div class=note-header>
+        <h3 class=note-path>A/B/C</h3>
+        <h1 class=note-title>Welcome To Ruminate</h1>
+        </div>
+        
+        <div class=note-body>
+        <p>
+            "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, 
+            totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta 
+            sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia 
+            consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui 
+            dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora 
+            incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum 
+            exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis 
+            autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel 
+            illum qui dolorem eum fugiat quo voluptas nulla pariatur?"
+        </p>
+        </div>
+        </div>
+    </div>
+    <div class=rightsb>
+        <section>
+            <h4>Publish</h4>
+            <ul>
+                <li>medium</li>
+                <li>facebook</li>
+                <li>devto</li>
+                <li>reddit</li>
+                <li>netlify</li>
+            </ul>
+        </section>
+        <section>
+            <h4>Link</h4>
+        </section>
+    </div>
+</div>;
+
+<style>
+    root {
+        font-family: arial, sans-serif;
+        width:100%;
+        display:flex;
+        min-height:100vh;
+        background:#F9F9F9;
+        font-size:14px;
+    }
+
+    .main {
+        height:100%;
+        width:70%;
+        margin: 20px 80px;
+    }
+
+    .leftsb {
+        background: #FFF;
+        width:15%;
+    }
+
+    .rightsb {
+        background: #FFF;
+        width:15%;
+        padding:10px;
+    }
+
+    .rightsb ul {
+        margin:0;
+        padding:0;
+        padding-left:10px;
+        display: flex;
+        width: 100%;
+        flex-basis: fit-content;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-flow: wrap;
+    }
+
+    .rightsb li {
+        width:50%;
+        margin:8px 0;
+    }
+
+    .note {
+        width:100%;
+    }
+
+    .note-body {
+        background:white;
+        padding:80px;
+        border-radius:10px;
+    }
+
+    .note-header {
+        padding-left:20px;
+    }
+
+    .search {
+        width:100%;
+    }
+
+    .search-input {
+        width:100%;
+        background:#F0F0F0;
+        font-size:1.2em;
+        border:none;
+        padding:10px 20px;
+        border-radius:20px;
+    }
+
+</style>
