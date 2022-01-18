@@ -4,6 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "build-markdown-parser": "npx hc compile parser --O0 --t ts --asytrip --o ./src/ts/ ../grammar/ruminate_markdown.hcg"
+  },
   "dependencies": {
     "@candlelib/glow": "^0.5.10",
     "@candlelib/spark": "^0.3.10",

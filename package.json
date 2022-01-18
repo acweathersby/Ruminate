@@ -11,7 +11,9 @@
   "bin": {
     "graze": "./source/graze/graze.js"
   },
-  "scripts": {},
+  "scripts": {
+    "build-markdown-parser": "npx hc compile parser --O0 --t ts --asytrip --o ./app/src/ts/ ./grammar/ruminate_formatter.hcg"
+  },
   "dependencies": {
     "hctoolkit": "^0.0.15"
   },
