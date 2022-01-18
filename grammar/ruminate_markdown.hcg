@@ -1,0 +1,122 @@
+
+<> markdown > lines
+
+    f:r { {t_Markdown, lines:$1, tok } }
+
+<> lines > g:nl? (line | code_block)
+
+    f:r { [$2] }
+    
+    | lines g:nl (line | code_block)
+    
+    f:r { $1 + [$3] }
+
+    | lines g:nl
+
+    f:r { $1 + [{ t_Line, header:{ t_Paragraph, text: str("") }, content:null, tok }] }
+
+
+<> line >
+
+    head content
+
+    f:r { { t_Line, header:$1, content:$2, tok } }
+
+    | 
+
+    content
+
+    f:r { { t_Line, header:{ t_Paragraph, text: str("") }, content:$1, tok } }
+
+<> code_block > ! \``` text? code_line(*) code_block_sentinel
+
+    f:r { { t_CodeBlock, syntax:$3, data:$4 } }
+
+<> code_line >
+
+        g:nl code_line_text?
+
+        f:r { { t_Text, value: str($2) } }
+
+<> code_line_text > 
+    (   g:num 
+    |   g:sp
+    |   g:id 
+    |   g:sym
+    )(+\" )
+
+<> code_block_sentinel >
+
+    \``` | g:rec
+
+<[ recover code_block_sentinel_1 ] 
+
+    consume nothing then set prod to code_block_sentinel
+>
+
+<> content > ( text | code_symbol | format_symbol )(+)
+
+<> space > g:sp(+)
+
+<> text > text_symbol(+\" )
+    f:r { { t_Text, value: $1 } }
+
+<> text_symbol > 
+        g:sym
+    |   g:id
+    |   g:sp
+    |   g:num
+   
+<> head > 
+    
+    header_token
+        f:r { { t_Header, length:f64($1) } }
+
+    | ol_token
+        f:r { { t_Ol, offset:f64($1) } }
+
+    | ul_token
+        f:r { { t_Ul, offset:f64($1) } }
+
+    | quote_token
+        f:r { { t_Quote, offset:f64($1) } }
+
+<> header_token > \# (+)
+
+<> ol_token > 
+    
+    space? g:num \.    f:r { [$1] }
+
+<> ul_token > 
+    
+    space? ( \- | \+ )  f:r { [$1] }
+
+<> quote_token > 
+    
+    space? \>           f:r { [$1] }
+    
+
+<> code_symbol > \`
+    f:r { { t_InlineCode } }
+
+<> spaces > g:sp(*)
+
+<> format_symbol > 
+    \* 
+    f:r { { t_MarkerA } }
+    | \_ 
+    f:r { { t_MarkerB } }
+    | \{
+    f:r { { t_QueryStart } }
+    | \}
+    f:r { { t_QueryEnd } }
+    | \[ 
+    f:r { { t_AnchorStart } }
+    | \![ 
+    f:r { { t_AnchorImageStart } }
+    | \]
+    f:r { { t_AnchorEnd } }
+    | \](
+    f:r { { t_AnchorMiddle } }
+    | \)
+    f:r { { t_AnchorEnd } }
