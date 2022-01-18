@@ -140,6 +140,34 @@ pub fn note_get_text(store: &mut Store, note_local_id: NoteLocalID) -> Option<St
     None
 }
 
+pub fn note_set_name(store: &mut Store, note_local_id: NoteLocalID, name: &str) {
+    store
+        .note_id_to_name
+        .insert(note_local_id, name.to_string());
+}
+
+pub fn note_get_name(store: &mut Store, note_local_id: NoteLocalID) -> String {
+    if let Some(name) = store.note_id_to_name.get(&note_local_id) {
+        name.to_owned()
+    } else {
+        "".to_string()
+    }
+}
+
+pub fn note_set_container_path(store: &mut Store, note_local_id: NoteLocalID, path: &str) {
+    store
+        .note_id_to_container_path
+        .insert(note_local_id, path.to_string());
+}
+
+pub fn note_get_container_path(store: &mut Store, note_local_id: NoteLocalID) -> String {
+    if let Some(path) = store.note_id_to_container_path.get(&note_local_id) {
+        path.to_owned()
+    } else {
+        "".to_string()
+    }
+}
+
 pub fn note_get_text_at_clock(
     store: &mut Store,
     note_local_id: NoteLocalID,

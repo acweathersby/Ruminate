@@ -9,7 +9,7 @@ pub struct CRDTNote {
     modified: u64,
     tags: Vec<String>,
     ////////////////////////////
-    data: CRDTString<u8>,
+data: CRDTString<u8>,
 }
 
 pub enum Note {

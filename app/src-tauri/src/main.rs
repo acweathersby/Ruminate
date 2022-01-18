@@ -15,9 +15,7 @@ mod rumi_app {
     #[tauri::command]
     pub fn init(data: String) {
         println!("{}", data);
-        log::set_max_level(LevelFilter::Debug);
         info!("Initializing stores");
-        unsafe { GLOBAL_STORE = Some(store_create()) }
     }
 
     #[tauri::command]
@@ -26,6 +24,37 @@ mod rumi_app {
             return note_create(store);
         }
         return 0;
+    }
+
+    #[tauri::command]
+    pub fn set_note_name(note_local_id: u32, name: String) {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            note_set_name(store, note_local_id, &name);
+        }
+    }
+
+    #[tauri::command]
+    pub fn get_note_name(note_local_id: u32) -> String {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            return note_get_name(store, note_local_id);
+        }
+
+        "".to_string()
+    }
+
+    #[tauri::command]
+    pub fn set_note_container_path(note_local_id: u32, container_path: String) {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            note_set_container_path(store, note_local_id, &container_path);
+        }
+    }
+
+    #[tauri::command]
+    pub fn get_note_container_path(note_local_id: u32) -> String {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            return note_get_container_path(store, note_local_id);
+        }
+        "".to_string()
     }
 
     #[tauri::command]
@@ -143,7 +172,32 @@ mod rumi_app {
 
     pub fn main() {
         tauri::Builder::default()
-            .setup(|_app| Ok(()))
+            .setup(|_app| {
+                log::set_max_level(LevelFilter::Debug);
+                unsafe { GLOBAL_STORE = Some(store_create()) };
+
+                let rumi_note = create_note();
+
+                if rumi_note > 0 {
+                    if insert_text(
+                        rumi_note,
+                        0,
+                        "
+Welcome to Ruminate. 
+                    "
+                        .to_string(),
+                    ) {
+                        set_note_name(rumi_note, "Tutorial".to_string());
+                        set_note_container_path(rumi_note, "/".to_string());
+
+                        println!("Loaded base note {:?}", rumi_note)
+                    } else {
+                        println!("Unable to load introduction note")
+                    }
+                }
+
+                Ok(())
+            })
             .invoke_handler(tauri::generate_handler![
                 init,
                 create_note,
@@ -157,7 +211,11 @@ mod rumi_app {
                 get_tag_ids,
                 insert_text,
                 delete_text,
-                get_text
+                get_text,
+                set_note_name,
+                get_note_name,
+                set_note_container_path,
+                get_note_container_path
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

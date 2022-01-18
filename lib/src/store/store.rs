@@ -53,6 +53,7 @@ pub struct Store {
     pub note_id_to_tag_id_list: HashMap<NoteLocalID, HashSet<TagLocalID>>,
     pub path_to_note_id: HashMap<String, Vec<NoteLocalID>>,
     pub note_id_to_name: HashMap<NoteLocalID, String>,
+    pub note_id_to_container_path: HashMap<NoteLocalID, String>,
 
     pub site_uuid_to_local_site: HashMap<SiteLocalID, SiteUUID>,
     pub site_uuid_to_name: HashMap<SiteLocalID, SiteName>,
@@ -66,6 +67,7 @@ impl Store {
 
             // Note Components ////////////////////
             note_id_to_name: HashMap::new(),
+            note_id_to_container_path: HashMap::new(),
             note_uuid_to_local_id: HashMap::new(),
             note_local_id_to_uuid: HashMap::new(),
             note_id_to_note_content: HashMap::new(),
