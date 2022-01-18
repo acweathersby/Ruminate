@@ -5,9 +5,10 @@
   },
   "build": {
     "distDir": "../build/",
-    "devPath": "../build",
-    "beforeDevCommand": "candle.wick compile --output ./build/ ./src/",
-    "beforeBuildCommand": "candle.wick compile --output ./build/ ./src/"
+    "devPath": "https://localhost:8080",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "withGlobalTauri": true
   },
   "tauri": {
     "bundle": {
@@ -49,6 +50,10 @@
       "active": false
     },
     "allowlist": {
+      "window": {
+        "all": false,
+        "create": false
+      },
       "all": true
     },
     "windows": [
