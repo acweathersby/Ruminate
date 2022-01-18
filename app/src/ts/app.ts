@@ -1,8 +1,8 @@
-import { invoke } from '@tauri-apps/api/tauri';
+import * as rumi from "./bridge.js";
 
 export function init() {
 
-    invoke("init", { data: "Test" });
+    rumi.init("Test");
 
     console.log("Hello World : JS");
 }
