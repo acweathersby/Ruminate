@@ -1,0 +1,61 @@
+import {id} from "@model";
+import * as txt from "../../ts/text_handler.ts";
+import * as rm from "../../ts/bridge.ts";
+
+import header from "./header";
+import paragraph from "./paragraph";
+import codeblock from "./codeblock";
+import cursor from "./cursor";
+
+let data = [];
+let path = "/rumi-tutorials/";
+let name = "test";
+let temp = "test";
+
+function onload(){
+    txt.construct_edit_tree(id, "@.note-body");
+    rm.get_text(id).then(n=>temp=n);
+    rm.get_note_name(id).then(n=>name=n);
+    rm.get_note_container_path(id).then(p=>path=p);
+}
+
+export default <div class=note> 
+    <div class=note-header>
+    <h3 class=note-path>{path}</h3>
+    <h1 class=note-title>{name}</h1>
+    </div>
+    <div class=note-body></div>
+</div>;
+
+<style>
+    root {
+        outline:none
+    }
+
+root {
+    width:100%;
+}
+
+.note-body {
+    background:#FDFDFD;
+    padding:80px;
+    border-radius:10px;
+    outline:none;
+    font-size:1.3em;
+    white-space: pre-wrap; 
+}
+
+.note-body:hover {
+    background:white;
+}
+
+.note-header {
+    padding-left:20px;
+}
+
+i {
+    background-color:red;
+    color:white;
+}
+
+</style>
