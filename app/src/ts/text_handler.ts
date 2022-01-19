@@ -1,9 +1,15 @@
 import { complete } from "@hctoolkit/runtime";
 import { FunctionMaps, Markdown } from "./ast.js";
+import { TodoError } from './errors/todo_error.js';
 import { attachListeners } from './listeners';
 import { Bytecode, Entrypoint, ReduceNames } from "./parser_data.js";
 import { convertMDASTToEditLines } from './sections.js';
 import { EditHost } from './types/edit_host';
+
+export * from "./task_processors/register_task.js";
+export * from "./task_processors/history.js";
+
+import "./task_processors/insert_text.js";
 
 function updateHost(edit_host: EditHost) {
     edit_host.host_ele.innerHTML = "";
@@ -13,10 +19,18 @@ function updateHost(edit_host: EditHost) {
 
 }
 
-export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElement) {
+export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElement, input_string = "Welcome To Ruminate"): Promise<EditHost> {
 
     if (!host_ele || !(host_ele instanceof HTMLDivElement))
         throw new Error("Expected a DIV element for the edit area host.");
+
+    let string = "";
+
+    if (note_id == -1) {
+        string = input_string;
+    } else {
+        throw new TodoError("Pull note text data from store");
+    }
 
     const edit_host: EditHost = {
         command_history: [],
@@ -26,22 +40,16 @@ export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElem
         options: {},
     };
 
-    const string = `Welcome to *Ruminate* dagobah Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi`;//await rm.get_text(note_id);
-
-    edit_host.string = string;
-
     const { result, err } = complete<Markdown>(string, Entrypoint.markdown, Bytecode, FunctionMaps, ReduceNames);
 
     if (err)
         throw err;
 
-    console.log(result);
-
     // -- enabling content editable on host node
     host_ele.setAttribute("contenteditable", "true");
 
     // TODO: Remove temporary innerHTML assignment
-    host_ele.innerHTML = string;
+    //host_ele.innerHTML = string;
 
     //Convert Markdown to Editable Content
     convertMDASTToEditLines(result, edit_host);
@@ -49,4 +57,10 @@ export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElem
     attachListeners(edit_host);
 
     updateHost(edit_host);
+
+    return edit_host;
+}
+
+export function renderMarkdown(edit_host: EditHost) {
+    return edit_host.sections.map(s => s.toString()).join("\n");
 }

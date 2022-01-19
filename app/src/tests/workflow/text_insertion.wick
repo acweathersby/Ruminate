@@ -1,8 +1,0 @@
-import test from "@test";
-import * as txt from "../../ts/text_handler.ts";
-
-export default <div></div>;
-
-test: { 
-    assert(1  == ele)
-}

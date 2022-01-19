@@ -1,7 +1,7 @@
 /**
  * Labels For Tasks
  */
-export const enum TextCommand {
+export enum TextCommand {
     INSERT_TEXT,
     REPLACE_TEXT,
     DELETE_TEXT_FORWARDS,

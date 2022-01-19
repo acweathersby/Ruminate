@@ -1,0 +1,36 @@
+import test from "@test";
+import * as txt from "../../ts/text_handler.ts";
+import { getProcessor } from "../../ts/task_processors/register_task.ts";
+import { TextCommand } from '../../ts/types/text_command_types.ts';
+
+export default <div></div>;
+
+test: { 
+
+    const edit_host = await txt.construct_edit_tree(-1, ele);
+
+    assert_group("Basic text insertion w/ history actions", sequence, ()=>{
+    
+        txt.getProcessor("edit", TextCommand.INSERT_TEXT)({
+            command: TextCommand.INSERT_TEXT,
+            data: {
+                APPLY_MARKDOWN_FORMAT: false,
+                input_text: "[TESTING]: ",
+                offset: 0
+            }/12
+            
+        }, edit_host);
+
+        assert("Inserts text using TextCommand.INSERT_TEXT", txt.renderMarkdown(edit_host) === "[TESTING]: Welcome To Ruminate");
+
+        txt.undo(edit_host);
+
+        assert("Undoes insert text operation", txt.renderMarkdown(edit_host) === "Welcome To Ruminate")
+        
+        txt.redo(edit_host);
+
+        assert("Redoes insert text operation", txt.renderMarkdown(edit_host) === "[TESTING]: Welcome To Ruminate")
+
+    });
+
+}

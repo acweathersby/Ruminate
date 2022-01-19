@@ -4,6 +4,8 @@ import { TextSection } from '../sections';
 import { registerTask } from './register_task';
 import { VoidResult, ResultType } from '../types/result';
 import { setZeroLengthSelection } from './common';
+import { TodoError } from '../errors/todo_error';
+import { addOperation } from './history';
 
 type InsertTextTask = TextCommandTask[TextCommand.INSERT_TEXT];
 
@@ -26,15 +28,13 @@ export function getTextSectionAtOffset(offset: number, edit_host: EditHost) {
     return null;
 }
 
-class TodoError extends Error { }
-
 function insertText(command: InsertTextTask, edit_host: EditHost): VoidResult {
 
     redoInsertText(command.data, edit_host);
 
     //Begin -- Update history data 
 
-    edit_host.command_history.push(
+    addOperation(
         <HistoryTask[TextCommand.INSERT_TEXT]>{
             type: TextCommand.INSERT_TEXT,
             redo_data: command.data,
@@ -43,7 +43,7 @@ function insertText(command: InsertTextTask, edit_host: EditHost): VoidResult {
                 offset_start: command.data.offset,
                 offset_end: command.data.offset + command.data.input_text.length
             }
-        });
+        }, edit_host);
 
     //End -- Update history data 
 };

@@ -4,8 +4,8 @@ import { EditHost } from "./types/edit_host";
 import { TextCommand, TextCommandTask } from './types/text_command_types';
 import { getProcessor } from './task_processors/register_task';
 
-import "./task_processors/insert_text.js";
 import { getOffsetsFromSelection, getSectionFromElement, getRoot, setZeroLengthSelection, nodeIsAtSectionRoot, getSectionFromNode, mergeSections } from './task_processors/common';
+import { undo, redo } from './task_processors/history';
 
 export function getCursorOffsets(edit_host: EditHost) {
     const sel = window.getSelection();
@@ -114,7 +114,6 @@ export function attachListeners(edit_host: EditHost) {
                         }
                     };
                     getProcessor("edit", TextCommand.INSERT_TEXT)(command, edit_host);
-                    edit_host.history_pointer++;
                 }; break;
                 case "insertReplacementText": debugger; break;
                 case "insertLineBreak": debugger; break;
@@ -141,18 +140,8 @@ export function attachListeners(edit_host: EditHost) {
                 case "deleteContent": debugger; break;
                 case "deleteContentBackward": debugger; break;
                 case "deleteContentForward": debugger; break;
-                case "historyUndo": {
-                    if (edit_host.history_pointer >= 0) {
-                        const command = edit_host.command_history[--edit_host.history_pointer];
-                        getProcessor("undo", command.type)(command.undo_data, edit_host);
-                    }
-                } break;
-                case "historyRedo": {
-                    if (edit_host.history_pointer < edit_host.command_history.length) {
-                        const command = edit_host.command_history[edit_host.history_pointer++];
-                        getProcessor("redo", command.type)(command.redo_data, edit_host);
-                    }
-                } break;
+                case "historyUndo": { undo(edit_host); } break;
+                case "historyRedo": { redo(edit_host); } break;
                 case "formatBold": debugger; break;
                 case "formatItalic": formatItalic(edit_host); break;
                 case "formatUnderline": debugger; break;
