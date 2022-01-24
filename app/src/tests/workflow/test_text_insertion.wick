@@ -17,7 +17,7 @@ test: {
                 APPLY_MARKDOWN_FORMAT: false,
                 input_text: "[TESTING]: ",
                 offset: 0
-            }/12
+            }
             
         }, edit_host);
 
