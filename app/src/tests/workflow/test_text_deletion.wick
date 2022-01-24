@@ -1,0 +1,40 @@
+import test from "@test";
+import * as txt from "../../ts/text_handler.ts";
+import { getProcessor } from "../../ts/task_processors/register_task.ts";
+import { TextCommand, DeletionComplexity } from '../../ts/types/text_command_types.ts';
+
+export default <div></div>;
+
+test: { 
+
+    const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome To Ruminate");
+
+    assert_group("Basic text deletion w/ history actions", sequence, ()=>{
+    
+        txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
+            command: TextCommand.DELETE_TEXT,
+            data: {
+                complexity:0,
+                offset: 0,
+                length:7
+            }
+            
+        }, edit_host);
+
+        assert("Deletes text from a text section", txt.renderMarkdown(edit_host) === " To Ruminate");
+
+        assert("Created a history entry", edit_host.command_history.length == 1)
+
+        assert(
+            "Delete history is labeled with a `TEXT_SECTION` DeletionComplexity [undo_data]", 
+            edit_host.command_history[0].undo_data.complexity == DeletionComplexity.TEXT_SECTION
+        )
+
+        assert(
+            "Delete history is labeled with a `TEXT_SECTION` DeletionComplexity [redo_data]", 
+            edit_host.command_history[0].redo_data.complexity == DeletionComplexity.TEXT_SECTION
+        )
+
+    });
+
+}

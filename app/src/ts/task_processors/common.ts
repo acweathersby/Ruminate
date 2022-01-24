@@ -1,4 +1,4 @@
-import { EditLine } from '../sections.js';
+import { EditLine, TextSection } from '../sections.js';
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
 
@@ -87,8 +87,6 @@ export function nodeIsAtSectionRoot(node: Node, edit_host: EditHost): boolean {
 }
 /**
  * Move selection cursor to an offset based on a Text node
- * @param textNode 
- * @param offset 
  */
 export function setZeroLengthSelection(
     /**
@@ -119,4 +117,43 @@ export function removeListeners(edit_host: EditHost) {
 
 export function mergeSections(section: Section, prev_section: Section, edit_host: EditHost) {
     debugger;
+}
+
+/**
+ * Retrieves the TextSection node which intersects the givin offset point.
+ * 
+ * If the offset is outside the bounds of the editable areas, then null is 
+ * returned. 
+ */
+export function getTextSectionAtOffset(offset: number, edit_host: EditHost) {
+    for (const line of edit_host.sections) {
+        if (line.overlaps(offset)) {
+            for (const node of line.first_child.traverse_horizontal()) {
+                if (node instanceof TextSection && node.overlaps(offset))
+                    return node;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Retrieve the EditLine of the givin section. 
+ * 
+ * `null` is returned if the section is not connected to an EditLine
+ */
+export function getEditLine(section: Section) {
+    if (section instanceof EditLine)
+        return section;
+
+    let par = section.parent;
+
+    while (par) {
+        if (par instanceof EditLine)
+            return par;
+        par = par.parent;
+    }
+
+    return null;
 }

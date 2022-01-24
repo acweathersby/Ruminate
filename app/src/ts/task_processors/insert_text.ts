@@ -1,34 +1,14 @@
-import { TextCommand, HistoryTask, TextCommandTask } from "../types/text_command_types";
-import { EditHost } from "../types/edit_host";
-import { TextSection } from '../sections';
-import { registerTask } from './register_task';
-import { VoidResult, ResultType } from '../types/result';
-import { setZeroLengthSelection } from './common';
 import { TodoError } from '../errors/todo_error';
+import { EditHost } from "../types/edit_host";
+import { ResultType, VoidResult } from '../types/result';
+import { HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
+import { getTextSectionAtOffset, setZeroLengthSelection } from './common';
 import { addOperation } from './history';
+import { registerTask } from './register_task';
 
 type InsertTextTask = TextCommandTask[TextCommand.INSERT_TEXT];
 
-/**
- * Retrieves the TextSection node which intersects the givin offset point.
- * 
- * If the offset is outside the bounds of the editable areas, then null is 
- * returned. 
- */
-export function getTextSectionAtOffset(offset: number, edit_host: EditHost) {
-    for (const line of edit_host.sections) {
-        if (line.overlaps(offset)) {
-            for (const node of line.first_child.traverse_horizontal()) {
-                if (node instanceof TextSection && node.overlaps(offset))
-                    return node;
-            }
-        }
-    }
-
-    return null;
-}
-
-function insertText(command: InsertTextTask, edit_host: EditHost): VoidResult {
+function insertText(command: InsertTextTask, edit_host: EditHost) {
 
     redoInsertText(command.data, edit_host);
 

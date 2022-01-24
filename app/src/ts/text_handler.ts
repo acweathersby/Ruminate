@@ -9,7 +9,13 @@ import { EditHost } from './types/edit_host';
 export * from "./task_processors/register_task.js";
 export * from "./task_processors/history.js";
 
+/**
+ * Import processors. These will register
+ * with processor store and made available
+ * through the `getProcessor` function.
+ */
 import "./task_processors/insert_text.js";
+import "./task_processors/delete_text.js";
 
 function updateHost(edit_host: EditHost) {
     edit_host.host_ele.innerHTML = "";
@@ -18,7 +24,7 @@ function updateHost(edit_host: EditHost) {
         section.toElement(edit_host.host_ele);
 
 }
-
+ 
 export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElement, input_string = "Welcome To Ruminate"): Promise<EditHost> {
 
     if (!host_ele || !(host_ele instanceof HTMLDivElement))
