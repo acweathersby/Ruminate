@@ -7,9 +7,9 @@ export default <div></div>;
 
 test: { 
 
-    const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome To Ruminate");
 
     assert_group("Basic text deletion w/ history actions", sequence, ()=>{
+        const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome To Ruminate");
     
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
             command: TextCommand.DELETE_TEXT,
@@ -35,6 +35,34 @@ test: {
             edit_host.command_history[0].redo_data.complexity == DeletionComplexity.TEXT_SECTION
         )
 
+        txt.undo(edit_host);
+
+        assert(
+            "Undo deletion of text",  txt.renderMarkdown(edit_host) === "Welcome To Ruminate"
+        )
+
+        txt.redo(edit_host);
+
+        assert(
+            "Redo deletion of text",  txt.renderMarkdown(edit_host) === " To Ruminate"
+        )
     });
+
+    assert_group("Inter-section text deletion w/ history actions", sequence, ()=>{ 
+
+        const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome *To* Ruminate");
+    
+        txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
+            command: TextCommand.DELETE_TEXT,
+            data: {
+                complexity:0,
+                offset: 2,
+                length:8
+            }
+            
+        }, edit_host);
+
+        assert("Deletes text spanning multiple sections", txt.renderMarkdown(edit_host) === "We*o* Ruminate" )
+    })
 
 }

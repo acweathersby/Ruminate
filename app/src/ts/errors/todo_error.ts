@@ -4,7 +4,7 @@ export class TodoError extends Error {
     __stack: string;
 
     constructor(message: string) {
-        super("");
+        super("[!TODO!] " + message.trimStart());
         this.__message = message;
         this.__stack = this.stack;
 
@@ -14,6 +14,4 @@ export class TodoError extends Error {
     get message(): string {
         return `[!TODO!] ${this.__message}`;
     }
-
-
 }

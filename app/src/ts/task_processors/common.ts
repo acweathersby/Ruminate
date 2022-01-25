@@ -92,10 +92,10 @@ export function setZeroLengthSelection(
     /**
      * The text node in which the selection should be set.
      */
-    textNode: Text,
+    text_node: Text,
     /**
      * The offset beginning from the 0th position of the 
-     * focusNode `data` string at which the cursor should
+     * text_node `data` string at which the cursor should
      * be placed.
      */
     offset: number
@@ -103,8 +103,42 @@ export function setZeroLengthSelection(
 
     const selection = window.getSelection();
     var range = document.createRange();
-    range.setStart(textNode, offset);
-    range.setEnd(textNode, offset);
+    range.setStart(text_node, offset);
+    range.setEnd(text_node, offset);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+/**
+ * Create a selection between two textNodes
+ */
+export function setSelection(
+    /**
+     * The text node in which the selection should start.
+     */
+    text_node_head: Text,
+    /**
+     * The offset beginning from the 0th position of the 
+     * text_node_head `data` string at which the cursor should
+     * be placed.
+     */
+    offset_head: number,
+    /**
+     * The text node in which the selection should end.
+     */
+    text_node_tail: Text,
+    /**
+     * The offset beginning from the 0th position of the 
+     * text_node_tail `data` string at which the cursor should
+     * be placed.
+     */
+    offset_tail: number
+) {
+
+    const selection = window.getSelection();
+    var range = document.createRange();
+    range.setStart(text_node_head, offset_head);
+    range.setEnd(text_node_tail, offset_tail);
     selection.removeAllRanges();
     selection.addRange(range);
 }

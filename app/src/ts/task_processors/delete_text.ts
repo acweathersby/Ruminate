@@ -1,6 +1,7 @@
+import { TodoError } from '../errors/todo_error';
 import { EditHost } from "../types/edit_host";
 import { DeletionComplexity, HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
-import { getEditLine, getTextSectionAtOffset, setZeroLengthSelection } from './common.js';
+import { getEditLine, getTextSectionAtOffset, setSelection, setZeroLengthSelection } from './common.js';
 import { addOperation } from './history.js';
 import { registerTask } from './register_task.js';
 
@@ -20,9 +21,16 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
 
     let complexity = DeletionComplexity.UNDEFINED;
 
+    let input_text = "--undefined--";
+
     if (start_text_section == end_text_section) {
 
         complexity = DeletionComplexity.TEXT_SECTION;
+
+        const seg_start = offset_start - start_text_section.getHeadOffset();
+        const seg_end = offset_end - start_text_section.getHeadOffset();
+
+        input_text = start_text_section.text.slice(seg_start, seg_end);
 
     } else if (getEditLine(start_text_section) == getEditLine(end_text_section)) {
 
@@ -44,7 +52,7 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
             redo_data: command.data,
             undo_data: {
                 complexity,
-                input_text: "TODO",
+                input_text: input_text,
                 offset: offset_start
             }
         }, edit_host);
@@ -81,20 +89,43 @@ function redoDeleteText(redo_data: HistoryTask[TextCommand.DELETE_TEXT]["redo_da
 
             break;
         case DeletionComplexity.SECTION_OVERLAP:
+            throw new TodoError("Implement redo DeletionComplexity.SECTION_OVERLAP");
             break;
         case DeletionComplexity.EDIT_LINE_OVERLAP:
+            throw new TodoError("Implement redo DeletionComplexity.EDIT_LINE_OVERLAP");
             break;
     }
     // End -- Update Selection  
 }
 
 function undoDeleteText(undo_data: HistoryTask[TextCommand.DELETE_TEXT]["undo_data"], edit_host: EditHost) {
-    switch (undo_data.complexity) {
+
+    const {
+        complexity,
+        input_text,
+        offset
+    } = undo_data;
+
+    switch (complexity) {
         case DeletionComplexity.TEXT_SECTION:
+
+            const text = getTextSectionAtOffset(offset, edit_host);
+
+            text.insertText(offset - text.getHeadOffset(), input_text);
+
+            setSelection(
+                text.ele,
+                offset - text.getHeadOffset(),
+                text.ele,
+                offset - text.getHeadOffset() + input_text.length
+            );
+
             break;
         case DeletionComplexity.SECTION_OVERLAP:
+            throw new TodoError("Implement undo DeletionComplexity.SECTION_OVERLAP");
             break;
         case DeletionComplexity.EDIT_LINE_OVERLAP:
+            throw new TodoError("Implement undo DeletionComplexity.EDIT_LINE_OVERLAP");
             break;
     }
 }
