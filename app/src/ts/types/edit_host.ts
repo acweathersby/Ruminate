@@ -1,4 +1,4 @@
-import { EditLine } from "../sections";
+import { SectionRoot } from "../sections";
 import { HistoryTask, TextCommand } from './text_command_types';
 
 /**
@@ -6,7 +6,8 @@ import { HistoryTask, TextCommand } from './text_command_types';
  * single note.
  */
 export interface EditHost {
-    sections: EditLine[];
+
+    root: SectionRoot;
 
     host_ele: HTMLDivElement;
 

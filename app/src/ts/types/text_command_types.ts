@@ -40,9 +40,6 @@ export interface TextCommandTask {
         command: TextCommand.DELETE_TEXT;
         data: HistoryTask[TextCommand.DELETE_TEXT]["redo_data"];
     };
-    [TextCommand.DELETE_TEXT_BACKWARDS]: {
-        command: TextCommand.DELETE_TEXT_BACKWARDS;
-    };
 }
 
 
@@ -61,11 +58,12 @@ export interface HistoryTask {
             /**
              * The starting offset of the region of text that should be remove.
              */
-            offset: number;
+            offset?: number;
             /**
              * The length of the region of text that is to be removed
              */
             length: number;
+
         };
         /**
          * Necessary information needed to undo actions performed
@@ -80,11 +78,16 @@ export interface HistoryTask {
             /**
              * The offset at which text data will be restored.
              */
-            offset: number;
+            offset?: number;
             /**
              * The original text data that was removed.
              */
             input_text: string;
+            /**
+             * 
+             */
+            first_edit_line?: number;
+            last_edit_line?: number;
         };
     },
     [TextCommand.REPLACE_TEXT]: {

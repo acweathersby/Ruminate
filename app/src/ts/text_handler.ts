@@ -1,9 +1,6 @@
-import { complete } from "@hctoolkit/runtime";
-import { FunctionMaps, Markdown } from "./ast.js";
 import { TodoError } from './errors/todo_error.js';
 import { attachListeners } from './listeners';
-import { Bytecode, Entrypoint, ReduceNames } from "./parser_data.js";
-import { convertMDASTToEditLines } from './sections.js';
+import { convertMDASTToEditLines, SectionRoot } from './sections.js';
 import { EditHost } from './types/edit_host';
 
 export * from "./task_processors/register_task.js";
@@ -16,15 +13,14 @@ export * from "./task_processors/history.js";
  */
 import "./task_processors/insert_text.js";
 import "./task_processors/delete_text.js";
+import { parseMarkdownText } from './parse_markdown';
 
 function updateHost(edit_host: EditHost) {
     edit_host.host_ele.innerHTML = "";
 
-    for (const section of edit_host.sections)
-        section.toElement(edit_host.host_ele);
-
+    edit_host.root.toElement(edit_host.host_ele);
 }
- 
+
 export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElement, input_string = "Welcome To Ruminate"): Promise<EditHost> {
 
     if (!host_ele || !(host_ele instanceof HTMLDivElement))
@@ -40,25 +36,23 @@ export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElem
 
     const edit_host: EditHost = {
         command_history: [],
-        sections: [],
+        root: null,
         host_ele,
         history_pointer: 0,
         options: {},
     };
-
-    const { result, err } = complete<Markdown>(string, Entrypoint.markdown, Bytecode, FunctionMaps, ReduceNames);
-
-    if (err)
-        throw err;
 
     // -- enabling content editable on host node
     host_ele.setAttribute("contenteditable", "true");
 
     // TODO: Remove temporary innerHTML assignment
     //host_ele.innerHTML = string;
+    const result = parseMarkdownText(string);
 
     //Convert Markdown to Editable Content
-    convertMDASTToEditLines(result, edit_host);
+    const lines = convertMDASTToEditLines(result);
+
+    edit_host.root = new SectionRoot(lines);
 
     attachListeners(edit_host);
 
@@ -68,5 +62,5 @@ export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElem
 }
 
 export function renderMarkdown(edit_host: EditHost) {
-    return edit_host.sections.map(s => s.toString()).join("\n");
+    return edit_host.root.toString();
 }

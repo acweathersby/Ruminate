@@ -3,22 +3,14 @@ import {
     AnchorImageStart,
     AnchorMiddle,
     AnchorStart,
-    ASTType,
-    CodeBlock,
-    Header,
-    InlineCode,
+    ASTType, InlineCode,
     Line,
     Markdown,
     MarkerA,
-    MarkerB,
-    Paragraph as MDParagraph,
-    QueryEnd,
-    QueryStart,
-    Quote,
-    Text as MDText
+    MarkerB, QueryEnd,
+    QueryStart, Text as MDText
 } from "./ast.js";
 import { Section } from './types/types';
-import { EditHost } from "./types/edit_host";
 
 /**
  * Sections
@@ -46,7 +38,11 @@ const enum LineType {
     HEADER,
 }
 
-
+export const enum TextClass {
+    bold = 1,
+    italic = 2,
+    underline = 4,
+}
 
 export class SectionBase {
 
@@ -63,6 +59,10 @@ export class SectionBase {
     first_child: Section | null;
     last_child: Section | null;
 
+    head: number;
+
+    tail: number;
+
     constructor() {
         this.length = 0;
         this.ele = null;
@@ -72,6 +72,8 @@ export class SectionBase {
         this.next = null;
         this.first_child = null;
         this.last_child = null;
+        this.head = 0;
+        this.tail = 0;
     }
 
     toElement(host_element?: HTMLElement): Section {
@@ -92,6 +94,23 @@ export class SectionBase {
         this.ele = ele;
         return ele;
     }
+
+
+    updateMetrics(offset = 0) {
+
+        this.head = offset;
+
+        if (this.first_child) {
+            for (const child of this.first_child.traverse_horizontal()) {
+                offset = child.updateMetrics(offset);
+            }
+        }
+
+        this.tail = offset;
+
+        return offset;
+    }
+
 
     createText(): Text {
         if (this.ele) return <Text>this.ele;
@@ -120,8 +139,18 @@ export class SectionBase {
         this.next = null;
         this.prev = null;
     }
-
-    link(prev: Section | null, parent: Section) {
+    /**
+     * Link this node into a parent section chain
+     * 
+     * 
+     * @param {Section|null} prev - An existing node in the target parents chain that
+     *  this node should follow. If this is `null` then this node will
+     *  be inserted at the head of the chain.
+     * 
+     * @param {Section} target_parent - A Section that can accept sub-sections.
+     * 
+     */
+    link(prev: Section | null, target_parent: Section) {
 
         if (this.prev) {
 
@@ -143,20 +172,20 @@ export class SectionBase {
             this.next = null;
         }
 
-        this.parent = parent;
+        this.parent = target_parent;
 
         if (!prev) {
-            const next = parent.first_child;
+            const next = target_parent.first_child;
 
             if (next) {
                 next.prev = this;
             } else {
-                parent.last_child = this;
+                target_parent.last_child = this;
             }
 
             this.next = next;
 
-            parent.first_child = this;
+            target_parent.first_child = this;
 
         } else {
 
@@ -176,11 +205,46 @@ export class SectionBase {
         return this;
     }
 
+    mergeLeft() {
+        if (this.prev) {
+            if (this.first_child) {
+                if (this.prev.last_child) {
+                    this.prev.last_child.next = this.first_child;
+                    this.first_child.prev = this.prev.last_child;
+                    this.prev.last_child = this.last_child;
+                } else {
+                    this.prev.first_child = this.first_child;
+                    this.prev.last_child = this.last_child;
+                }
+
+                for (const child of this.children)
+                    child.parent = this.prev;
+            }
+
+            this.prev.next = this.next;
+
+            if (this.next)
+                this.next.prev = this.prev;
+            else
+                this.parent.last_child = this.prev;
+        }
+    }
+
+    get index(): number {
+        if (this.prev) {
+            return this.prev.index + 1;
+        } else {
+            return 0;
+        }
+    }
+
     get leading_offset() {
         return 0;
     }
 
     get children() {
+        if (!this.first_child)
+            return [];
         return [...this.first_child.traverse_horizontal()];
     }
 
@@ -217,41 +281,14 @@ export class SectionBase {
         return this.length;
     }
 
-    getHeadOffset(USE_MARKDOWN_OFFSETS: boolean = false, __offset__: number = 0) {
-
-        let prev = this.prev;
-
-        while (prev) {
-            if (USE_MARKDOWN_OFFSETS)
-                __offset__ += prev.markdown_length;
-            else __offset__ += prev.length;
-            prev = prev.prev;
-        }
-
-        if (this.parent)
-            return this.parent.getHeadOffset(USE_MARKDOWN_OFFSETS, __offset__);
-
-        return __offset__;
-    }
-
-    getTailOffset(USE_MARKDOWN_OFFSETS: boolean = false) {
-        return (USE_MARKDOWN_OFFSETS ? this.markdown_length : this.length)
-            + this.getHeadOffset(USE_MARKDOWN_OFFSETS);
-    }
     /**
      * Returns `true` if the givin offset is within the bounds of
      * node. If the node is zero length, then returns `true` if
      * the offset is equal to the node's offset.
      */
     overlaps(offset: number) {
-        return this.getHeadOffset() <= offset && this.getTailOffset() >= offset;
+        return this.head <= offset && this.tail >= offset;
     }
-}
-
-export const enum TextClass {
-    bold = 1,
-    italic = 2,
-    underline = 4,
 }
 
 export class TextSection extends SectionBase {
@@ -263,6 +300,12 @@ export class TextSection extends SectionBase {
         super();
         this.text = text;
         this.length = text.length;
+    }
+
+    updateMetrics(offset?: number): number {
+        this.head = offset;
+        this.tail = offset + this.length;
+        return this.tail;
     }
 
     merge() {
@@ -358,7 +401,8 @@ export class TextSection extends SectionBase {
     }
 
     /**
-     * Removes a segment of characters of `length` starting at `offset`
+     * Removes a segment of `length` characters starting at `offset`,
+     * where `offset = 0` is the first character in the TextSection. 
      */
     removeText(offset: number, length: number) {
 
@@ -432,11 +476,34 @@ export class Node extends SectionBase {
                 this.length += section.length;
         return this.length;
     }
-
+    /**
+     * Returns the string representation of the edit graph with
+     * Markdown formatting.
+     * @returns 
+     */
     toString(): string {
         if (this.first_child)
             return [...this.first_child.traverse_horizontal()].join("");
         return "";
+    }
+}
+
+export class SectionRoot extends Node {
+
+    first_child: EditLine | null;
+
+    last_child: EditLine | null;
+
+    constructor(sections: EditLine[]) {
+        super("div", sections);
+    }
+
+    get children(): EditLine[] {
+        return <any>super.children;
+    }
+
+    toString(): string {
+        return this.children.map(c => c.toString()).join("\n");
     }
 }
 
@@ -465,6 +532,13 @@ export class EditLine extends Node {
         this.type = type;
     }
 
+    updateLength(): number {
+        const length_adjust = 1;
+        this.length = super.updateLength() + length_adjust;
+        return this.length;
+    }
+
+
     toElement(host_element?: HTMLElement): Section | null {
         if (this.type == LineType.CODEBLOCK) {
             return this.next;
@@ -472,39 +546,34 @@ export class EditLine extends Node {
             return super.toElement(host_element);
         }
     }
+
+    updateMetrics(offset?: number): number {
+        if (!this.prev)
+            return super.updateMetrics();
+        offset = super.updateMetrics(offset + 1);
+        this.head -= 1;
+        return offset;
+    }
+
+    updateElement(): void {
+        if (!this.first_child) {
+            const empty = new TextSection("");
+            empty.link(null, this);
+        }
+        return super.updateElement();
+    }
+
 }
 
-export class ParagraphSection extends Node {
-    constructor(sections?: Section[]) {
-        super(0, "p", sections);
-    }
 
-    toString(): string {
-        return `\n${super.toString()}`;
-    }
-    get markdown_length() {
-        return this.length + 1;
-    }
-}
-
-export class ItalicSection extends SectionBase {
+export class ItalicSection extends Node {
 
     linked: ItalicSection | null;
 
-    IS_START: boolean;
-
-    constructor() {
-        super();
-        this.IS_START = false;
-        this.length = 0;
-    }
-
-    linkEnd(end: ItalicSection) {
-        if (end.linked)
-            throw new Error(`${this.constructor.name} already linked`);
-        end.linked = this;
-        this.linked = end;
-        this.IS_START = true;
+    constructor(
+        sections: Section[]
+    ) {
+        super("i", sections);
     }
 
     get leading_offset() {
@@ -516,42 +585,23 @@ export class ItalicSection extends SectionBase {
     }
 
     toString(): string {
-        return `_`;
-    }
-
-    toElement(host_element?: HTMLElement): Section | null {
-
-        this.ele = this.createElement("i");
-
-        for (
-            let node = this.next;
-            node != this.linked && node;
-            node = node.toElement(this.ele)
-        );
-
-
-        if (host_element)
-            host_element.appendChild(this.ele);
-
-        return this.linked.next;
+        return `*${super.toString()}*`;
     }
 }
 
-export class BoldSection extends SectionBase {
+export class BoldSection extends Node {
 
     linked: BoldSection | null;
 
-    IS_END: boolean;
-
-    constructor() {
-        super();
-        this.IS_END = false;
+    constructor(
+        sections: Section[]
+    ) {
+        super("strong", sections);
     }
 
     linkEnd(end: BoldSection) {
         if (end.linked)
             throw new Error(`${this.constructor.name} already linked`);
-        end.IS_END = true;
         end.linked = this;
         this.linked = end;
     }
@@ -569,21 +619,8 @@ export class BoldSection extends SectionBase {
     }
 }
 
-export class CodeblockSection extends SectionBase {
-    constructor(length: number, line?: Line) {
-        super(length);
-
-        if (line) {
-            if (line.header instanceof ParagraphSection) {
-            }
-            else
-                throw new Error("Markdown Line header is not a Paragraph");
-        }
-    }
-}
-
-export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost) {
-
+export function convertMDASTToEditLines(md: Markdown): EditLine[] {
+    const lines: EditLine[] = [];
     for (const line of md.lines) {
         if (line.node_type == ASTType.Line)
             switch (line.header.node_type) {
@@ -593,15 +630,22 @@ export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost) {
                 case ASTType.Ul:
                     break;
                 case ASTType.Paragraph:
+                    //If the line data is empty then ignore it. 
+                    /* if (line.content.length == 0)
+                        continue; */
+
                     const paragraph = new EditLine(convertContent(line.content), LineType.PARAGRAPH, 0);
                     paragraph.type = LineType.PARAGRAPH;
-                    edit_host.sections.push(paragraph);
+                    lines.push(paragraph);
+
                     break;
             }
         else {
 
         }
     }
+
+    return lines;
 }
 
 export function convertContent(raw_content: Content[]) {
@@ -744,25 +788,21 @@ function tryFormat(
     if (matches.length > 0) {
         const end = matches.pop();
 
-        var start_section, end_section;
+        var start_section;
+
+        const sections = convertOuterContent(
+            raw_content,
+            offset + search_size,
+            end - search_size,
+        );
 
         if (search_size > 1) {
-            start_section = new BoldSection();
-            end_section = new BoldSection();
+            start_section = new BoldSection(sections);
         } else {
-            start_section = new ItalicSection();
-            end_section = new ItalicSection();
+            start_section = new ItalicSection(sections);
         }
 
-        start_section.linkEnd(end_section);
-
-        line_content.push(start_section,
-            ...convertOuterContent(
-                raw_content,
-                offset + search_size,
-                end - search_size,
-            ), end_section
-        );
+        line_content.push(start_section);
 
 
         return end - 1;

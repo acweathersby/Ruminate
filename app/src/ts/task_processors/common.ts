@@ -47,11 +47,10 @@ export function getOffsetsFromSelection(): {
         focusNode, focusOffset, anchorOffset, anchorNode,
     } = selection;
 
-
     let anchor = getSectionFromElement(anchorNode);
     let focus = getSectionFromElement(focusNode);
-    let anchor_offset = anchor.getHeadOffset() + anchorOffset;
-    let focus_offset = focus.getHeadOffset() + focusOffset;
+    let anchor_offset = anchor.head + anchorOffset;
+    let focus_offset = focus.head + focusOffset;
     let FOCUS_IS_HEAD = anchor_offset > focus_offset;
 
     let start_offset = FOCUS_IS_HEAD ? focus_offset : anchor_offset;
@@ -69,7 +68,7 @@ export function getOffsetsFromSelection(): {
 export function getSectionFromNode(node: Node, edit_host: EditHost) {
     let par = node;
     while (par) {
-        for (let section of edit_host.sections)
+        for (let section of edit_host.root.children)
             if (section.ele == par)
                 return section;
         par = par.parentElement;
@@ -160,11 +159,22 @@ export function mergeSections(section: Section, prev_section: Section, edit_host
  * returned. 
  */
 export function getTextSectionAtOffset(offset: number, edit_host: EditHost) {
-    for (const line of edit_host.sections) {
+
+    for (const line of edit_host.root.children) {
         if (line.overlaps(offset)) {
-            for (const node of line.first_child.traverse_horizontal()) {
-                if (node instanceof TextSection && node.overlaps(offset))
-                    return node;
+            let candidates: Section[] = [line];
+            for (const candidate of candidates) {
+                if (candidate.first_child)
+                    for (const node of candidate.first_child.traverse_horizontal()) {
+                        if (node.overlaps(offset)) {
+                            if (node instanceof TextSection)
+                                return node;
+                            else {
+                                candidates.push(node);
+                                break;
+                            };
+                        }
+                    }
             }
         }
     }

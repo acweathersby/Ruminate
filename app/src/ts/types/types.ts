@@ -1,4 +1,4 @@
-import { ParagraphSection, CodeblockSection, SectionBase, TextSection } from "../sections";
+import { SectionBase, TextSection, EditLine } from "../sections";
 
-export type Section = ParagraphSection | CodeblockSection | SectionBase | TextSection;
+export type Section = SectionBase | TextSection | EditLine;
 
