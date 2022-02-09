@@ -3,9 +3,7 @@ import {
     AnchorImageStart,
     AnchorMiddle,
     AnchorStart,
-    ASTType, InlineCode,
-    Line,
-    Markdown,
+    ASTType, InlineCode, Markdown,
     MarkerA,
     MarkerB, QueryEnd,
     QueryStart, Text as MDText
@@ -31,7 +29,7 @@ type Content = MDText
     | AnchorMiddle
     | AnchorEnd;
 
-const enum LineType {
+export const enum LineType {
     PARAGRAPH,
     CODEBLOCK,
     QUOTE,
@@ -150,27 +148,31 @@ export class SectionBase {
      * @param {Section} target_parent - A Section that can accept sub-sections.
      * 
      */
-    link(prev: Section | null, target_parent: Section) {
+    link(prev: Section | null, target_parent: Section = null) {
+        if (!target_parent) {
+            if (prev)
+                target_parent = prev.parent;
+            else
+                throw new Error("Missing parent section to link");
+        }
+
+        if (this.parent) {
+            if (!this.prev)
+                this.parent.first_child = this.next;
+            if (!this.next)
+                this.parent.last_child = this.prev;
+        }
 
         if (this.prev) {
-
-            if (prev == this.prev)
-                return;
-
+            if (prev == this.prev) return;
             this.prev.next = this.next;
-            if (this.next)
-                this.next.prev = this.prev;
-
-            if (this.parent) {
-                if (!this.prev)
-                    this.parent.first_child = this.next;
-                if (!this.next)
-                    this.parent.last_child = this.prev;
-            }
-
-            this.prev = null;
-            this.next = null;
         }
+
+        if (this.next)
+            this.next.prev = this.prev;
+
+        this.prev = null;
+        this.next = null;
 
         this.parent = target_parent;
 
@@ -205,31 +207,6 @@ export class SectionBase {
         return this;
     }
 
-    mergeLeft() {
-        if (this.prev) {
-            if (this.first_child) {
-                if (this.prev.last_child) {
-                    this.prev.last_child.next = this.first_child;
-                    this.first_child.prev = this.prev.last_child;
-                    this.prev.last_child = this.last_child;
-                } else {
-                    this.prev.first_child = this.first_child;
-                    this.prev.last_child = this.last_child;
-                }
-
-                for (const child of this.children)
-                    child.parent = this.prev;
-            }
-
-            this.prev.next = this.next;
-
-            if (this.next)
-                this.next.prev = this.prev;
-            else
-                this.parent.last_child = this.prev;
-        }
-    }
-
     get index(): number {
         if (this.prev) {
             return this.prev.index + 1;
@@ -245,22 +222,52 @@ export class SectionBase {
     get children() {
         if (!this.first_child)
             return [];
-        return [...this.first_child.traverse_horizontal()];
+        return [...this.first_child.#traverse_horizontal()];
+    }
+
+    *#traverse_horizontal(): Generator<Section> {
+        let next = this.next;
+        yield this;
+        let node = next;
+        while (node && node != this) {
+            next = node.next;
+            yield node;
+            node = next;
+        }
     }
 
     /**
-     * Returns a generator that yields this node and its siblings.
+     * Returns a generator that yields this node and its siblings. Preserves
+     * current ordering and linkage even if modified during iteration.
+     * 
      */
-    *traverse_horizontal(loop: boolean = false): Generator<Section> {
-        yield this;
-        let node = this.next;
-        while (node && node != this) {
-            yield node;
-            node = node.next;
-            if (!node && loop && this.parent) {
-                node = this.parent.first_child;
+    *traverse_horizontal(LOOP: boolean = false): Generator<Section> {
+        let next = this.next;
+        let parent = this.parent;
+        if (parent) {
+
+            const curr_idx = this.index;
+            const children = parent.children;
+            const length = children.length;
+
+            yield this;
+
+            for (
+                let i = (curr_idx + 1) % length;
+                i != curr_idx;
+                i = (i + 1) % length
+            ) {
+                if (i == 0 && !LOOP)
+                    // Either `this` is at index 0 and it has already been yield,
+                    // we have just looped to the start of the array as a result
+                    // of the modulus operation.
+                    break;
+
+                yield children[i];
             }
-        }
+
+        } return this.#traverse_horizontal();
+
     }
 
     hasSingleChild(): boolean {
@@ -269,7 +276,7 @@ export class SectionBase {
 
     numberOfChildren(): number {
         if (this.first_child)
-            return [...this.first_child.traverse_horizontal()].length;
+            return this.children.length;
         return 0;
     }
 
@@ -294,17 +301,23 @@ export class SectionBase {
 export class TextSection extends SectionBase {
     text: string;
     parts: Section[];
-
     ele: Text;
+    IS_PARAGRAPH_PLACEHOLDER: boolean;
     constructor(text: string = "") {
         super();
         this.text = text;
         this.length = text.length;
+        this.IS_PARAGRAPH_PLACEHOLDER = false;
     }
 
     updateMetrics(offset?: number): number {
-        this.head = offset;
-        this.tail = offset + this.length;
+        if (this.IS_PARAGRAPH_PLACEHOLDER) {
+            this.head = offset;
+            this.tail = offset;
+        } else {
+            this.head = offset;
+            this.tail = offset + this.length;
+        }
         return this.tail;
     }
 
@@ -333,7 +346,11 @@ export class TextSection extends SectionBase {
     toElement(host_element?: HTMLElement): Section {
 
         this.ele = this.createText();
-        this.ele.data = this.text;
+
+        if (!this.text)
+            this.ele.data = '\n';
+        else
+            this.ele.data = this.text;
 
         if (host_element)
             host_element.appendChild(this.ele);
@@ -346,13 +363,12 @@ export class TextSection extends SectionBase {
         return this.length;
     }
 
-    toString(pre_existing_class) {
-
+    toString() {
         return this.text;
     }
     /**
      * If the split point is within the text segment then
-     * this node is split into two nodes that represent the 
+     * this node is split into two nodes that represent 
      * each part of the split text. The right most node is 
      * returned in this case.
      */
@@ -385,6 +401,9 @@ export class TextSection extends SectionBase {
      * the associated Text node.
      */
     insertText(offset: number, text: string) {
+
+        if (this.IS_PARAGRAPH_PLACEHOLDER)
+            this.IS_PARAGRAPH_PLACEHOLDER = false;
 
         if (offset == 0) {
             this.text = text + this.text;
@@ -483,7 +502,7 @@ export class Node extends SectionBase {
      */
     toString(): string {
         if (this.first_child)
-            return [...this.first_child.traverse_horizontal()].join("");
+            return this.children.join("");
         return "";
     }
 }
@@ -503,7 +522,7 @@ export class SectionRoot extends Node {
     }
 
     toString(): string {
-        return this.children.map(c => c.toString()).join("\n");
+        return this.children.map(c => c.toString()).join("\n\n");
     }
 }
 
@@ -520,6 +539,9 @@ export class EditLine extends Node {
      */
 
     meta_value: number;
+
+    prev: EditLine;
+    next: EditLine;
 
     constructor(sections: Section[], type: LineType, meta_value: number = 0) {
         super({
@@ -550,17 +572,61 @@ export class EditLine extends Node {
     updateMetrics(offset?: number): number {
         if (!this.prev)
             return super.updateMetrics();
-        offset = super.updateMetrics(offset + 1);
-        this.head -= 1;
-        return offset;
+        const new_offset = super.updateMetrics(offset + 1);
+        this.head = offset;
+        return new_offset;
     }
 
     updateElement(): void {
-        if (!this.first_child) {
-            const empty = new TextSection("");
-            empty.link(null, this);
-        }
+        this.ensureIsEditable();
         return super.updateElement();
+    }
+
+    mergeLeft() {
+        if (this.prev) {
+            this.prev.removePlaceholder();
+
+            if (this.first_child) {
+                if (this.prev.last_child) {
+                    this.prev.last_child.next = this.first_child;
+                    this.first_child.prev = this.prev.last_child;
+                    this.prev.last_child = this.last_child;
+                } else {
+                    this.prev.first_child = this.first_child;
+                    this.prev.last_child = this.last_child;
+                }
+
+                for (const child of this.children)
+                    child.parent = this.prev;
+            }
+
+            this.prev.next = this.next;
+
+            if (this.next)
+                this.next.prev = this.prev;
+            else
+                this.parent.last_child = this.prev;
+        }
+    }
+
+    ensureIsEditable(): void {
+        if (!this.first_child)
+            this.addPlaceholder();
+    }
+
+    removePlaceholder() {
+        if (
+            this.first_child instanceof TextSection
+            &&
+            this.first_child.IS_PARAGRAPH_PLACEHOLDER
+        )
+            this.first_child.remove();
+    }
+
+    addPlaceholder() {
+        const empty = new TextSection("");
+        empty.IS_PARAGRAPH_PLACEHOLDER = true;
+        empty.link(null, this);
     }
 
 }

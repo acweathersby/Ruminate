@@ -3,9 +3,8 @@
  */
 export enum TextCommand {
     INSERT_TEXT,
-    REPLACE_TEXT,
+    INSERT_PARAGRAPH,
     DELETE_TEXT,
-    DELETE_TEXT_BACKWARDS
 }
 export interface TextCommandTask {
     /**
@@ -20,14 +19,15 @@ export interface TextCommandTask {
         data: HistoryTask[TextCommand.INSERT_TEXT]["redo_data"];
     };
     /**
-     * ## `[eEplace Text]`
+     * ## `[Insert Text]`
      *
-     * Replace a current selection of text with a new string.
-     * May optionally format the inserted text using the Markdown
+     * Inserts a new string of text within the target note.
+     * May optionally format the inserted text with using the Markdown
      * formatter.
      */
-    [TextCommand.REPLACE_TEXT]: {
-        command: TextCommand.REPLACE_TEXT;
+    [TextCommand.INSERT_PARAGRAPH]: {
+        command: TextCommand.INSERT_PARAGRAPH;
+        data: HistoryTask[TextCommand.INSERT_PARAGRAPH]["redo_data"];
     };
     /**
      * ## `[Delete Text]`
@@ -80,6 +80,10 @@ export interface HistoryTask {
              */
             offset?: number;
             /**
+             * The original length of the deleted region
+             */
+            original_length: number;
+            /**
              * The original text data that was removed.
              */
             input_text: string;
@@ -89,11 +93,6 @@ export interface HistoryTask {
             first_edit_line?: number;
             last_edit_line?: number;
         };
-    },
-    [TextCommand.REPLACE_TEXT]: {
-        type: TextCommand.REPLACE_TEXT;
-        redo_data: {};
-        undo_data: {};
     },
 
     [TextCommand.INSERT_TEXT]: {
@@ -139,6 +138,30 @@ export interface HistoryTask {
              * `[Insert Text]` command
              */
             length: number;
+        };
+    };
+
+    [TextCommand.INSERT_PARAGRAPH]: {
+        type: TextCommand.INSERT_PARAGRAPH,
+        /**
+         * Necessary information needed to perform/redo actions performed
+         * by the `[Insert Text]` command.
+         */
+        redo_data: {
+            /**
+             * The the point at which the new paragraph should be inserted.
+             */
+            offset: number;
+        };
+        /**
+         * Necessary information needed to undo actions performed
+         * by the [Insert Text] command.
+         */
+        undo_data: {
+            /**
+             * The offset of the start of the new paragraph
+             */
+            offset: number;
         };
     };
 }

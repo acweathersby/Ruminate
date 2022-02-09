@@ -103,8 +103,7 @@ This is a test`
             data: {
                 complexity:0,
                 offset: 2,
-                length:19basherit
-                
+                length:19
             }
             
         }, edit_host);
@@ -178,8 +177,37 @@ And only a test`
         assert(
             "Redo deletion of text",  txt.renderMarkdown(edit_host) === "Welcome To Ruminate a test"
         )   
+    })
 
+    assert_group("Text deletion at EOF boundary w/ history actions", sequence, solo, ()=>{ 
 
+        const text_data = `Welcome To Ruminate`
+
+        const edit_host = await txt.construct_edit_tree(-1, ele, text_data);
+    
+        txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
+            command: TextCommand.DELETE_TEXT,
+            data: {
+                complexity:0,
+                offset: 1,
+                length:18
+            }
+            
+        }, edit_host);
+
+        assert("Deletes section that ends at the end of input", txt.renderMarkdown(edit_host) === "W" )
+ 
+        txt.undo(edit_host);
+
+        assert(
+            "Undo deletion of text",  txt.renderMarkdown(edit_host) === text_data
+        )
+
+        txt.redo(edit_host);
+
+        assert(
+            "Redo deletion of text",  txt.renderMarkdown(edit_host) === "W"
+        )   
     })
 
 }

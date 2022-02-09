@@ -1,6 +1,6 @@
 import { TodoError } from './errors/todo_error.js';
 import { attachListeners } from './listeners';
-import { convertMDASTToEditLines, SectionRoot } from './sections.js';
+import { convertMDASTToEditLines, EditLine, SectionRoot } from './sections.js';
 import { EditHost } from './types/edit_host';
 
 export * from "./task_processors/register_task.js";
@@ -13,6 +13,7 @@ export * from "./task_processors/history.js";
  */
 import "./task_processors/insert_text.js";
 import "./task_processors/delete_text.js";
+import "./task_processors/insert_paragraph.js";
 import { parseMarkdownText } from './parse_markdown';
 
 function updateHost(edit_host: EditHost) {
@@ -35,6 +36,7 @@ export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElem
     }
 
     const edit_host: EditHost = {
+        DIRTY_METRICS: true,
         command_history: [],
         root: null,
         host_ele,
@@ -59,6 +61,11 @@ export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElem
     updateHost(edit_host);
 
     return edit_host;
+}
+
+export function addMarkdownPreviewTarget(edit_host: EditHost, target: HTMLDivElement) {
+    if (edit_host)
+        edit_host.markdown_element = target;
 }
 
 export function renderMarkdown(edit_host: EditHost) {

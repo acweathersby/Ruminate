@@ -7,11 +7,15 @@ import { HistoryTask, TextCommand } from './text_command_types';
  */
 export interface EditHost {
 
+    DIRTY_METRICS: boolean;
+
     root: SectionRoot;
 
     host_ele: HTMLDivElement;
 
     options?: {};
+
+    markdown_element?: HTMLDivElement;
 
     command_history: (HistoryTask[TextCommand])[];
 

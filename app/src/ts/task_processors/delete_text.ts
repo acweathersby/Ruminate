@@ -2,7 +2,7 @@ import { parseMarkdownText } from '../parse_markdown';
 import { convertMDASTToEditLines, EditLine } from '../sections';
 import { EditHost } from "../types/edit_host";
 import { DeletionComplexity, HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
-import { getEditLine, getTextSectionAtOffset, setSelection, setZeroLengthSelection } from './common.js';
+import { getEditLine, getTextSectionAtOffset, setSelection, setZeroLengthSelection, updateMetrics, updateUIElements } from './common.js';
 import { addOperation } from './history.js';
 import { modifySections } from './modify_sections';
 import { registerTask } from './register_task.js';
@@ -12,14 +12,17 @@ type DeleteTextTask = TextCommandTask[TextCommand.DELETE_TEXT];
 
 function deleteText(command: DeleteTextTask, edit_host: EditHost) {
 
-    edit_host.root.updateMetrics();
+    updateMetrics(edit_host);
 
     //Identify the complexity involved in performing this deletion.
     const
         offset_start = command.data.offset,
         offset_end = command.data.offset + command.data.length,
         start_text_section = getTextSectionAtOffset(offset_start, edit_host),
-        end_text_section = getTextSectionAtOffset(offset_end, edit_host);
+        end_text_section = getTextSectionAtOffset(offset_end, edit_host),
+        start_line = getEditLine(start_text_section),
+        end_line = getEditLine(end_text_section),
+        original_length = offset_end - offset_start;
 
     let
         first_edit_line = 0,
@@ -27,7 +30,14 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
         complexity = DeletionComplexity.UNDEFINED,
         input_text = "--undefined--";
 
-    if (start_text_section == end_text_section) {
+    const
+        SAME_SECTION = start_text_section == end_text_section,
+        SAME_LINE = start_line == end_line,
+        IS_LINE_DELETION =
+            start_line.head == offset_start
+            && (start_line.head + 1) == offset_end;
+
+    if (SAME_SECTION && !IS_LINE_DELETION) {
 
         complexity = DeletionComplexity.TEXT_SECTION;
 
@@ -36,7 +46,7 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
 
         input_text = start_text_section.text.slice(seg_start, seg_end);
 
-    } else if (getEditLine(start_text_section) == getEditLine(end_text_section)) {
+    } else if (SAME_LINE && !IS_LINE_DELETION) {
 
         const edit_line = getEditLine(start_text_section);
 
@@ -59,10 +69,6 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
         first_edit_line = effected_lines[0].index;
         last_edit_line = first_edit_line + 1;
 
-        if (start_text_section.head == offset_start) {
-            //first_edit_line = first_edit_line - 1;
-        }
-
         if (end_text_section.tail == offset_end)
             last_edit_line = -1;
 
@@ -80,6 +86,7 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
                 complexity,
                 input_text: input_text,
                 offset: offset_start,
+                original_length,
                 first_edit_line,
                 last_edit_line
             }
@@ -88,9 +95,12 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
 
 };
 
-function redoDeleteText(redo_data: HistoryTask[TextCommand.DELETE_TEXT]["redo_data"], edit_host: EditHost) {
+function redoDeleteText(
+    redo_data: HistoryTask[TextCommand.DELETE_TEXT]["redo_data"],
+    edit_host: EditHost
+) {
 
-    edit_host.root.updateMetrics();
+    updateMetrics(edit_host);
 
 
     let {
@@ -139,7 +149,7 @@ function redoDeleteText(redo_data: HistoryTask[TextCommand.DELETE_TEXT]["redo_da
                 }
             );
 
-            edit_host.root.updateElement();
+            updateUIElements(edit_host);
 
             const node = getTextSectionAtOffset(offset, edit_host);
 
@@ -169,8 +179,9 @@ function redoDeleteText(redo_data: HistoryTask[TextCommand.DELETE_TEXT]["redo_da
                 },
             });
 
-            edit_host.root.updateMetrics();
-            edit_host.root.updateElement();
+            updateMetrics(edit_host, true);
+
+            updateUIElements(edit_host);
 
             const node = getTextSectionAtOffset(offset, edit_host);
 
@@ -182,14 +193,18 @@ function redoDeleteText(redo_data: HistoryTask[TextCommand.DELETE_TEXT]["redo_da
 }
 
 
-function undoDeleteText(undo_data: HistoryTask[TextCommand.DELETE_TEXT]["undo_data"], edit_host: EditHost) {
+function undoDeleteText(
+    undo_data: HistoryTask[TextCommand.DELETE_TEXT]["undo_data"],
+    edit_host: EditHost
+) {
 
-    edit_host.root.updateMetrics();
+    updateMetrics(edit_host);
 
     const {
         complexity,
         input_text,
         offset,
+        original_length,
         first_edit_line,
         last_edit_line
     } = undo_data;
@@ -211,15 +226,16 @@ function undoDeleteText(undo_data: HistoryTask[TextCommand.DELETE_TEXT]["undo_da
         } break;
         case DeletionComplexity.SECTION_OVERLAP: {
 
-            replaceEditLineContent(input_text, edit_host.root.children[first_edit_line], edit_host);
+            replaceEditLineContent(
+                input_text,
+                edit_host.root.children[first_edit_line],
+                edit_host
+            );
 
-            edit_host.root.updateElement();
-            edit_host.root.updateMetrics();
+            updateUIElements(edit_host);
+            updateMetrics(edit_host);
             const node_start = getTextSectionAtOffset(offset, edit_host);
             const node_end = getTextSectionAtOffset(offset, edit_host);
-
-
-            console.log({ node_start: !!node_start, node_end: !!node_end });
 
             setSelection(
                 node_start.ele,
@@ -238,8 +254,20 @@ function undoDeleteText(undo_data: HistoryTask[TextCommand.DELETE_TEXT]["undo_da
             } else {
                 replaceEditLineContent(input_text, children[first_edit_line], edit_host);
             }
-            edit_host.root.updateMetrics();
-            edit_host.root.updateElement();
+
+            updateUIElements(edit_host);
+            updateMetrics(edit_host, true);
+
+            const node_start = getTextSectionAtOffset(offset, edit_host);
+            const node_end = getTextSectionAtOffset(offset + original_length, edit_host);
+
+            setSelection(
+                node_start.ele,
+                node_start.IS_PARAGRAPH_PLACEHOLDER ? 0 :
+                    offset - node_start.head,
+                node_end.ele,
+                offset + original_length - node_end.head
+            );
 
         } break;
     }
@@ -250,7 +278,11 @@ registerTask("edit", TextCommand.DELETE_TEXT, deleteText);
 registerTask("undo", TextCommand.DELETE_TEXT, undoDeleteText);
 registerTask("redo", TextCommand.DELETE_TEXT, redoDeleteText);
 
-function insertEditLineContent(input_text: string, prev_edit_line: EditLine, edit_host: EditHost) {
+function insertEditLineContent(
+    input_text: string,
+    prev_edit_line: EditLine,
+    edit_host: EditHost
+) {
     const md = parseMarkdownText(input_text);
 
     const edit_lines = convertMDASTToEditLines(md);
@@ -263,7 +295,11 @@ function insertEditLineContent(input_text: string, prev_edit_line: EditLine, edi
     }
 }
 
-function replaceEditLineContent(input_text: string, prev_edit_line: EditLine, edit_host: EditHost) {
+function replaceEditLineContent(
+    input_text: string,
+    prev_edit_line: EditLine,
+    edit_host: EditHost
+) {
 
     insertEditLineContent(input_text, prev_edit_line, edit_host);
 

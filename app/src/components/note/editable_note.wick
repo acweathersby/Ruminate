@@ -11,9 +11,11 @@ let data = [];
 let path = "/rumi-tutorials/";
 let name = "test";
 let temp = "test";
+const temp_data = "Lorem *ipsum* dolor sit amet."
 
-function onload(){
-    txt.construct_edit_tree(id, "@.note-body");
+async function onload(){
+    const edit_host = await txt.construct_edit_tree(-1/* id */, "@.note-body", temp_data);
+    txt.addMarkdownPreviewTarget(edit_host, "@.note-md-preview");
     rm.get_text(id).then(n=>temp=n);
     rm.get_note_name(id).then(n=>name=n);
     rm.get_note_container_path(id).then(p=>path=p);
@@ -25,6 +27,7 @@ export default <div class=note>
     <h1 class=note-title>{name}</h1>
     </div>
     <div class=note-body></div>
+    <div class=note-md-preview>Hello World</div>
 </div>;
 
 <style>

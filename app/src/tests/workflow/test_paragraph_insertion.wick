@@ -1,0 +1,66 @@
+import test from "@test";
+import * as txt from "../../ts/text_handler.ts";
+import { getProcessor } from "../../ts/task_processors/register_task.ts";
+import { TextCommand, DeletionComplexity } from '../../ts/types/text_command_types.ts';
+
+export default <div></div>;
+
+test: { 
+
+
+    assert_group("Basic paragraph insertion at end of line", sequence, ()=>{
+        const text = "Welcome";
+
+        const edit_host = await txt.construct_edit_tree(-1, ele, text);
+    
+        txt.getProcessor("edit", TextCommand.INSERT_PARAGRAPH)({
+            command: TextCommand.INSERT_PARAGRAPH,
+            data: {
+                offset: 7  
+            }
+            
+        }, edit_host);
+
+        assert("Inserts a paragraph", txt.renderMarkdown(edit_host) === "Welcome\n\n");
+
+        txt.undo(edit_host);
+
+        assert(
+            "Undo deletion of text",  txt.renderMarkdown(edit_host) === text
+        )
+
+        txt.redo(edit_host);
+
+        assert(
+            "Redo deletion of text",  txt.renderMarkdown(edit_host) === "Welcome\n\n"
+        )
+    });
+
+    assert_group("Basic paragraph insertion in middle of simple text line", sequence, ()=>{
+        const text = "Welcome To Ruminate";
+
+        const edit_host = await txt.construct_edit_tree(-1, ele, text);
+    
+        txt.getProcessor("edit", TextCommand.INSERT_PARAGRAPH)({
+            command: TextCommand.INSERT_PARAGRAPH,
+            data: {
+                offset: 7  
+            }
+            
+        }, edit_host);
+
+        assert("Inserts a paragraph", txt.renderMarkdown(edit_host) === "Welcome\n\n To Ruminate");
+
+        txt.undo(edit_host);
+
+        assert(
+            "Undo deletion of text",  txt.renderMarkdown(edit_host) === text
+        )
+
+        txt.redo(edit_host);
+
+        assert(
+            "Redo deletion of text",  txt.renderMarkdown(edit_host) === "Welcome\n\n To Ruminate"
+        )
+    });
+}

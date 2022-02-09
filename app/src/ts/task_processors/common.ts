@@ -1,3 +1,4 @@
+import { AnchorStart } from '../ast.js';
 import { EditLine, TextSection } from '../sections.js';
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
@@ -158,7 +159,11 @@ export function mergeSections(section: Section, prev_section: Section, edit_host
  * If the offset is outside the bounds of the editable areas, then null is 
  * returned. 
  */
-export function getTextSectionAtOffset(offset: number, edit_host: EditHost) {
+export function getTextSectionAtOffset(
+    offset: number,
+    edit_host: EditHost,
+    TAIL_CAPTURE: boolean = false
+): TextSection | null {
 
     for (const line of edit_host.root.children) {
         if (line.overlaps(offset)) {
@@ -166,7 +171,7 @@ export function getTextSectionAtOffset(offset: number, edit_host: EditHost) {
             for (const candidate of candidates) {
                 if (candidate.first_child)
                     for (const node of candidate.first_child.traverse_horizontal()) {
-                        if (node.overlaps(offset)) {
+                        if (offset >= node.head && (offset < node.tail || (TAIL_CAPTURE && offset == node.tail))) {
                             if (node instanceof TextSection)
                                 return node;
                             else {
@@ -177,6 +182,17 @@ export function getTextSectionAtOffset(offset: number, edit_host: EditHost) {
                     }
             }
         }
+    }
+
+    if (edit_host.root.last_child) {
+
+        let sec: Section = edit_host.root.last_child;
+
+        while (sec && !(sec instanceof TextSection))
+            sec = sec.last_child;
+
+        if (sec)
+            return <TextSection>sec;
     }
 
     return null;
@@ -200,4 +216,40 @@ export function getEditLine(section: Section) {
     }
 
     return null;
+}
+/**
+ * Updates the edit sections `head` and `tail` offset properties.
+ * @param {EditHost} host - An EditHost object.
+ * @param FORCE - If `true` force the update of offset properties, regardless of 
+ *                dirty state.
+ */
+export function updateMetrics(host: EditHost, FORCE: boolean = false) {
+
+    if (FORCE || host.DIRTY_METRICS) {
+        host.DIRTY_METRICS = false;
+        host.root.updateMetrics();
+    }
+}
+/**
+ * Sets the `EditHost~DIRTY_METRICS` flag to true.
+ * @param {EditHost} host - An EditHost object.
+ */
+export function invalidateMetrics(host: EditHost) {
+    host.DIRTY_METRICS = true;
+}
+
+/**
+ * Updates the user's view of the edit area
+ * @param {EditHost} host - An EditHost object.
+ */
+export function updateUIElements(host: EditHost) {
+    host.root.updateElement();
+    if (host.markdown_element) {
+        if (!host.markdown_element.firstElementChild) {
+            const pre = document.createElement("pre");
+            host.markdown_element.appendChild(pre);
+        }
+
+        host.markdown_element.firstElementChild.innerHTML = host.root.toString();
+    }
 }

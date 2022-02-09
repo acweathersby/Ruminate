@@ -54,11 +54,11 @@
     consume nothing then set prod to code_block_sentinel
 >
 
-<> content > ( text | code_symbol | format_symbol )(+)
+<> content > ( text | code_symbol | ! format_symbol )(+)
 
-<> space > g:sp(+)
+<> space > ! g:sp(+)
 
-<> text > text_symbol(+\" )
+<> text > ! text_symbol(+\" )
     f:r { { t_Text, value: $1 } }
 
 <> text_symbol > 
