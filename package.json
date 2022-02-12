@@ -7,13 +7,15 @@
   "repository": "https://github.com/acweathersby/ruminate",
   "author": "Anthony C Weathersby",
   "license": "MIT",
-  "private": false,
+  "private": true,
   "bin": {
     "graze": "./source/graze/graze.js"
   },
   "scripts": {
-    "build:app": "cd app && npm run build",
-    "build-markdown-parser": "npx hc compile parser --O0 --t ts --asytrip --o ./app/src/ts/ ./grammar/ruminate_formatter.hcg"
+    "build:query": "npx hc compile parser --O0 --t ts --asytrip --o ./src/ts/editor/parser/ ../grammar/query.hcg",
+    "inspect:query": "npx hc tools disassemble --browse ../grammar/query.hcg",
+    "build:md": "cd app && npm run build:md",
+    "build:app": "cd app && npm run build"
   },
   "dependencies": {
     "hctoolkit": "^0.0.15"
