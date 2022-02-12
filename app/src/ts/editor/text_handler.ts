@@ -1,7 +1,9 @@
 import { TodoError } from './errors/todo_error.js';
 import { attachListeners } from './listeners';
 import { convertMDASTToEditLines, parseMarkdownText } from './parser/parse_markdown.js';
-import { SectionRoot } from './section/sections.js';
+import { SectionRoot } from "./section/base/root";
+import { EditHost } from './types/edit_host.js';
+
 import "./task_processors/delete_text.js";
 import "./task_processors/insert_paragraph.js";
 /**
@@ -12,20 +14,20 @@ import "./task_processors/insert_paragraph.js";
 import "./task_processors/insert_text.js";
 import "./task_processors/toggle_bold.js";
 import "./task_processors/toggle_italics.js";
-import { EditHost } from '../types/edit_host';
 
 export * from "./task_processors/history.js";
 export * from "./task_processors/register_task.js";
 
-
-
 function updateHost(edit_host: EditHost) {
     edit_host.host_ele.innerHTML = "";
-
     edit_host.root.toElement(edit_host.host_ele);
 }
 
-export async function construct_edit_tree(note_id: number, host_ele: HTMLDivElement, input_string = "Welcome To Ruminate"): Promise<EditHost> {
+export async function construct_edit_tree(
+    note_id: number,
+    host_ele: HTMLDivElement,
+    input_string = "Welcome To Ruminate"
+): Promise<EditHost> {
 
     if (!host_ele || !(host_ele instanceof HTMLDivElement))
         throw new Error("Expected a DIV element for the edit area host.");

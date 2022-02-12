@@ -1,4 +1,4 @@
-import { ItalicSection } from '../section/sections';
+import { ItalicSection } from "../section/decorator";
 import { EditHost } from "../types/edit_host";
 import { FormatType, HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
 import { updateMetrics, updateUIElements } from './common.js';

@@ -1,4 +1,5 @@
-import { EditLine, TextSection } from '../section/sections.js';
+import { EditLine } from "../section/line";
+import { TextSection } from "../section/text";
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
 
@@ -252,5 +253,12 @@ export function updateUIElements(host: EditHost) {
         }
 
         host.markdown_element.firstElementChild.innerHTML = host.root.toString();
+    }
+}
+export function addChildrenStartingAt(parent: Section, child: Section) {
+    let prev = null;
+    for (const sec of child.traverse_horizontal()) {
+        sec.link(prev, parent);
+        prev = sec;
     }
 }

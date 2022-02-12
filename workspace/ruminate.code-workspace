@@ -12,5 +12,6 @@
 			"path": "../app",
 			"name": "App"
 		}
-	]
+	],
+	"settings": {}
 }

@@ -58,14 +58,20 @@
 
 <> space > ! g:sp(+)
 
-<> text > ! text_symbol(+\" )
+<> text > ! (text_symbol)(+\" )
     f:r { { t_Text, value: $1 } }
 
 <> text_symbol > 
         g:sym
-    |   g:id
+    |   tk:word
     |   g:sp
-    |   g:num
+    |   tk:num
+
+<> word > g:id 
+    | word g:id
+
+<> num > g:num
+    | num g:num
    
 <> head > 
     

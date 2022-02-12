@@ -1,9 +1,21 @@
 import { parseMarkdownText } from '../parser/parse_markdown';
-import { EditLine } from '../section/sections.js';
+import { EditLine } from "../section/line";
 import { convertMDASTToEditLines } from "../parser/parse_markdown";
 import { EditHost } from "../types/edit_host";
-import { DeletionComplexity, HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
-import { getEditLine, getTextSectionAtOffset, setSelection, setZeroLengthSelection, updateMetrics, updateUIElements } from './common.js';
+import {
+    DeletionComplexity,
+    HistoryTask,
+    TextCommand,
+    TextCommandTask
+} from "../types/text_command_types";
+import {
+    getEditLine,
+    getTextSectionAtOffset,
+    setSelection,
+    setZeroLengthSelection,
+    updateMetrics,
+    updateUIElements
+} from './common.js';
 import { addOperation } from './history.js';
 import { modifySections } from './modify_sections';
 import { registerTask } from './register_task.js';

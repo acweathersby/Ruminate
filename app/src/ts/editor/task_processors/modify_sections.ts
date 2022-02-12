@@ -1,4 +1,4 @@
-import { TextSection } from '../section/sections';
+import { TextSection } from "../section/text";
 import { Section } from '../types/types';
 
 interface ModifyFunctions {

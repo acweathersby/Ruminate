@@ -1,9 +1,29 @@
 import { complete } from "@hctoolkit/runtime";
 import { Token } from '@hctoolkit/runtime/build';
-import { BoldSection, Content, EditLine, ItalicSection, LineType, TextSection } from '../section/sections';
+import { AnchorSection } from "../section/anchor";
+import { CodeBlock } from '../section/code';
+import { BoldSection, ItalicSection } from "../section/decorator";
+import { Header } from '../section/header ';
+import { EditLine } from "../section/line";
+import { NoteSlotSection } from "../section/note";
+import { Paragraph } from '../section/paragraph';
+import { TextSection } from "../section/text";
+import { Content } from "../section/types";
 import { Section } from '../types/types';
-import { AnchorEnd, AnchorMiddle, ASTType, FunctionMaps, InlineCode, Markdown, Text as MDText } from "./ast.js";
-import { Bytecode, Entrypoint, ReduceNames } from "./parser_data.js";
+import {
+    AnchorEnd,
+    AnchorMiddle,
+    ASTType,
+    FunctionMaps,
+    InlineCode,
+    Markdown,
+    Text as MDText
+} from "./ast.js";
+import {
+    Bytecode,
+    Entrypoint,
+    ReduceNames
+} from "./parser_data.js";
 
 
 export function parseMarkdownText(text: string): Markdown {
@@ -20,22 +40,24 @@ export function parseMarkdownText(text: string): Markdown {
 export function convertMDASTToEditLines(md: Markdown): EditLine[] {
     const lines: EditLine[] = [];
     for (const line of md.lines) {
-        if (line.node_type == ASTType.Line)
+        if (line.node_type == ASTType.CodeBlock) {
+            lines.push(new CodeBlock(line.syntax, line.data));
+        } else if (line.node_type == ASTType.Line)
             switch (line.header.node_type) {
-                case ASTType.Header:
-                    break;
+
                 case ASTType.Ol:
                 case ASTType.Ul:
+                    break;
+                case ASTType.Header:
+                    //If the header length is more than 6 treat as a 
+                    // paragraph
+                    lines.push(new Header(line.header.length, convertContent(line.content)));
                     break;
                 case ASTType.Paragraph:
                     //If the line data is empty then ignore it. 
                     if (line.content.length == 0)
                         continue;
-
-                    const paragraph = new EditLine(convertContent(line.content), LineType.PARAGRAPH, 0);
-                    paragraph.line_type = LineType.PARAGRAPH;
-                    lines.push(paragraph);
-
+                    lines.push(new Paragraph(convertContent(line.content)));
                     break;
             }
         else {
@@ -58,7 +80,7 @@ export function getTextRepresentation(obj: Content) {
         case ASTType.AnchorMiddle:
             return "](";
         case ASTType.AnchorEnd:
-            return "]";
+            return ")";
         case ASTType.QueryStart:
             return "{";
         case ASTType.QueryEnd:
@@ -74,11 +96,12 @@ export function getTextRepresentation(obj: Content) {
     }
 }
 
+
 export function convertOuterContent(raw_content: Content[], offset = 0, length = raw_content.length) {
 
     const line_contents: Section[] = [];
 
-    for (let i = offset; i < length; i++) {
+    outer: for (let i = offset; i < length; i++) {
 
         const obj = raw_content[i];
 
@@ -103,14 +126,36 @@ export function convertOuterContent(raw_content: Content[], offset = 0, length =
                             end = j;
                     }
 
-                    if (mid < end && end > i) {
-                        debugger;
+                    if (mid - 1 > 0 && mid > 0 && mid < end && end > i) {
+                        const content = raw_content.slice(i + 1, mid);
+                        const data = raw_content.slice(mid + 1, end);
+
+                        if (obj.node_type == ASTType.AnchorImageStart) {
+
+                        } else {
+                            line_contents.push(new AnchorSection(
+                                convertOuterContent(raw_content, i + 1, mid),
+                                data.map(getTextRepresentation).join("")
+                            ));
+                        }
+
+                        i = end;
+
                     } else {
                         line_contents.push(new TextSection(getTextRepresentation(obj)));
                     }
                 }
                 break;
             case ASTType.QueryStart:
+                for (let j = i + 1; j < length; j++) {
+                    let end = raw_content[j];
+                    if (end.node_type == ASTType.QueryEnd) {
+                        const data = raw_content.slice(i + 1, j);
+                        line_contents.push(new NoteSlotSection(data.map(getTextRepresentation).join("")));
+                        i = j;
+                        continue outer;
+                    }
+                }
                 //Temporary
                 line_contents.push(new TextSection(getTextRepresentation(obj)));
                 break;
@@ -163,7 +208,11 @@ function tryFormat(
 
         const node = raw_content[i - 1];
 
-        if (raw_content[i].node_type == type && !(node instanceof MDText && node.value[node.value.length - 1] == " ")) {
+        if (
+            raw_content[i].node_type == type
+            &&
+            !(node instanceof MDText && node.value[node.value.length - 1] == " ")
+        ) {
 
             let j = i + 1;
 
@@ -222,6 +271,7 @@ export function codeContent(raw_content: Content[]) {
                 continue;
             };
 
+            //@ts-ignore
             raw_content[i].type = "text";
 
             content.push(raw_content[i]);

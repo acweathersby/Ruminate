@@ -1,9 +1,18 @@
-import { EditLine, ItalicSection, LineType, SectionRoot, TextSection } from '../section/sections';
+import { SectionRoot } from "../section/base/root";
+import { ItalicSection } from "../section/decorator";
+import { Paragraph } from '../section/paragraph';
+import { TextSection } from "../section/text";
 import { EditHost } from "../types/edit_host";
 import { HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
 import { Section } from '../types/types';
-import { addChildrenStartingAt } from './addChildrenStartingAt';
-import { getEditLine, getTextSectionAtOffset, setZeroLengthSelection, updateMetrics, updateUIElements } from './common';
+import {
+    addChildrenStartingAt,
+    getEditLine,
+    getTextSectionAtOffset,
+    setZeroLengthSelection,
+    updateMetrics,
+    updateUIElements
+} from './common';
 import { addOperation } from './history';
 import { registerTask } from './register_task';
 
@@ -48,7 +57,7 @@ function redoInsertParagraph(
 
     const { offset } = redo_data;
 
-    const new_paragraph = new EditLine([], LineType.PARAGRAPH);
+    const new_paragraph = new Paragraph();
 
     const prev_edit_line = getEditLine(getTextSectionAtOffset(offset, edit_host));
 

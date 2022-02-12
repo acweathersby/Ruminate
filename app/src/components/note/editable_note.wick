@@ -1,6 +1,6 @@
 import {id} from "@model";
-import * as txt from "../../ts/text_handler.ts";
-import * as rm from "../../ts/bridge.ts";
+import * as txt from "../../ts/editor/text_handler.ts";
+import * as rm from "../../ts/tauri/bridge.ts";
 
 import header from "./header";
 import paragraph from "./paragraph";
@@ -11,7 +11,7 @@ let data = [];
 let path = "/rumi-tutorials/";
 let name = "test";
 let temp = "test";
-const temp_data = "Welcome [To] (#trial) Ruminate"
+const temp_data = "Welcome [To](#trial) {test} Ruminate"
 
 async function onload(){
     const edit_host = await txt.construct_edit_tree(-1/* id */, "@.note-body", temp_data);
@@ -46,6 +46,12 @@ root {
     outline:none;
     font-size:1.3em;
     white-space: pre-wrap; 
+}
+
+.note-insert {
+    position:relative;
+    width:100%;
+    border: 1px solid black;
 }
 
 .note-body:hover {
