@@ -41,7 +41,7 @@ export function convertMDASTToEditLines(md: Markdown): EditLine[] {
     const lines: EditLine[] = [];
     for (const line of md.lines) {
         if (line.node_type == ASTType.CodeBlock) {
-            lines.push(new CodeBlock(line.syntax, line.data));
+            lines.push(new CodeBlock(getText(line.syntax), line.data.map(getText)));
         } else if (line.node_type == ASTType.Line)
             switch (line.header.node_type) {
 
@@ -71,29 +71,31 @@ export function convertContent(raw_content: Content[]) {
     return convertOuterContent(codeContent(raw_content));
 }
 
-export function getTextRepresentation(obj: Content) {
-    switch (obj.node_type) {
-        case ASTType.AnchorStart:
-            return "[";
-        case ASTType.AnchorImageStart:
-            return "![";
-        case ASTType.AnchorMiddle:
-            return "](";
-        case ASTType.AnchorEnd:
-            return ")";
-        case ASTType.QueryStart:
-            return "{";
-        case ASTType.QueryEnd:
-            return "}";
-        case ASTType.MarkerA:
-            return "*";
-        case ASTType.MarkerB:
-            return "_";
-        case ASTType.Text:
-            if (obj instanceof MDText)
-                return obj.value;
-            return "";
-    }
+export function getText(obj: Content): string {
+    if (obj)
+        switch (obj.node_type) {
+            case ASTType.AnchorStart:
+                return "[";
+            case ASTType.AnchorImageStart:
+                return "![";
+            case ASTType.AnchorMiddle:
+                return "](";
+            case ASTType.AnchorEnd:
+                return ")";
+            case ASTType.QueryStart:
+                return "{";
+            case ASTType.QueryEnd:
+                return "}";
+            case ASTType.MarkerA:
+                return "*";
+            case ASTType.MarkerB:
+                return "_";
+            case ASTType.Text:
+                if (obj instanceof MDText)
+                    return obj.value;
+                return "";
+        }
+    return "";
 }
 
 
@@ -135,14 +137,14 @@ export function convertOuterContent(raw_content: Content[], offset = 0, length =
                         } else {
                             line_contents.push(new AnchorSection(
                                 convertOuterContent(raw_content, i + 1, mid),
-                                data.map(getTextRepresentation).join("")
+                                data.map(getText).join("")
                             ));
                         }
 
                         i = end;
 
                     } else {
-                        line_contents.push(new TextSection(getTextRepresentation(obj)));
+                        line_contents.push(new TextSection(getText(obj)));
                     }
                 }
                 break;
@@ -151,23 +153,23 @@ export function convertOuterContent(raw_content: Content[], offset = 0, length =
                     let end = raw_content[j];
                     if (end.node_type == ASTType.QueryEnd) {
                         const data = raw_content.slice(i + 1, j);
-                        line_contents.push(new NoteSlotSection(data.map(getTextRepresentation).join("")));
+                        line_contents.push(new NoteSlotSection(data.map(getText).join("")));
                         i = j;
                         continue outer;
                     }
                 }
                 //Temporary
-                line_contents.push(new TextSection(getTextRepresentation(obj)));
+                line_contents.push(new TextSection(getText(obj)));
                 break;
             case ASTType.AnchorMiddle:
             case ASTType.AnchorEnd:
             case ASTType.QueryEnd:
             case ASTType.Text:
-                line_contents.push(new TextSection(getTextRepresentation(obj)));
+                line_contents.push(new TextSection(getText(obj)));
                 break;
             case ASTType.InlineCode:
                 //Temporary
-                line_contents.push(new TextSection(getTextRepresentation(obj)));
+                line_contents.push(new TextSection(getText(obj)));
                 break;
         }
 

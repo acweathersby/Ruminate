@@ -30,7 +30,7 @@
 
 <> code_block > ! \``` text? code_line(*) code_block_sentinel
 
-    f:r { { t_CodeBlock, syntax:$3, data:$4 } }
+    f:r { { t_CodeBlock, syntax:$2, data:$3 } }
 
 <> code_line >
 

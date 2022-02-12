@@ -7,7 +7,6 @@ import paragraph from "./paragraph";
 import codeblock from "./codeblock";
 import cursor from "./cursor";
 
-let data = [];
 let path = "/rumi-tutorials/";
 let name = "test";
 let temp = "test";
@@ -31,11 +30,8 @@ export default <div class=note>
 </div>;
 
 <style>
-    root {
-        outline:none
-    }
-
 root {
+    outline:none;
     width:100%;
 }
 
@@ -46,6 +42,7 @@ root {
     outline:none;
     font-size:1.3em;
     white-space: pre-wrap; 
+    color:#222222
 }
 
 .note-insert {
@@ -62,9 +59,12 @@ root {
     padding-left:20px;
 }
 
+.note-md-preview pre{
+    white-space: pre-wrap;
+}
+
 i {
-    background-color:red;
-    color:white;
+    color:black;
 }
 
 </style>

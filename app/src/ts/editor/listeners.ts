@@ -65,7 +65,7 @@ export function attachListeners(edit_host: EditHost) {
             debugger;
         },
         paste(e: ClipboardEvent) {
-            debugger;
+            //debugger;
         },
         keypress(e: KeyboardEvent) {
             /*  if (e.code == "Space") {
@@ -100,8 +100,14 @@ export function attachListeners(edit_host: EditHost) {
         },
     };
 
-    for (const name in edit_host.event_handlers)
-        edit_host.host_ele.addEventListener(name, edit_host.event_handlers[name]);
+    for (const [name, listener] of Object.entries(edit_host.event_handlers))
+        edit_host.host_ele.addEventListener(name, <any>listener);
+}
+
+export function removeListeners(edit_host: EditHost) {
+    if (edit_host.event_handlers)
+        for (const [name, listener] of Object.entries(edit_host.event_handlers))
+            edit_host.host_ele.removeEventListener(name, <any>listener);
 }
 /**
  * Decouples the event handling from the event process, preventing
@@ -114,32 +120,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
     updateMetrics(edit_host);
 
     switch (e.inputType) {
-        case "insertText": {
-            const { start_offset, end_offset } = getOffsetsFromSelection();
-
-            if (start_offset - end_offset !== 0) {
-                const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
-                    command: TextCommand.DELETE_TEXT,
-                    data: {
-                        complexity: DeletionComplexity.UNDEFINED,
-                        offset: start_offset,
-                        length: end_offset - start_offset,
-                    }
-                };
-                getProcessor("edit", TextCommand.DELETE_TEXT)(command, edit_host);
-                updateMetrics(edit_host, true);
-            }
-
-            const command = <TextCommandTask[TextCommand.INSERT_TEXT]>{
-                command: TextCommand.INSERT_TEXT,
-                data: {
-                    APPLY_MARKDOWN_FORMAT: false,
-                    input_text: e.data,
-                    offset: start_offset
-                }
-            };
-            getProcessor("edit", TextCommand.INSERT_TEXT)(command, edit_host);
-        }; break;
+        case "insertText": insertText(edit_host, e.data); break;
         case "insertReplacementText": debugger; break;
         case "insertLineBreak": debugger; break;
         case "insertParagraph": {
@@ -156,7 +137,21 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "insertHorizontalRule": debugger; break;
         case "insertFromYank": debugger; break;
         case "insertFromDrop": debugger; break;
-        case "insertFromPaste": debugger; break;
+        case "insertFromPaste": debugger; {
+
+            const cb = e.dataTransfer;
+            const items = Array.from(cb.items).filter(i => i.kind == "string" && i.type == "text/plain");
+
+            if (items[0]) {
+                return new Promise(r => {
+                    items[0].getAsString(data => {
+                        debugger;
+                        insertText(edit_host, data);
+                        r(void 1);
+                    });
+                });
+            }
+        }; break;
         case "insertFromPasteAsQuotation": debugger; break;
         case "insertTranspose": debugger; break;
         case "insertCompositionText": debugger; break;
@@ -267,4 +262,32 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "formatFontColor": debugger; break;
         case "formatFontName": debugger; break;
     }
+}
+
+function insertText(edit_host: EditHost, text_data: string) {
+
+    const { start_offset, end_offset } = getOffsetsFromSelection();
+
+    if (start_offset - end_offset !== 0) {
+        const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
+            command: TextCommand.DELETE_TEXT,
+            data: {
+                complexity: DeletionComplexity.UNDEFINED,
+                offset: start_offset,
+                length: end_offset - start_offset,
+            }
+        };
+        getProcessor("edit", TextCommand.DELETE_TEXT)(command, edit_host);
+        updateMetrics(edit_host, true);
+    }
+
+    const command = <TextCommandTask[TextCommand.INSERT_TEXT]>{
+        command: TextCommand.INSERT_TEXT,
+        data: {
+            APPLY_MARKDOWN_FORMAT: false,
+            input_text: text_data,
+            offset: start_offset
+        }
+    };
+    getProcessor("edit", TextCommand.INSERT_TEXT)(command, edit_host);
 }
