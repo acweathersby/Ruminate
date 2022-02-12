@@ -1,4 +1,0 @@
-import data from "./data.wick";
-import {self} from "@model";
-
-export default <div> <data content={self} /> </divs>;
