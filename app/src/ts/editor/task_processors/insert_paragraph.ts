@@ -1,7 +1,8 @@
-import { EditLine, ItalicSection, LineType, SectionRoot, TextSection } from '../sections';
+import { EditLine, ItalicSection, LineType, SectionRoot, TextSection } from '../section/sections';
 import { EditHost } from "../types/edit_host";
 import { HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
 import { Section } from '../types/types';
+import { addChildrenStartingAt } from './addChildrenStartingAt';
 import { getEditLine, getTextSectionAtOffset, setZeroLengthSelection, updateMetrics, updateUIElements } from './common';
 import { addOperation } from './history';
 import { registerTask } from './register_task';
@@ -63,14 +64,6 @@ function redoInsertParagraph(
         updateMetrics(edit_host, true);
         const node = getTextSectionAtOffset(new_paragraph.head + 1, edit_host);
         setZeroLengthSelection(node.ele, 0);
-    }
-}
-
-function addChildrenStartingAt(parent: Section, child: Section) {
-    let prev = null;
-    for (const sec of child.traverse_horizontal()) {
-        sec.link(prev, parent);
-        prev = sec;
     }
 }
 

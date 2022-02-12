@@ -1,5 +1,6 @@
-import { parseMarkdownText } from '../parse_markdown';
-import { convertMDASTToEditLines, EditLine } from '../sections';
+import { parseMarkdownText } from '../parser/parse_markdown';
+import { EditLine } from '../section/sections.js';
+import { convertMDASTToEditLines } from "../parser/parse_markdown";
 import { EditHost } from "../types/edit_host";
 import { DeletionComplexity, HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
 import { getEditLine, getTextSectionAtOffset, setSelection, setZeroLengthSelection, updateMetrics, updateUIElements } from './common.js';
@@ -18,7 +19,7 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
     const
         offset_start = command.data.offset,
         offset_end = command.data.offset + command.data.length,
-        start_text_section = getTextSectionAtOffset(offset_start, edit_host),
+        start_text_section = getTextSectionAtOffset(offset_start, edit_host, true),
         end_text_section = getTextSectionAtOffset(offset_end, edit_host),
         start_line = getEditLine(start_text_section),
         end_line = getEditLine(end_text_section),
@@ -126,6 +127,7 @@ function redoDeleteText(
 
                 const node = getTextSectionAtOffset(offset, edit_host);
 
+
                 setZeroLengthSelection(node.ele, offset - node.head);
             } else {
                 setZeroLengthSelection(text.ele, offset - text.head);
@@ -149,6 +151,8 @@ function redoDeleteText(
                 }
             );
 
+            updateMetrics(edit_host, true);
+
             updateUIElements(edit_host);
 
             const node = getTextSectionAtOffset(offset, edit_host);
@@ -158,13 +162,12 @@ function redoDeleteText(
         } break;
 
         case DeletionComplexity.EDIT_LINE_OVERLAP: {
-
             //Merge edit lines that overlap the deletion region
             const end_offset = length + offset;
 
             modifySections(edit_host.root, offset, end_offset, {
-                on_text_segment: (s, start, end, mf) => {
-                    s.removeText(start, end);
+                on_text_segment: (s, start, len, mf) => {
+                    s.removeText(start, len);
                 },
                 on_section_segment: (s, start, end, mf) => {
                     if (s instanceof EditLine) {
@@ -186,9 +189,9 @@ function redoDeleteText(
             const node = getTextSectionAtOffset(offset, edit_host);
 
             setZeroLengthSelection(node.ele, offset - node.head);
-        }
-            break;
+        } break;
     }
+
     // End -- Update Selection  
 }
 
@@ -233,15 +236,16 @@ function undoDeleteText(
             );
 
             updateUIElements(edit_host);
-            updateMetrics(edit_host);
+            updateMetrics(edit_host, true);
+
             const node_start = getTextSectionAtOffset(offset, edit_host);
-            const node_end = getTextSectionAtOffset(offset, edit_host);
+            const node_end = getTextSectionAtOffset(offset + original_length, edit_host);
 
             setSelection(
                 node_start.ele,
                 offset,
                 node_end.ele,
-                offset
+                offset + original_length - node_end.head
             );
 
         } break;
@@ -258,7 +262,7 @@ function undoDeleteText(
             updateUIElements(edit_host);
             updateMetrics(edit_host, true);
 
-            const node_start = getTextSectionAtOffset(offset, edit_host);
+            const node_start = getTextSectionAtOffset(offset, edit_host, true);
             const node_end = getTextSectionAtOffset(offset + original_length, edit_host);
 
             setSelection(

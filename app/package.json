@@ -1,14 +1,18 @@
 {
-  "name": "app",
-  "version": "1.0.0",
+  "name": "Ruminate App",
+  "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build-markdown-parser": "npx hc compile parser --O0 --t ts --asytrip --o ./src/ts/ ../grammar/ruminate_markdown.hcg",
-    "inspect-markdown-parser": "npx hc tools disassemble --browse ../grammar/ruminate_markdown.hcg",
-    "dev": "RUST_BACKTRACE=1 cargo tauri dev",
-    "dev:fe": "candle.wick workspace --port 51221 ./src/"
+    "build:markdown-parser": "npx hc compile parser --O0 --t ts --asytrip --o ./src/ts/editor/parser/ ../grammar/ruminate_markdown.hcg",
+    "inspect:markdown-parser": "npx hc tools disassemble --browse ../grammar/ruminate_markdown.hcg",
+    "dev:app": "RUST_BACKTRACE=1 cargo tauri dev",
+    "dev:fe": "candle.wick workspace --port 51221 ./src/",
+    "build": "npm run build:release",
+    "build:release": "echo \"Build routine not defined\"",
+    "build:debug": "",
+    "test": "candle.wick test ./src/tests/"
   },
   "dependencies": {
     "@candlelib/glow": "^0.5.10",

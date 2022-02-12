@@ -1,0 +1,44 @@
+import test from "@test";
+import * as txt from "../../ts/editor/text_handler.ts";
+import { updateMetrics } from "../../ts/editor/task_processors/common.ts";
+import { getProcessor } from "../../ts/editor/task_processors/register_task.ts";
+import { TextCommand, DeletionComplexity } from '../../ts/editor/types/text_command_types.ts';
+
+export default <div></div>;
+
+test: { 
+    assert_group("Basic toggle of italics within an italic section", sequence, ()=>{
+        const text = "Hello *you crazy* world";
+
+        const edit_host = await txt.construct_edit_tree(-1, ele, text);
+        
+        updateMetrics(edit_host, true);
+        txt.getProcessor("edit", TextCommand.TOGGLE_ITALICS)({
+            command: TextCommand.TOGGLE_ITALICS,
+            data: {
+                type: 0, 
+                ranges:[{
+                    start_offset: 7,
+                    end_offset: 14
+                }]
+            }
+            
+        }, edit_host);
+
+        assert("Remove italic sections from a paragraph", txt.renderMarkdown(edit_host) === "Hello *y*ou craz*y* world");
+
+        updateMetrics(edit_host, true);
+        txt.undo(edit_host);
+
+        assert(
+            "Undo deletion of text",  txt.renderMarkdown(edit_host) === text
+        )
+
+        updateMetrics(edit_host, true);
+        txt.redo(edit_host);
+
+        assert(
+            "Redo deletion of text",  txt.renderMarkdown(edit_host) === "Hello *y*ou craz*y* world"
+        )
+    });
+}

@@ -1,7 +1,8 @@
 import test from "@test";
-import * as txt from "../../ts/text_handler.ts";
-import { getProcessor } from "../../ts/task_processors/register_task.ts";
-import { TextCommand, DeletionComplexity } from '../../ts/types/text_command_types.ts';
+import * as txt from "../../ts/editor/text_handler.ts";
+import { getProcessor } from "../../ts/editor/task_processors/register_task.ts";
+import { TextCommand, DeletionComplexity } from '../../ts/editor/types/text_command_types.ts';
+import { updateMetrics } from "../../ts/editor/task_processors/common.ts";
 
 export default <div></div>;
 
@@ -10,7 +11,8 @@ test: {
 
     assert_group("Basic text deletion w/ history actions", sequence, ()=>{
         const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome To Ruminate");
-    
+        
+        updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
             command: TextCommand.DELETE_TEXT,
             data: {
@@ -35,12 +37,14 @@ test: {
             edit_host.command_history[0].redo_data.complexity == DeletionComplexity.TEXT_SECTION
         )
 
+        updateMetrics(edit_host, true);
         txt.undo(edit_host);
 
         assert(
             "Undo deletion of text",  txt.renderMarkdown(edit_host) === "Welcome To Ruminate"
         )
 
+        updateMetrics(edit_host, true);
         txt.redo(edit_host);
 
         assert(
@@ -52,6 +56,7 @@ test: {
 
         const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome *To* Ruminate");
         
+        updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
             command: TextCommand.DELETE_TEXT,
             data: {
@@ -74,12 +79,14 @@ test: {
             edit_host.command_history[0].redo_data.complexity == DeletionComplexity.SECTION_OVERLAP
         )
 
+        updateMetrics(edit_host, true);
         txt.undo(edit_host);
 
         assert(
             "Undo deletion of text",  txt.renderMarkdown(edit_host) === "Welcome *To* Ruminate"
         )
 
+        updateMetrics(edit_host, true);
         txt.redo(edit_host);
 
         assert(
@@ -97,13 +104,14 @@ test: {
 This is a test`
 
         const edit_host = await txt.construct_edit_tree(-1, ele, text_data);
-    
+
+        updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
             command: TextCommand.DELETE_TEXT,
             data: {
                 complexity:0,
                 offset: 2,
-                length:19
+                length:18
             }
             
         }, edit_host);
@@ -120,12 +128,14 @@ This is a test`
             edit_host.command_history[0].redo_data.complexity == DeletionComplexity.EDIT_LINE_OVERLAP
         )
 
+        updateMetrics(edit_host, true);
         txt.undo(edit_host) ;
 
         assert(
             "Undo deletion of text",  txt.renderMarkdown(edit_host) === text_data
         )
 
+        updateMetrics(edit_host, true);
         txt.redo(edit_host);
 
         assert(
@@ -133,7 +143,7 @@ This is a test`
         ) 
     })
 
-    assert_group("Inter-edit-line text deletion at edit line boundaries w/ history actions", sequence, ()=>{ 
+    assert_group("Inter-edit-line text deletion at edit line boundaries w/ history actions",  sequence, ()=>{ 
 
         const text_data = 
 `Welcome To Ruminate
@@ -143,20 +153,22 @@ This is a test
 And only a test`
 
         const edit_host = await txt.construct_edit_tree(-1, ele, text_data);
-    
+
+        updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
             command: TextCommand.DELETE_TEXT,
             data: {
                 complexity:0,
                 offset: 19,
-                length:26
+                length:24
             }
             
         }, edit_host);
 
         assert("Deletes text spanning multiple EditLines", txt.renderMarkdown(edit_host) === "Welcome To Ruminate a test" )
  
-         assert(
+     
+        assert(
             "Delete history is labeled with a `EDIT_LINE_OVERLAP` DeletionComplexity [undo_data]", 
             edit_host.command_history[0].undo_data.complexity == DeletionComplexity.EDIT_LINE_OVERLAP
         )
@@ -165,26 +177,29 @@ And only a test`
             "Delete history is labeled with a `EDIT_LINE_OVERLAP` DeletionComplexity [redo_data]", 
             edit_host.command_history[0].redo_data.complexity == DeletionComplexity.EDIT_LINE_OVERLAP
         )
-
+ 
+        updateMetrics(edit_host, true);
         txt.undo(edit_host);
-
+   
         assert(
             "Undo deletion of text",  txt.renderMarkdown(edit_host) === text_data
         )
 
+        updateMetrics(edit_host, true);
         txt.redo(edit_host);
 
         assert(
             "Redo deletion of text",  txt.renderMarkdown(edit_host) === "Welcome To Ruminate a test"
-        )   
+        )
     })
 
-    assert_group("Text deletion at EOF boundary w/ history actions", sequence, solo, ()=>{ 
+    assert_group("Text deletion at EOF boundary w/ history actions", sequence, ()=>{ 
 
         const text_data = `Welcome To Ruminate`
 
         const edit_host = await txt.construct_edit_tree(-1, ele, text_data);
-    
+
+        updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
             command: TextCommand.DELETE_TEXT,
             data: {
@@ -196,13 +211,15 @@ And only a test`
         }, edit_host);
 
         assert("Deletes section that ends at the end of input", txt.renderMarkdown(edit_host) === "W" )
- 
+        
+        updateMetrics(edit_host, true);
         txt.undo(edit_host);
 
         assert(
             "Undo deletion of text",  txt.renderMarkdown(edit_host) === text_data
         )
 
+        updateMetrics(edit_host, true);
         txt.redo(edit_host);
 
         assert(

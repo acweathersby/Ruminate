@@ -3,12 +3,12 @@ import {
     AnchorImageStart,
     AnchorMiddle,
     AnchorStart,
-    ASTType, InlineCode, Markdown,
-    MarkerA,
+    InlineCode, MarkerA,
     MarkerB, QueryEnd,
     QueryStart, Text as MDText
-} from "./ast.js";
-import { Section } from './types/types';
+} from "../parser/ast.js";
+import { modifySections } from '../task_processors/modify_sections.js';
+import { Section } from '../types/types';
 
 /**
  * Sections
@@ -18,7 +18,7 @@ import { Section } from './types/types';
 
 ///
 
-type Content = MDText
+export type Content = MDText
     | MarkerA
     | MarkerB
     | QueryStart
@@ -74,6 +74,8 @@ export class SectionBase {
         this.tail = 0;
     }
 
+    get Type(): any { return SectionBase; }
+
     toElement(host_element?: HTMLElement): Section {
 
         this.ele = document.createElement("div");
@@ -108,6 +110,16 @@ export class SectionBase {
 
         return offset;
     }
+    /**
+     * Split the section in two, return a new section that is immediately
+     * right adjacent to this section
+     * @returns 
+     */
+    split(offset: number): Section {
+        const obj = new this.constructor.prototype();
+        obj.link(this);
+        return obj;
+    }
 
 
     createText(): Text {
@@ -118,7 +130,10 @@ export class SectionBase {
         this.ele = ele;
         return ele;
     }
-
+    /**
+     * Remove the section from its list if it belongs to
+     * one.
+     */
     remove() {
 
         if (this.prev)
@@ -310,6 +325,8 @@ export class TextSection extends SectionBase {
         this.IS_PARAGRAPH_PLACEHOLDER = false;
     }
 
+    get Type() { return TextSection; }
+
     updateMetrics(offset?: number): number {
         if (this.IS_PARAGRAPH_PLACEHOLDER) {
             this.head = offset;
@@ -383,6 +400,9 @@ export class TextSection extends SectionBase {
             new_node.parent = this.parent;
             new_node.prev = this;
             new_node.next = this.next;
+            new_node.head = this.head + offset;
+            new_node.tail = this.tail;
+            this.tail = new_node.head;
 
             if (this.next)
                 this.next.prev = new_node;
@@ -394,6 +414,27 @@ export class TextSection extends SectionBase {
             return new_node;
         }
         return this;
+    }
+
+    /**
+     * Joins adjacent TextSections together
+     * 
+     * Opposite of `split`.
+     */
+    heal() {
+
+        if (this.prev instanceof TextSection) {
+            this.prev.heal();
+        } else {
+            while (this.next) {
+                if (this.next instanceof TextSection) {
+                    this.text += this.next.text;
+                    this.length = this.text.length;
+                    this.tail = this.next.tail;
+                    this.next.remove();
+                } else break;
+            }
+        }
     }
 
     /**
@@ -413,6 +454,8 @@ export class TextSection extends SectionBase {
             this.text = this.text.slice(0, offset) + text + this.text.slice(offset);
         }
 
+        this.tail -= this.length - this.text.length;
+
         this.length = this.text.length;
 
         if (this.ele)
@@ -426,6 +469,8 @@ export class TextSection extends SectionBase {
     removeText(offset: number, length: number) {
 
         this.text = this.text.slice(0, offset) + this.text.slice(offset + length);
+
+        this.tail -= this.length - this.text.length;
 
         this.length = this.text.length;
 
@@ -532,7 +577,7 @@ export class EditLine extends Node {
      * Indicates the HTML element type
      * that wraps the section contents. 
      */
-    type: LineType;
+    line_type: LineType;
 
     /**
      * An indicator of how the element type should be adjusted. 
@@ -551,7 +596,7 @@ export class EditLine extends Node {
             [LineType.QUOTE]: "quote",
         }[type], sections);
 
-        this.type = type;
+        this.line_type = type;
     }
 
     updateLength(): number {
@@ -562,7 +607,7 @@ export class EditLine extends Node {
 
 
     toElement(host_element?: HTMLElement): Section | null {
-        if (this.type == LineType.CODEBLOCK) {
+        if (this.line_type == LineType.CODEBLOCK) {
             return this.next;
         } else {
             return super.toElement(host_element);
@@ -631,16 +676,113 @@ export class EditLine extends Node {
 
 }
 
+export class FormatNode extends Node {
 
-export class ItalicSection extends Node {
+    /**
+     * Replaces itself with its children elements
+     */
+    dissolve() {
+        if (this.parent) {
+            let prev = this.prev;
+            for (const child of this.children) {
+                child.link(prev, this.parent);
+                prev = child;
+            }
+            this.remove();
+        }
+    }
 
-    linked: ItalicSection | null;
+    split(offset: number) {
+
+        let right = new this.Type([]);
+
+        right.link(this);
+
+        const head = this.head;
+
+        right.tail = this.tail;
+
+        this.tail = this.head + offset;
+
+        right.head = this.tail;
+
+        for (const child of this.children) {
+            if ((child.tail - head) >= offset) {
+                const child_right = (child.tail - head) == offset
+                    ? child.next
+                    : child.split((head + offset) - (child.head));
+                if (child_right) {
+                    let prev = null;
+                    for (const child of child_right.traverse_horizontal()) {
+                        child.link(prev, right);
+                        prev = child;
+                    }
+                }
+                break;
+            }
+        }
+
+        return right;
+    }
+
+    /**
+     * Joins adjacent ItalicSection together
+     * and removes redundancies within the italic 
+     * section. 
+     * 
+     * Opposite of `split`.
+     */
+    heal() {
+
+        const Type: typeof FormatNode = this.Type;
+
+        if (this.prev instanceof FormatNode && this.prev instanceof Type) {
+            this.prev.heal();
+        } else {
+            while (this.next) {
+                if (this.next instanceof Type) {
+                    let prev = this.last_child;
+                    for (const child of this.next.children) {
+                        child.link(prev, this);
+                        prev = child;
+                    }
+                    this.tail = this.next.tail;
+                    this.next.remove();
+                } else break;
+            }
+            //Remove Italic sections within the section
+            modifySections(this, this.head, this.tail, {
+                on_section_segment(s, start, end, mf) {
+                    modifySections(s, start, end, mf);
+                    if (s instanceof Type)
+                        s.dissolve();
+                    else if (s instanceof FormatNode)
+                        s.heal();
+
+                },
+                on_seg_overlap(s, start, end, mf) {
+                    modifySections(s, start, end, mf);
+                    if (s instanceof Type)
+                        s.dissolve();
+                    else if (s instanceof FormatNode || s instanceof TextSection)
+                        s.heal();
+                },
+                on_text_segment(s) {
+                    s.heal();
+                }
+            });
+        }
+    }
+}
+export class ItalicSection extends FormatNode {
 
     constructor(
         sections: Section[]
     ) {
         super("i", sections);
     }
+
+    get Type() { return ItalicSection; }
 
     get leading_offset() {
         return 1;
@@ -655,9 +797,7 @@ export class ItalicSection extends Node {
     }
 }
 
-export class BoldSection extends Node {
-
-    linked: BoldSection | null;
+export class BoldSection extends FormatNode {
 
     constructor(
         sections: Section[]
@@ -665,276 +805,17 @@ export class BoldSection extends Node {
         super("strong", sections);
     }
 
-    linkEnd(end: BoldSection) {
-        if (end.linked)
-            throw new Error(`${this.constructor.name} already linked`);
-        end.linked = this;
-        this.linked = end;
-    }
-
     get leading_offset() {
-        return 1;
+        return 2;
     }
 
     get markdown_length() {
-        return this.length + 2;
+        return this.length + 4;
     }
 
     toString(): string {
-        return `_${super.toString()}_`;
+        return `__${super.toString()}__`;
     }
-}
-
-export function convertMDASTToEditLines(md: Markdown): EditLine[] {
-    const lines: EditLine[] = [];
-    for (const line of md.lines) {
-        if (line.node_type == ASTType.Line)
-            switch (line.header.node_type) {
-                case ASTType.Header:
-                    break;
-                case ASTType.Ol:
-                case ASTType.Ul:
-                    break;
-                case ASTType.Paragraph:
-                    //If the line data is empty then ignore it. 
-                    /* if (line.content.length == 0)
-                        continue; */
-
-                    const paragraph = new EditLine(convertContent(line.content), LineType.PARAGRAPH, 0);
-                    paragraph.type = LineType.PARAGRAPH;
-                    lines.push(paragraph);
-
-                    break;
-            }
-        else {
-
-        }
-    }
-
-    return lines;
-}
-
-export function convertContent(raw_content: Content[]) {
-    return convertOuterContent(codeContent(raw_content));
-}
-
-export function getTextRepresentation(obj: Content) {
-    switch (obj.node_type) {
-        case ASTType.AnchorStart:
-            return "[";
-        case ASTType.AnchorImageStart:
-            return "![";
-        case ASTType.AnchorMiddle:
-            return "](";
-        case ASTType.AnchorEnd:
-            return "]";
-        case ASTType.QueryStart:
-            return "{";
-        case ASTType.QueryEnd:
-            return "}";
-        case ASTType.MarkerA:
-            return "*";
-        case ASTType.MarkerB:
-            return "_";
-        case ASTType.Text:
-            if (obj instanceof MDText)
-                return obj.value;
-            return "";
-    }
-}
-
-export function convertOuterContent(raw_content: Content[], offset = 0, length = raw_content.length) {
-
-    const line_contents: Section[] = [];
-
-    for (let i = offset; i < length; i++) {
-
-        const obj = raw_content[i];
-
-        switch (obj.node_type) {
-            case ASTType.MarkerA:
-            case ASTType.MarkerB:
-                {
-                    var d = tryFormat(obj.node_type, raw_content, line_contents, i, length);
-                    if (d != i) { i = d; continue; };
-                }
-                break;
-            case ASTType.AnchorStart:
-            case ASTType.AnchorImageStart:
-                { // Look ahead for the middle and end tokens
-                    let mid = -1;
-                    let end = -1;
-                    for (let j = i + 1; j < length; j++) {
-                        let obj2 = raw_content[j];
-                        if (obj2 instanceof AnchorMiddle)
-                            mid = j;
-                        if (obj2 instanceof AnchorEnd)
-                            end = j;
-                    }
-
-                    if (mid < end && end > i) {
-                        debugger;
-                    } else {
-                        line_contents.push(new TextSection(getTextRepresentation(obj)));
-                    }
-                }
-                break;
-            case ASTType.QueryStart:
-                //Temporary
-                line_contents.push(new TextSection(getTextRepresentation(obj)));
-                break;
-            case ASTType.AnchorMiddle:
-            case ASTType.AnchorEnd:
-            case ASTType.QueryEnd:
-            case ASTType.Text:
-                line_contents.push(new TextSection(getTextRepresentation(obj)));
-                break;
-            case ASTType.InlineCode:
-                //Temporary
-                line_contents.push(new TextSection(getTextRepresentation(obj)));
-                break;
-        }
-
-    }
-
-    return line_contents;
-}
-
-function tryFormat(
-    type: ASTType,
-    raw_content: Content[],
-    line_content: Section[],
-    offset: number,
-    length: number
-) {
-
-    let start = offset + 1;
-    let search_size = 1;
-
-    for (let i = start; i < length; i++)
-        if (raw_content[i].node_type !== type) { start = i; break; };
-
-    search_size = start - offset;
-
-    if (search_size > 2 || search_size == 1)
-        search_size = 1;
-    else
-        search_size = 2;
-
-    let start_node = raw_content[start];
-
-    if (start_node instanceof MDText && start_node.value[0] == " ")
-        return offset;
-
-    let matches = [];
-
-    for (let i = start; i < length; i++) {
-
-        const node = raw_content[i - 1];
-
-        if (raw_content[i].node_type == type && !(node instanceof MDText && node.value[node.value.length - 1] == " ")) {
-
-            let j = i + 1;
-
-            while (j < length && raw_content[j].node_type == type) { j++; };
-
-            let diff = j - i;
-
-            if (diff >= search_size) {
-
-                matches.push(j);
-
-                if (diff == search_size) { break; }
-            }
-
-            i += diff;
-        }
-    }
-
-    if (matches.length > 0) {
-        const end = matches.pop();
-
-        var start_section;
-
-        const sections = convertOuterContent(
-            raw_content,
-            offset + search_size,
-            end - search_size,
-        );
-
-        if (search_size > 1) {
-            start_section = new BoldSection(sections);
-        } else {
-            start_section = new ItalicSection(sections);
-        }
-
-        line_content.push(start_section);
-
-
-        return end - 1;
-    }
-
-    return offset;
-}
-export function codeContent(raw_content: Content[]) {
-
-    const content = [];
-
-    for (let i = 0; i < raw_content.length; i++) {
-
-        if (raw_content[i] instanceof InlineCode) {
-
-            var d = tryCodeBlock(raw_content[i], raw_content, content, i, raw_content.length);
-
-            if (d != i) {
-                i = d;
-                continue;
-            };
-
-            raw_content[i].type = "text";
-
-            content.push(raw_content[i]);
-
-            continue;
-        }
-
-        content.push(raw_content[i]);
-    }
-
-    return content;
-}
-function tryCodeBlock(obj, raw_content, content, offset, length) {
-
-    let start = offset + 1;
-
-    if (raw_content[start] == " ")
-        return offset;
-
-
-    for (let i = start; i < length; i++) {
-
-        if (raw_content[i - 1] == " ")
-            continue;
-
-        if (raw_content[i].type == "inline_code") {
-            const tok = Token.fromRange(obj.pos, raw_content[i].pos);
-
-            content.push(<HTMLElementNode>{
-                type: HTMLNodeType.HTML_CODE,
-                tag: "CODE",
-                attributes: [MD_Attribute],
-                nodes: [{
-                    type: HTMLNodeType.HTMLText,
-                    data: escape_html_string(tok.slice().slice(1, -1)).trim(),
-                    pos: tok
-                }]
-            });
-
-            return i;
-        }
-    }
-
-    return offset;
 }
 
 

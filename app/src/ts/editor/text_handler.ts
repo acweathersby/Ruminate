@@ -1,20 +1,23 @@
 import { TodoError } from './errors/todo_error.js';
 import { attachListeners } from './listeners';
-import { convertMDASTToEditLines, EditLine, SectionRoot } from './sections.js';
-import { EditHost } from './types/edit_host';
-
-export * from "./task_processors/register_task.js";
-export * from "./task_processors/history.js";
-
+import { convertMDASTToEditLines, parseMarkdownText } from './parser/parse_markdown.js';
+import { SectionRoot } from './section/sections.js';
+import "./task_processors/delete_text.js";
+import "./task_processors/insert_paragraph.js";
 /**
  * Import processors. These will register
  * with processor store and made available
  * through the `getProcessor` function.
  */
 import "./task_processors/insert_text.js";
-import "./task_processors/delete_text.js";
-import "./task_processors/insert_paragraph.js";
-import { parseMarkdownText } from './parse_markdown';
+import "./task_processors/toggle_bold.js";
+import "./task_processors/toggle_italics.js";
+import { EditHost } from '../types/edit_host';
+
+export * from "./task_processors/history.js";
+export * from "./task_processors/register_task.js";
+
+
 
 function updateHost(edit_host: EditHost) {
     edit_host.host_ele.innerHTML = "";

@@ -1,8 +1,8 @@
-import * as rumi from "./bridge.js";
+import * as tauri from "./tauri/bridge.js";
 
 export function init() {
 
-    rumi.init("Test");
+    tauri.init("Test");
 
     console.log("Hello World : JS");
 }

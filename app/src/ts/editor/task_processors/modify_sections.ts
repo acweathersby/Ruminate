@@ -1,4 +1,4 @@
-import { TextSection } from '../sections';
+import { TextSection } from '../section/sections';
 import { Section } from '../types/types';
 
 interface ModifyFunctions {
@@ -8,8 +8,21 @@ interface ModifyFunctions {
      * - The selection range starts within the section and ends outside the section.
      * - The selection range is entirely contained within the section and the range
      *   boundaries do not line up with section boundaries. 
+     * 
+     * @param {TextSection} s - Section to be modified.
+     * 
+     * @param {number} off - The point within the section it starts to overlap with the 
+     *  selection region.
+     * 
+     * @param {number} len - The number of characters from `off` that are within the 
+     *  selection region. 
+     * 
+     * @param {ModifyFunctions} modify_functions - The object containing the modifying
+     * functions used by `modifySections`.
+     * 
      */
-    on_text_segment: (s: TextSection, off: number, len: number, modify_functions: ModifyFunctions) => void;
+    on_text_segment(
+        s: TextSection, off: number, len: number, modify_functions: ModifyFunctions): void;
     /**
      * Called when the selection range relates to the section in one of three ways:
      * - The selection range starts outside the section and ends within the section.
@@ -17,7 +30,11 @@ interface ModifyFunctions {
      * - The selection range is entirely contained within the section and the range
      *   boundaries do not line up with section boundaries. 
      */
-    on_section_segment: (s: Section, off_start: number, off_end: number, modify_functions: ModifyFunctions) => void;
+    on_section_segment: (
+        /**
+         * The section that should be modified
+         */
+        s: Section, off_start: number, off_end: number, modify_functions: ModifyFunctions) => void;
     /**
      * Called when the givin selection is completely contained by the selection range.
      */

@@ -1,5 +1,4 @@
-import { AnchorStart } from '../ast.js';
-import { EditLine, TextSection } from '../sections.js';
+import { EditLine, TextSection } from '../section/sections.js';
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
 
@@ -171,10 +170,12 @@ export function getTextSectionAtOffset(
             for (const candidate of candidates) {
                 if (candidate.first_child)
                     for (const node of candidate.first_child.traverse_horizontal()) {
+                        console.log({ head: node.head, offset });
                         if (offset >= node.head && (offset < node.tail || (TAIL_CAPTURE && offset == node.tail))) {
-                            if (node instanceof TextSection)
+                            if (node instanceof TextSection) {
+
                                 return node;
-                            else {
+                            } else {
                                 candidates.push(node);
                                 break;
                             };

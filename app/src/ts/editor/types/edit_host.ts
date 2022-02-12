@@ -1,4 +1,4 @@
-import { SectionRoot } from "../sections";
+import { SectionRoot } from "../section/sections";
 import { HistoryTask, TextCommand } from './text_command_types';
 
 /**

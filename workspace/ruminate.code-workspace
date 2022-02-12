@@ -11,9 +11,6 @@
 		{
 			"path": "../app",
 			"name": "App"
-		},
-		{
-			"path": "../app/src-tauri"
 		}
 	]
 }

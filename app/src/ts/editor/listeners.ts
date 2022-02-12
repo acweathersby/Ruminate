@@ -1,8 +1,8 @@
 import { getOffsetsFromSelection, invalidateMetrics, updateMetrics } from './task_processors/common';
-import { redo, undo, applyHistoryFork } from './task_processors/history';
+import { redo, undo } from './task_processors/history';
 import { getProcessor } from './task_processors/register_task';
 import { EditHost } from "./types/edit_host";
-import { DeletionComplexity, TextCommand, TextCommandTask } from './types/text_command_types';
+import { DeletionComplexity, FormatType, TextCommand, TextCommandTask } from './types/text_command_types';
 import { Section } from './types/types';
 
 
@@ -172,7 +172,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "deleteByCut": debugger; break;
         case "deleteContent": debugger; break;
         case "deleteContentBackward": {
-            edit_host.root.updateMetrics();
+
             const { start_offset, end_offset } = getOffsetsFromSelection();
             const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
                 command: TextCommand.DELETE_TEXT,
@@ -191,7 +191,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
             getProcessor("edit", TextCommand.DELETE_TEXT)(command, edit_host);
         } break;
         case "deleteContentForward": {
-            edit_host.root.updateMetrics();
+
             const { start_offset, end_offset } = getOffsetsFromSelection();
             const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
                 command: TextCommand.DELETE_TEXT,
@@ -212,8 +212,44 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         }; break;
         case "historyUndo": { undo(edit_host); } break;
         case "historyRedo": { redo(edit_host); } break;
-        case "formatBold": debugger; break;
-        case "formatItalic": debugger; break;
+        case "formatBold": {
+            const { start_offset, end_offset } = getOffsetsFromSelection();
+
+            if (start_offset == end_offset)
+                break;
+
+            const command = <TextCommandTask[TextCommand.TOGGLE_BOLD]>{
+                command: TextCommand.TOGGLE_BOLD,
+                data: {
+                    type: FormatType.UNDEFINED,
+                    ranges: [{
+                        start_offset,
+                        end_offset
+                    }]
+                }
+            };
+
+            getProcessor("edit", TextCommand.TOGGLE_BOLD)(command, edit_host);
+        }; break;
+        case "formatItalic": {
+            const { start_offset, end_offset } = getOffsetsFromSelection();
+
+            if (start_offset == end_offset)
+                break;
+
+            const command = <TextCommandTask[TextCommand.TOGGLE_ITALICS]>{
+                command: TextCommand.TOGGLE_ITALICS,
+                data: {
+                    type: FormatType.UNDEFINED,
+                    ranges: [{
+                        start_offset,
+                        end_offset
+                    }]
+                }
+            };
+
+            getProcessor("edit", TextCommand.TOGGLE_ITALICS)(command, edit_host);
+        }; break;
         case "formatUnderline": debugger; break;
         case "formatStrikeThrough": debugger; break;
         case "formatSuperscript": debugger; break;
