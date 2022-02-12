@@ -10,9 +10,9 @@
     "dev:app": "RUST_BACKTRACE=1 cargo tauri dev",
     "dev:fe": "candle.wick workspace --port 51221 ./src/",
     "build": "npm run build:release",
-    "build:release": "echo \"Build routine not defined\"",
-    "build:debug": "",
-    "test": "candle.wick test ./src/tests/"
+    "build:release": "cargo tauri build",
+    "build:debug": "cargo tauri dev",
+    "test:fe": "candle.wick test ./src/tests/"
   },
   "dependencies": {
     "@candlelib/glow": "^0.5.10",
