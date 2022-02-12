@@ -1,4 +1,4 @@
-import { getOffsetsFromSelection, invalidateMetrics, updateMetrics } from './task_processors/common';
+import { getOffsetsFromSelection, invalidateMetrics, toggleEditable, updateMetrics } from './task_processors/common';
 import { redo, undo } from './task_processors/history';
 import { getProcessor } from './task_processors/register_task';
 import { EditHost } from "./types/edit_host";
@@ -77,8 +77,12 @@ export function attachListeners(edit_host: EditHost) {
 
             let NO_DEFAULT = false;
 
-            if (e.ctrlKey) {
+            if (e.ctrlKey && e.shiftKey) {
+                toggleEditable(edit_host);
+                return false;
+            }
 
+            if (e.ctrlKey && e.code) {
                 if (e.code == "KeyZ") {
                     if (e.shiftKey) {
                         edit_host.event_handlers.beforeinput(<any>{ inputType: "historyRedo" });
