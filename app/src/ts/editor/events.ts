@@ -1,4 +1,4 @@
-import { getOffsetsFromSelection, invalidateMetrics, toggleEditable, updateMetrics } from './task_processors/common';
+import { getOffsetsFromSelection, invalidateMetrics, toggleEditable, updateMarkdownDebugger, updateMetrics } from './task_processors/common';
 import { redo, undo } from './task_processors/history';
 import { getProcessor } from './task_processors/register_task';
 import { EditHost } from "./types/edit_host";
@@ -21,12 +21,15 @@ export function attachListeners(edit_host: EditHost) {
                  insertText(" ", edit_host);
              } */
         },
+        keyup(e: KeyboardEvent) {
+            console.log(e);
+        },
         keydown(e: KeyboardEvent) {
             const sel = window.getSelection();
 
             let NO_DEFAULT = false;
 
-            if (e.ctrlKey && e.shiftKey) {
+            if (e.key == 'Alt') {
                 toggleEditable(edit_host);
                 return false;
             }
@@ -47,6 +50,7 @@ export function attachListeners(edit_host: EditHost) {
             e.stopImmediatePropagation();
         },
         beforeinput(e: InputEvent) {
+            console.log("A");
             if (e.preventDefault)
                 e.preventDefault();
             processInputEvent(e, edit_host);
@@ -74,7 +78,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
 
     switch (e.inputType) {
         case "insertText": insertText(edit_host, e.data); break;
-        case "insertReplacementText": debugger; break;
+
         case "insertLineBreak": debugger; break;
         case "insertParagraph": {
             const command = <TextCommandTask[TextCommand.INSERT_PARAGRAPH]>{
@@ -90,7 +94,8 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "insertHorizontalRule": debugger; break;
         case "insertFromYank": debugger; break;
         case "insertFromDrop": debugger; break;
-        case "insertFromPaste": debugger; {
+        case "insertReplacementText":
+        case "insertFromPaste": {
 
             const cb = e.dataTransfer;
             const items = Array.from(cb.items).filter(i => i.kind == "string" && i.type == "text/plain");
@@ -98,7 +103,6 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
             if (items[0]) {
                 return new Promise(r => {
                     items[0].getAsString(data => {
-                        debugger;
                         insertText(edit_host, data);
                         r(void 1);
                     });
@@ -215,6 +219,10 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "formatFontColor": debugger; break;
         case "formatFontName": debugger; break;
     }
+
+
+    if (edit_host.DEBUGGER_ENABLED)
+        updateMarkdownDebugger(edit_host);
 }
 
 function insertText(edit_host: EditHost, text_data: string) {

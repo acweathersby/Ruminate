@@ -1,5 +1,5 @@
 import test from "@test";
-import * as txt from "../../ts/editor/text_handler.ts";
+import * as txt from "../../ts/editor/text_editor.ts";
 import { getProcessor } from "../../ts/editor/task_processors/register_task.ts";
 import { TextCommand, DeletionComplexity } from '../../ts/editor/types/text_command_types.ts';
 import { updateMetrics } from "../../ts/editor/task_processors/common.ts";
@@ -10,7 +10,7 @@ test: {
 
 
     assert_group("Basic text deletion w/ history actions", sequence, ()=>{
-        const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome To Ruminate");
+        const edit_host = await txt.constructEditHost(-1, ele, "Welcome To Ruminate");
         
         updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
@@ -54,7 +54,7 @@ test: {
 
     assert_group("Inter-section text deletion w/ history actions", sequence, ()=>{ 
 
-        const edit_host = await txt.construct_edit_tree(-1, ele, "Welcome *To* Ruminate");
+        const edit_host = await txt.constructEditHost(-1, ele, "Welcome *To* Ruminate");
         
         updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
@@ -103,7 +103,7 @@ test: {
 
 This is a test`
 
-        const edit_host = await txt.construct_edit_tree(-1, ele, text_data);
+        const edit_host = await txt.constructEditHost(-1, ele, text_data);
 
         updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
@@ -152,7 +152,7 @@ This is a test
 
 And only a test`
 
-        const edit_host = await txt.construct_edit_tree(-1, ele, text_data);
+        const edit_host = await txt.constructEditHost(-1, ele, text_data);
 
         updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({
@@ -197,7 +197,7 @@ And only a test`
 
         const text_data = `Welcome To Ruminate`
 
-        const edit_host = await txt.construct_edit_tree(-1, ele, text_data);
+        const edit_host = await txt.constructEditHost(-1, ele, text_data);
 
         updateMetrics(edit_host, true);
         txt.getProcessor("edit", TextCommand.DELETE_TEXT)({

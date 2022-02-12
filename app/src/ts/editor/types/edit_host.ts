@@ -6,7 +6,7 @@ import { HistoryTask, TextCommand } from './text_command_types';
  * single note.
  */
 export interface EditHost {
-
+    DEBUGGER_ENABLED: boolean,
     DIRTY_METRICS: boolean;
 
     root: SectionRoot;
@@ -15,7 +15,7 @@ export interface EditHost {
 
     options?: {};
 
-    markdown_element?: HTMLDivElement;
+    markdown_debugger_element?: HTMLDivElement;
 
     command_history: (HistoryTask[TextCommand])[];
 
@@ -27,6 +27,7 @@ export interface EditHost {
         paste(arg: ClipboardEvent): void;
         keypress(arg: KeyboardEvent): void;
         keydown(arg: KeyboardEvent): void;
+        keyup(arg: KeyboardEvent): void;
         beforeinput(arg: InputEvent): void;
     };
 }

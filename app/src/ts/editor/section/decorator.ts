@@ -45,3 +45,24 @@ export class BoldSection extends FormatNode {
         return `__${super.toString()}__`;
     }
 }
+
+export class InlineCode extends FormatNode {
+
+    constructor(
+        sections: Section[]
+    ) {
+        super("code", sections);
+    }
+
+    get leading_offset() {
+        return 2;
+    }
+
+    get markdown_length() {
+        return this.length + 2;
+    }
+
+    toString(): string {
+        return `\`${super.toString()}\``;
+    }
+}

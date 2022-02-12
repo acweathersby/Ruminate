@@ -1,5 +1,5 @@
 import test from "@test";
-import * as txt from "../../ts/editor/text_handler.ts";
+import * as txt from "../../ts/editor/text_editor.ts";
 import { getProcessor } from "../../ts/editor/task_processors/register_task.ts";
 import { TextCommand } from '../../ts/editor/types/text_command_types.ts';
 

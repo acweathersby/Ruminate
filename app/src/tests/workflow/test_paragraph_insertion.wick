@@ -1,5 +1,5 @@
 import test from "@test";
-import * as txt from "../../ts/editor/text_handler.ts";
+import * as txt from "../../ts/editor/text_editor.ts";
 import { getProcessor } from "../../ts/editor/task_processors/register_task.ts";
 import { TextCommand, DeletionComplexity } from '../../ts/editor/types/text_command_types.ts';
 
@@ -11,7 +11,7 @@ test: {
     assert_group("Basic paragraph insertion at end of line", sequence, ()=>{
         const text = "Welcome";
 
-        const edit_host = await txt.construct_edit_tree(-1, ele, text);
+        const edit_host = await txt.constructEditHost(-1, ele, text);
     
         txt.getProcessor("edit", TextCommand.INSERT_PARAGRAPH)({
             command: TextCommand.INSERT_PARAGRAPH,
@@ -39,7 +39,7 @@ test: {
     assert_group("Basic paragraph insertion in middle of simple text line", sequence, ()=>{
         const text = "Welcome To Ruminate";
 
-        const edit_host = await txt.construct_edit_tree(-1, ele, text);
+        const edit_host = await txt.constructEditHost(-1, ele, text);
     
         txt.getProcessor("edit", TextCommand.INSERT_PARAGRAPH)({
             command: TextCommand.INSERT_PARAGRAPH,

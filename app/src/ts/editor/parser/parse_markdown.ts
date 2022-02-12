@@ -1,8 +1,8 @@
-import { complete } from "@hctoolkit/runtime";
+import { ASTNode, complete, state_index_mask } from "@hctoolkit/runtime";
 import { Token } from '@hctoolkit/runtime/build';
 import { AnchorSection } from "../section/anchor";
 import { CodeBlock } from '../section/code';
-import { BoldSection, ItalicSection } from "../section/decorator";
+import { BoldSection, InlineCode, ItalicSection } from "../section/decorator";
 import { Header } from '../section/header ';
 import { EditLine } from "../section/line";
 import { NoteSlotSection } from "../section/note";
@@ -10,70 +10,62 @@ import { Paragraph } from '../section/paragraph';
 import { TextSection } from "../section/text";
 import { Content } from "../section/types";
 import { Section } from '../types/types';
+
 import {
     AnchorEnd,
     AnchorMiddle,
     ASTType,
     FunctionMaps,
-    InlineCode,
     Markdown,
-    Text as MDText
+    InlineCode as MDInlineCode,
+    Text as MDText,
+    Header as MDHeader
 } from "./ast.js";
+
 import {
     Bytecode,
     Entrypoint,
-    ReduceNames
+    ExpectedTokenLookup,
+    ReduceNames,
+    TokenLookup
 } from "./parser_data.js";
 
+const { md } = Entrypoint;
 
 export function parseMarkdownText(text: string): Markdown {
-    const { result, err } = complete<Markdown>(text, Entrypoint.markdown, Bytecode, FunctionMaps, ReduceNames);
 
-    if (err)
-        throw err;
+    const { result, err } = complete<Markdown>(text, md, Bytecode, FunctionMaps, ReduceNames);
+
+    if (err) {
+
+        const index = err.last_state & state_index_mask;
+
+        let expected = "";
+
+        let token = new Token(text, err.tk_length || 1, err.tk_offset, 0);
+
+        if (ExpectedTokenLookup.has(index)) {
+            expected = ExpectedTokenLookup.get(index)?.map(v => TokenLookup.get(v)).join(" | ");
+        }
+
+        if (token.toString() == " ")
+            token.throw(`Expected [ ${expected} ] but found a space.`);
+        else if (err.tk_offset >= text.length)
+            token.throw(`Expected [ ${expected} ] but encountered the end of the input.`);
+        else
+            token.throw(`Expected [ ${expected} ] but found [ ${token} ]`);
+    }
 
     return result;
 }
 
 
 
-export function convertMDASTToEditLines(md: Markdown): EditLine[] {
-    const lines: EditLine[] = [];
-    for (const line of md.lines) {
-        if (line.node_type == ASTType.CodeBlock) {
-            lines.push(new CodeBlock(getText(line.syntax), line.data.map(getText)));
-        } else if (line.node_type == ASTType.Line)
-            switch (line.header.node_type) {
-
-                case ASTType.Ol:
-                case ASTType.Ul:
-                    break;
-                case ASTType.Header:
-                    //If the header length is more than 6 treat as a 
-                    // paragraph
-                    lines.push(new Header(line.header.length, convertContent(line.content)));
-                    break;
-                case ASTType.Paragraph:
-                    //If the line data is empty then ignore it. 
-                    if (line.content.length == 0)
-                        continue;
-                    lines.push(new Paragraph(convertContent(line.content)));
-                    break;
-            }
-        else {
-        }
-    }
-
-    return lines;
-}
-
-export function convertContent(raw_content: Content[]) {
-    return convertOuterContent(codeContent(raw_content));
-}
-
-export function getText(obj: Content): string {
-    if (obj)
-        switch (obj.node_type) {
+export function getText(obj: any): string {
+    if (obj instanceof ASTNode)
+        switch (obj.type) {
+            case ASTType.InlineCode:
+                return "`";
             case ASTType.AnchorStart:
                 return "[";
             case ASTType.AnchorImageStart:
@@ -94,12 +86,60 @@ export function getText(obj: Content): string {
                 if (obj instanceof MDText)
                     return obj.value;
                 return "";
+            case ASTType.Header:
+                if (obj instanceof MDHeader)
+                    return "#".repeat(obj.length);
         }
+    else return obj.toString();
     return "";
 }
 
 
-export function convertOuterContent(raw_content: Content[], offset = 0, length = raw_content.length) {
+export function convertMDASTToEditLines(md: Markdown): EditLine[] {
+    const lines: EditLine[] = [];
+    for (const line of md.lines) {
+        if (line.type == ASTType.CodeBlock) {
+            lines.push(new CodeBlock(getText(line.syntax), line.data.map(getText)));
+        } else if (line.type == ASTType.Line)
+            switch (line.header.type) {
+
+                case ASTType.Ol:
+                case ASTType.Ul:
+                    break;
+                case ASTType.Header:
+
+                    const [first] = line.content;
+                    // Enforce that at least one space character proceed the 
+                    // # chars
+                    if (!first || line.header.length > 6 || first.type != ASTType.Text || first.value[0] !== " ") {
+                        lines.push(new Paragraph(convertContent([new MDText(getText(line.header)), ...line.content])));
+                    } else {
+                        //Remove leading space
+                        first.value = first.value.slice(1);
+                        lines.push(new Header(line.header.length, convertContent(line.content)));
+                    }
+
+                    break;
+                case ASTType.Paragraph:
+                    //If the line data is empty then ignore it. 
+                    if (line.content.length == 0)
+                        continue;
+                    lines.push(new Paragraph(convertContent(line.content)));
+                    break;
+            }
+        else {
+        }
+    }
+
+    return lines;
+}
+
+export function convertContent(raw_content: Content[]) {
+    return convertOuterContent(raw_content);
+}
+
+
+export function convertOuterContent(raw_content: (Content | InlineCode)[], offset = 0, length = raw_content.length) {
 
     const line_contents: Section[] = [];
 
@@ -107,11 +147,28 @@ export function convertOuterContent(raw_content: Content[], offset = 0, length =
 
         const obj = raw_content[i];
 
-        switch (obj.node_type) {
+        if (obj instanceof InlineCode) {
+            line_contents.push(obj);
+            continue;
+        }
+
+
+        switch (obj.type) {
+            case ASTType.InlineCode: {
+
+                const d = getInlineCounterpart(raw_content, i, raw_content.length);
+
+                if (d != i) {
+                    const str = raw_content.slice(i + 1, d).map(getText).join("");
+                    line_contents.push(new InlineCode([new TextSection(str)]));
+                    i = d;
+                };
+
+            } break;
             case ASTType.MarkerA:
             case ASTType.MarkerB:
                 {
-                    var d = tryFormat(obj.node_type, raw_content, line_contents, i, length);
+                    const d = tryFormat(obj.type, raw_content, line_contents, i, length);
                     if (d != i) { i = d; continue; };
                 }
                 break;
@@ -132,7 +189,7 @@ export function convertOuterContent(raw_content: Content[], offset = 0, length =
                         const content = raw_content.slice(i + 1, mid);
                         const data = raw_content.slice(mid + 1, end);
 
-                        if (obj.node_type == ASTType.AnchorImageStart) {
+                        if (obj.type == ASTType.AnchorImageStart) {
 
                         } else {
                             line_contents.push(new AnchorSection(
@@ -151,7 +208,7 @@ export function convertOuterContent(raw_content: Content[], offset = 0, length =
             case ASTType.QueryStart:
                 for (let j = i + 1; j < length; j++) {
                     let end = raw_content[j];
-                    if (end.node_type == ASTType.QueryEnd) {
+                    if (end.type == ASTType.QueryEnd) {
                         const data = raw_content.slice(i + 1, j);
                         line_contents.push(new NoteSlotSection(data.map(getText).join("")));
                         i = j;
@@ -179,7 +236,7 @@ export function convertOuterContent(raw_content: Content[], offset = 0, length =
 }
 function tryFormat(
     type: ASTType,
-    raw_content: Content[],
+    raw_content: (Content | InlineCode)[],
     line_content: Section[],
     offset: number,
     length: number
@@ -188,8 +245,11 @@ function tryFormat(
     let start = offset + 1;
     let search_size = 1;
 
-    for (let i = start; i < length; i++)
-        if (raw_content[i].node_type !== type) { start = i; break; };
+    for (let i = start; i < length; i++) {
+        const obj = raw_content[i];
+        if (obj instanceof InlineCode) continue;
+        if (obj.type !== type) { start = i; break; };
+    }
 
     search_size = start - offset;
 
@@ -207,18 +267,24 @@ function tryFormat(
     let matches = [];
 
     for (let i = start; i < length; i++) {
-
+        const i_obj = raw_content[i];
         const node = raw_content[i - 1];
-
+        if (i_obj instanceof InlineCode) continue;
         if (
-            raw_content[i].node_type == type
+            i_obj.type == type
             &&
             !(node instanceof MDText && node.value[node.value.length - 1] == " ")
         ) {
 
-            let j = i + 1;
+            let
+                j = i + 1,
+                j_obj = raw_content[j];
 
-            while (j < length && raw_content[j].node_type == type) { j++; };
+            while (
+                j < length
+                && !(j_obj instanceof InlineCode)
+                && j_obj.type == type
+            ) { j++; j_obj = raw_content[j]; };
 
             let diff = j - i;
 
@@ -252,69 +318,17 @@ function tryFormat(
 
         line_content.push(start_section);
 
-
         return end - 1;
     }
 
     return offset;
 }
-export function codeContent(raw_content: Content[]) {
+function getInlineCounterpart(raw_content: (Content | InlineCode)[], offset, length) {
 
-    const content = [];
-
-    for (let i = 0; i < raw_content.length; i++) {
-
-        if (raw_content[i] instanceof InlineCode) {
-
-            var d = tryCodeBlock(raw_content[i], raw_content, content, i, raw_content.length);
-
-            if (d != i) {
-                i = d;
-                continue;
-            };
-
-            //@ts-ignore
-            raw_content[i].type = "text";
-
-            content.push(raw_content[i]);
-
-            continue;
-        }
-
-        content.push(raw_content[i]);
-    }
-
-    return content;
-}
-function tryCodeBlock(obj, raw_content, content, offset, length) {
-
-    let start = offset + 1;
-
-    if (raw_content[start] == " ")
-        return offset;
-
-
-    for (let i = start; i < length; i++) {
-
-        if (raw_content[i - 1] == " ")
-            continue;
-
-        if (raw_content[i].type == "inline_code") {
-            const tok = Token.fromRange(obj.pos, raw_content[i].pos);
-
-            content.push(<HTMLElementNode>{
-                type: HTMLNodeType.HTML_CODE,
-                tag: "CODE",
-                attributes: [MD_Attribute],
-                nodes: [{
-                    type: HTMLNodeType.HTMLText,
-                    data: escape_html_string(tok.slice().slice(1, -1)).trim(),
-                    pos: tok
-                }]
-            });
-
+    for (let i = offset + 2; i < length; i++) {
+        const i_obj = raw_content[i];
+        if (i_obj instanceof MDInlineCode)
             return i;
-        }
     }
 
     return offset;

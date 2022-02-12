@@ -63,7 +63,9 @@ function redoInsertText(redo_data: HistoryTask[TextCommand.INSERT_TEXT]["redo_da
     if (APPLY_MARKDOWN_FORMAT) {
         throw new TodoError("Implement insertText with Markdown Formatting");
     } else {
+
         updateUIElements(edit_host);
+
         setZeroLengthSelection(node.ele, offset - node.head + input_text.length);
     }
 
@@ -83,7 +85,6 @@ function undoInsertText(undo_data: HistoryTask[TextCommand.INSERT_TEXT]["undo_da
     updateUIElements(edit_host);
 
     setZeroLengthSelection(node.ele, undo_data.offset_start - node.head);
-
 }
 
 

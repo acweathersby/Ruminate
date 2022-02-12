@@ -1,5 +1,5 @@
 import { TodoError } from './errors/todo_error.js';
-import { attachListeners } from './listeners';
+import { attachListeners } from './events';
 import { convertMDASTToEditLines, parseMarkdownText } from './parser/parse_markdown.js';
 import { SectionRoot } from "./section/base/root";
 import { EditHost } from './types/edit_host.js';
@@ -14,6 +14,7 @@ import "./task_processors/insert_paragraph.js";
 import "./task_processors/insert_text.js";
 import "./task_processors/toggle_bold.js";
 import "./task_processors/toggle_italics.js";
+import { toggleEditable, updateMarkdownDebugger } from './task_processors/common.js';
 
 export * from "./task_processors/history.js";
 export * from "./task_processors/register_task.js";
@@ -23,7 +24,7 @@ function updateHost(edit_host: EditHost) {
     edit_host.root.toElement(edit_host.host_ele);
 }
 
-export async function construct_edit_tree(
+export async function constructEditHost(
     note_id: number,
     host_ele: HTMLDivElement,
     input_string = "Welcome To Ruminate"
@@ -41,6 +42,7 @@ export async function construct_edit_tree(
     }
 
     const edit_host: EditHost = {
+        DEBUGGER_ENABLED: true,
         DIRTY_METRICS: true,
         command_history: [],
         root: null,
@@ -50,10 +52,8 @@ export async function construct_edit_tree(
     };
 
     // -- enabling content editable on host node
-    host_ele.setAttribute("contenteditable", "true");
+    toggleEditable(edit_host);
 
-    // TODO: Remove temporary innerHTML assignment
-    //host_ele.innerHTML = string;
     const result = parseMarkdownText(string);
 
     //Convert Markdown to Editable Content
@@ -69,8 +69,13 @@ export async function construct_edit_tree(
 }
 
 export function addMarkdownPreviewTarget(edit_host: EditHost, target: HTMLDivElement) {
-    if (edit_host)
-        edit_host.markdown_element = target;
+
+    if (edit_host) {
+
+        edit_host.markdown_debugger_element = target;
+
+        updateMarkdownDebugger(edit_host);
+    }
 }
 
 export function renderMarkdown(edit_host: EditHost) {

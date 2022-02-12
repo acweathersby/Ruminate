@@ -7,7 +7,16 @@ import { EditLine } from './line';
  * of a document.
  */
 export class Header extends EditLine {
+
+    level: number;
+
     constructor(level: number, sections: Section[]) {
         super("h" + level, sections);
+        this.level = level;
+
     }
-}
+
+    toString(): string {
+        return `${"#".repeat(this.level)} ${super.toString()}`;
+    }
+};

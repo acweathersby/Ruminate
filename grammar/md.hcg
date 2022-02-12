@@ -1,4 +1,6 @@
 
+@EXPORT markdown as md
+
 <> markdown > lines
 
     f:r { {t_Markdown, lines:$1, tok } }
@@ -13,7 +15,7 @@
 
     | lines g:nl
 
-    f:r { $1 + [{ t_Line, header:{ t_Paragraph, text: str("") }, content:null, tok }] }
+    f:r { $1 + [{ t_EmptyLine }]}
 
 
 <> line >
@@ -28,7 +30,7 @@
 
     f:r { { t_Line, header:{ t_Paragraph, text: str("") }, content:$1, tok } }
 
-<> code_block > ! \``` text? code_line(*) code_block_sentinel
+<> code_block > \``` text? code_line(*) code_block_sentinel
 
     f:r { { t_CodeBlock, syntax:$2, data:$3 } }
 
@@ -47,14 +49,14 @@
 
 <> code_block_sentinel >
 
-    \``` | g:rec
+    g:nl \``` | g:rec
 
 <[ recover code_block_sentinel_1 ] 
 
     consume nothing then set prod to code_block_sentinel
 >
 
-<> content > ( text | code_symbol | ! format_symbol )(+)
+<> content > ( text | ! format_symbol )(+)
 
 <> space > ! g:sp(+)
 
@@ -87,7 +89,7 @@
     | quote_token
         f:r { { t_Quote, offset:f64($1) } }
 
-<> header_token > \# (+)
+<> header_token > \# (+) 
 
 <> ol_token > 
     
@@ -100,15 +102,13 @@
 <> quote_token > 
     
     space? \>           f:r { [$1] }
-    
-
-<> code_symbol > \`
-    f:r { { t_InlineCode } }
 
 <> spaces > g:sp(*)
 
 <> format_symbol > 
-    \* 
+    \` 
+    f:r { { t_InlineCode } }
+    | \* 
     f:r { { t_MarkerA } }
     | \_ 
     f:r { { t_MarkerB } }
@@ -118,7 +118,7 @@
     f:r { { t_QueryEnd } }
     | \[ 
     f:r { { t_AnchorStart } }
-    | \![ 
+    | \![
     f:r { { t_AnchorImageStart } }
     | \]
     f:r { { t_AnchorEnd } }

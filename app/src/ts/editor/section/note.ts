@@ -8,6 +8,7 @@ export class NoteSlotSection extends Node {
     constructor(query: string) {
         super("span", []);
         this.query = query;
+        this.length = 1;
     }
 
     toElement(host_element?: HTMLElement): Section {

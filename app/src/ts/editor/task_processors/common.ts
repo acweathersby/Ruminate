@@ -246,19 +246,48 @@ export function invalidateMetrics(host: EditHost) {
  */
 export function updateUIElements(host: EditHost) {
     host.root.updateElement();
-    if (host.markdown_element) {
-        if (!host.markdown_element.firstElementChild) {
-            const pre = document.createElement("pre");
-            host.markdown_element.appendChild(pre);
-        }
+}
 
-        host.markdown_element.firstElementChild.innerHTML = host.root.toString();
+export function updateMarkdownDebugger(host: EditHost) {
+    if (host.markdown_debugger_element) {
+        if (host.DEBUGGER_ENABLED) {
+
+            if (!host.markdown_debugger_element.firstElementChild) {
+                const pre = document.createElement("pre");
+                host.markdown_debugger_element.appendChild(pre);
+            }
+
+            host.markdown_debugger_element.firstElementChild.innerHTML = host.root.toString();
+        } else {
+            host.markdown_debugger_element.innerHTML = "";
+        }
     }
 }
+
 export function addChildrenStartingAt(parent: Section, child: Section) {
     let prev = null;
     for (const sec of child.traverse_horizontal()) {
         sec.link(prev, parent);
         prev = sec;
     }
+}
+
+/**
+ * Toggle the editable state of the host element
+ */
+export function toggleEditable(edit_host: EditHost) {
+    const EDITABLE = edit_host.host_ele.getAttribute("contenteditable") == "true";
+
+    setEditable(edit_host, !EDITABLE);
+}
+
+/**
+ * Set the editable state of the host element
+ */
+export function setEditable(edit_host: EditHost, EDITABLE: boolean = true) {
+
+    if (EDITABLE)
+        edit_host.host_ele.setAttribute("contenteditable", "true");
+    else
+        edit_host.host_ele.setAttribute("contenteditable", "false");
 }

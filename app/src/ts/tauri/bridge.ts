@@ -23,8 +23,8 @@ function assert_tauri_decorator<T>(fn: T): T {
 }
 
 export const init = assert_tauri_decorator(
-    async function init(data: string): Promise<void> {
-        return invoke("init", { data });
+    async function init(): Promise<void> {
+        return invoke("init", { data: "" });
     });
 export const create_note = assert_tauri_decorator(
     async function create_note(): Promise<number> {
