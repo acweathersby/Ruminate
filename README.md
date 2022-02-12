@@ -1,6 +1,6 @@
 # RUMINATE NOTES
 
-## Build Dev 
+## Commands
 
 ### Run Frontend Dev Environment
 
