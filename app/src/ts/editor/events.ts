@@ -3,57 +3,6 @@ import { redo, undo } from './task_processors/history';
 import { getProcessor } from './task_processors/register_task';
 import { EditHost } from "./types/edit_host";
 import { DeletionComplexity, FormatType, TextCommand, TextCommandTask } from './types/text_command_types';
-import { Section } from './types/types';
-
-
-export function getCursorOffsets(edit_host: EditHost) {
-    const sel = window.getSelection();
-    return {
-        start: getSelectionOffset(sel.anchorNode, sel.anchorOffset, edit_host),
-        end: getSelectionOffset(sel.anchorNode, sel.anchorOffset, edit_host)
-    };
-}
-
-export function getSelectionOffset(node: Node, offset: number, edit_host: EditHost): {
-    offset: number,
-    section: Section;
-} {
-    const host: Section =
-        //@ts-ignore
-        node.ruminate_host;
-
-    let prev = host.prev;
-
-    while (prev) {
-        offset += prev.length;
-        prev = prev.prev;
-    }
-
-    let par = host.parent;
-
-    while (par.parent) {
-        let prev = par.prev;
-
-        offset += par.leading_offset;
-
-        while (prev) {
-            offset += prev.length;
-            prev = prev.prev;
-        }
-
-        par = par.parent;
-    }
-
-    for (const section of edit_host.root.children)
-        if (section == par) {
-            return { offset, section };
-        } else {
-            offset += section.length;
-        }
-
-    throw new Error("Unable to derive absolute selection offset");
-}
-
 
 export function attachListeners(edit_host: EditHost) {
 
