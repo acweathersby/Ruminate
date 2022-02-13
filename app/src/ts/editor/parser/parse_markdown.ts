@@ -55,7 +55,7 @@ export function parseMarkdownText(text: string): Markdown {
         else
             token.throw(`Expected [ ${expected} ] but found [ ${token} ]`);
     }
-
+    console.log(result);
     return result;
 }
 
@@ -97,37 +97,55 @@ export function getText(obj: any): string {
 
 export function convertMDASTToEditLines(md: Markdown): EditLine[] {
     const lines: EditLine[] = [];
+
+    let prev = null;
+
     for (const line of md.lines) {
-        if (line.type == ASTType.CodeBlock) {
-            lines.push(new CodeBlock(getText(line.syntax), line.data.map(getText)));
-        } else if (line.type == ASTType.Line)
-            switch (line.header.type) {
+        switch (line.type) {
+            case ASTType.CodeBlock: {
+                const section = new CodeBlock(getText(line.syntax), line.data.map(getText));
+                lines.push(section);
+                prev = section;
+            } break;
+            case ASTType.EmptyLine:
+                prev = null;
+                break;
+            case ASTType.OL:
+            case ASTType.UL:
+                break;
+            case ASTType.Header: {
 
-                case ASTType.Ol:
-                case ASTType.Ul:
-                    break;
-                case ASTType.Header:
+                const [first] = line.content;
+                // Enforce that at least one space character proceed the 
+                // # chars
+                if (!first || line.length > 6 || first.type != ASTType.Text || first.value[0] !== " ") {
+                    const section = new Paragraph(convertContent([new MDText(getText(line)), ...line.content]));
+                    lines.push(section);
+                    prev = section;
+                } else {
+                    //Remove leading space
+                    first.value = first.value.slice(1);
+                    const section = new Header(line.length, convertContent(line.content));
+                    lines.push(section);
+                    prev = section;
+                }
+            } break;
+            case ASTType.Paragraph: {
+                //If the line data is empty then ignore it. 
+                if (line.content.length == 0)
+                    continue;
 
-                    const [first] = line.content;
-                    // Enforce that at least one space character proceed the 
-                    // # chars
-                    if (!first || line.header.length > 6 || first.type != ASTType.Text || first.value[0] !== " ") {
-                        lines.push(new Paragraph(convertContent([new MDText(getText(line.header)), ...line.content])));
-                    } else {
-                        //Remove leading space
-                        first.value = first.value.slice(1);
-                        lines.push(new Header(line.header.length, convertContent(line.content)));
-                    }
+                if (prev instanceof Paragraph) {
+                    let p = prev.last_child;
+                    for (const sec of [new TextSection(" "), ...convertContent(line.content)])
+                        p = sec.link(p, prev);
+                } else {
+                    const section = new Paragraph(convertContent(line.content));
+                    lines.push(section);
+                    prev = section;
+                }
 
-                    break;
-                case ASTType.Paragraph:
-                    //If the line data is empty then ignore it. 
-                    if (line.content.length == 0)
-                        continue;
-                    lines.push(new Paragraph(convertContent(line.content)));
-                    break;
-            }
-        else {
+            } break;
         }
     }
 

@@ -47,8 +47,8 @@ export class Node extends SectionBase {
     toElement(host_element?: HTMLElement): Section | null {
 
         this.ele = this.createElement(this.tag);
-        this.updateElement();
 
+        this.updateElement();
 
         if (host_element)
             host_element.appendChild(this.ele);

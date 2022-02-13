@@ -3,42 +3,91 @@
 
 <> markdown > lines
 
-    f:r { {t_Markdown, lines:$1, tok } }
+    f:r { {t_Markdown, lines:$1 } }
 
-<> lines > g:nl? (line | code_block)
+<> lines > g:nl? line
 
     f:r { [$2] }
     
-    | lines g:nl (line | code_block)
+    | lines g:nl line
     
     f:r { $1 + [$3] }
 
     | lines g:nl
 
-    f:r { $1 + [{ t_EmptyLine }]}
+    f:r { $1 + [{ t_EmptyLine, c_Line }]}
 
 
 <> line >
 
-    head content
+    header_token content
 
-    f:r { { t_Line, header:$1, content:$2, tok } }
+    f:r { { t_Header, c_Line, length:f64($1), content:$2 } }
+
+    | 
+    
+    tk:spaces? tk:ol_token content
+
+    f:r { { t_OL, c_Line, spaces:str($1), content:$3 } }
+
+    |
+
+    tk:spaces? tk:ul_token content
+
+    f:r { { t_UL, c_Line, spaces:str($1), content:$3 } }
+
+    |
+
+    tk:spaces? tk:quote_token content
+
+    f:r { { t_Quote, c_Line, spaces:str($1), content:$3 } }
 
     | 
 
-    content
+    tk:spaces? content
 
-    f:r { { t_Line, header:{ t_Paragraph, text: str("") }, content:$1, tok } }
+    f:r { { t_Paragraph, c_Line, spaces:str($1), content:$2 } }
 
-<> code_block > \``` text? code_line(*) code_block_sentinel
+    |
+     
+    tk:code_block_delimiter code_line_text? code_line(*) cb_sentinel
 
-    f:r { { t_CodeBlock, syntax:$2, data:$3 } }
+    f:r { { t_CodeBlock, c_Line, syntax:str($2), data:$3 } }
+
+
+<> spaces > (g:sp)(*)
+
+<> header_token > 
+    \# (+)
+
+<> ol_token > 
+    
+    g:num \.    
+
+<> ul_token > 
+    
+    ( \- | \+ )  
+
+<> quote_token > 
+    
+    \>           
 
 <> code_line >
 
         g:nl code_line_text?
 
-        f:r { { t_Text, value: str($2) } }
+        f:r { { t_Text, c_Content, value: str($2) } }
+
+<> code_block_delimiter > \```
+
+<> code_block_delimiter_with_nl > g:nl \```
+
+<> cb_sentinel > tk:code_block_delimiter_with_nl | g:rec
+
+<[ recover cb_sentinel_1 ] 
+
+    consume nothing then set prod to cb_sentinel
+>
 
 <> code_line_text > 
     (   g:num 
@@ -49,24 +98,17 @@
 
 <> code_block_sentinel >
 
-    g:nl \``` | g:rec
-
-<[ recover code_block_sentinel_1 ] 
-
-    consume nothing then set prod to code_block_sentinel
->
+    g:nl \``` 
 
 <> content > ( text | ! format_symbol )(+)
 
-<> space > ! g:sp(+)
-
-<> text > ! (text_symbol)(+\" )
-    f:r { { t_Text, value: $1 } }
+<> text > ! text_symbol(+\" )
+    f:r { { t_Text, c_Content, value: $1 } }
 
 <> text_symbol > 
         g:sym
-    |   tk:word
     |   g:sp
+    |   tk:word
     |   tk:num
 
 <> word > g:id 
@@ -74,55 +116,27 @@
 
 <> num > g:num
     | num g:num
-   
-<> head > 
-    
-    header_token
-        f:r { { t_Header, length:f64($1) } }
-
-    | ol_token
-        f:r { { t_Ol, offset:f64($1) } }
-
-    | ul_token
-        f:r { { t_Ul, offset:f64($1) } }
-
-    | quote_token
-        f:r { { t_Quote, offset:f64($1) } }
-
-<> header_token > \# (+) 
-
-<> ol_token > 
-    
-    space? g:num \.    f:r { [$1] }
-
-<> ul_token > 
-    
-    space? ( \- | \+ )  f:r { [$1] }
-
-<> quote_token > 
-    
-    space? \>           f:r { [$1] }
-
-<> spaces > g:sp(*)
 
 <> format_symbol > 
     \` 
-    f:r { { t_InlineCode } }
+    f:r { { t_InlineCode, c_Content } }
     | \* 
-    f:r { { t_MarkerA } }
+    f:r { { t_MarkerA, c_Content } }
     | \_ 
-    f:r { { t_MarkerB } }
+    f:r { { t_MarkerB, c_Content } }
     | \{
-    f:r { { t_QueryStart } }
+    f:r { { t_QueryStart, c_Content } }
     | \}
-    f:r { { t_QueryEnd } }
+    f:r { { t_QueryEnd, c_Content } }
     | \[ 
-    f:r { { t_AnchorStart } }
+    f:r { { t_AnchorStart, c_Content } }
     | \![
-    f:r { { t_AnchorImageStart } }
+    f:r { { t_AnchorImageStart, c_Content } }
     | \]
-    f:r { { t_AnchorEnd } }
+    f:r { { t_AnchorEnd, c_Content } }
     | \](
-    f:r { { t_AnchorMiddle } }
+    f:r { { t_AnchorMiddle, c_Content } }
     | \)
-    f:r { { t_AnchorEnd } }
+    f:r { { t_AnchorEnd, c_Content, c_Meta } }
+    | \(
+    f:r { { t_MetaStart, c_Content, c_Meta } }

@@ -38,27 +38,76 @@ import {
     SerializeStructVector
 } from "@hctoolkit/runtime";
 
+export type c_Line = Header
+   | OL
+   | UL
+   | Quote
+   | Paragraph
+   | CodeBlock
+   | EmptyLine;
+
+
+export function isLine(s:ASTNode<ASTType>): s is c_Line{
+    return (s.type & 2) ==  2;
+}
+        
+
+export type c_Content = Text
+   | InlineCode
+   | MarkerA
+   | MarkerB
+   | QueryStart
+   | QueryEnd
+   | AnchorStart
+   | AnchorImageStart
+   | AnchorEnd
+   | AnchorMiddle
+   | MetaStart;
+
+
+export function isContent(s:ASTNode<ASTType>): s is c_Content{
+    return (s.type & 4) ==  4;
+}
+        
+
+export type c_Meta = AnchorEnd
+   | MetaStart;
+
+
+export function isMeta(s:ASTNode<ASTType>): s is c_Meta{
+    return (s.type & 8) ==  8;
+}
+        
+
+
+export enum ASTClass {
+Line = 2,
+Content = 4,
+Meta = 8
+}
+
+
 
 export enum ASTType {
-Markdown = 22,
-Line = 24,
-Paragraph = 26,
-CodeBlock = 28,
-Text = 30,
-Header = 32,
-Ol = 34,
-Ul = 36,
-Quote = 38,
-InlineCode = 40,
-MarkerA = 42,
-MarkerB = 44,
-QueryStart = 46,
-QueryEnd = 48,
-AnchorStart = 50,
-AnchorImageStart = 52,
-AnchorEnd = 54,
-AnchorMiddle = 56,
-EmptyLine = 58
+Markdown = 176,
+Header = 194,
+OL = 210,
+UL = 226,
+Quote = 242,
+Paragraph = 258,
+CodeBlock = 274,
+Text = 292,
+InlineCode = 308,
+MarkerA = 324,
+MarkerB = 340,
+QueryStart = 356,
+QueryEnd = 372,
+AnchorStart = 388,
+AnchorImageStart = 404,
+AnchorEnd = 428,
+AnchorMiddle = 436,
+MetaStart = 460,
+EmptyLine = 466
 }
 
 
@@ -70,25 +119,25 @@ export function Deserialize(reader: ByteReader){
 function DeserializeStruct(reader: ByteReader): ASTNode<ASTType>{
     switch(reader.peek_byte()){
         
-        case 1: return Markdown.Deserialize(reader);
-        case 1: return Line.Deserialize(reader);
-        case 1: return Paragraph.Deserialize(reader);
-        case 1: return CodeBlock.Deserialize(reader);
-        case 1: return Text.Deserialize(reader);
-        case 1: return Header.Deserialize(reader);
-        case 1: return Ol.Deserialize(reader);
-        case 1: return Ul.Deserialize(reader);
-        case 1: return Quote.Deserialize(reader);
-        case 1: return InlineCode.Deserialize(reader);
-        case 1: return MarkerA.Deserialize(reader);
-        case 1: return MarkerB.Deserialize(reader);
-        case 1: return QueryStart.Deserialize(reader);
-        case 1: return QueryEnd.Deserialize(reader);
-        case 1: return AnchorStart.Deserialize(reader);
-        case 1: return AnchorImageStart.Deserialize(reader);
-        case 1: return AnchorEnd.Deserialize(reader);
-        case 1: return AnchorMiddle.Deserialize(reader);
-        case 1: return EmptyLine.Deserialize(reader);
+        case 0: return Markdown.Deserialize(reader);
+        case 0: return Header.Deserialize(reader);
+        case 0: return OL.Deserialize(reader);
+        case 0: return UL.Deserialize(reader);
+        case 0: return Quote.Deserialize(reader);
+        case 0: return Paragraph.Deserialize(reader);
+        case 0: return CodeBlock.Deserialize(reader);
+        case 0: return Text.Deserialize(reader);
+        case 0: return InlineCode.Deserialize(reader);
+        case 0: return MarkerA.Deserialize(reader);
+        case 0: return MarkerB.Deserialize(reader);
+        case 0: return QueryStart.Deserialize(reader);
+        case 0: return QueryEnd.Deserialize(reader);
+        case 0: return AnchorStart.Deserialize(reader);
+        case 0: return AnchorImageStart.Deserialize(reader);
+        case 0: return AnchorEnd.Deserialize(reader);
+        case 0: return AnchorMiddle.Deserialize(reader);
+        case 0: return MetaStart.Deserialize(reader);
+        case 0: return EmptyLine.Deserialize(reader);
     }
     throw new Error("Could not deserialize");
 }
@@ -96,16 +145,13 @@ function DeserializeStruct(reader: ByteReader): ASTNode<ASTType>{
 
 export class Markdown extends ASTNode<ASTType> {
     
-    lines:(CodeBlock | Line | EmptyLine)[];
-tok:Token;
+    lines:c_Line[];
 
     constructor(
-        _lines:(CodeBlock | Line | EmptyLine)[],
-        _tok:Token,) 
+        _lines:c_Line[],) 
     {
         super();
             this.lines = _lines;
-        this.tok = _tok;
         
     }
     replace_lines(child: ASTNode<ASTType>,j:number) : null | ASTNode<ASTType> {
@@ -114,9 +160,7 @@ tok:Token;
             if(j < this.lines.length && j >= 0){
                 return this.lines.splice(j, 1)[0];
             }
-        }else if(CodeBlock.nodeIs(child)
-    || Line.nodeIs(child)
-    || EmptyLine.nodeIs(child)){
+        }else if(isLine(child)){
             if(j < 0){
                 this.lines.unshift(child);
             }else if(j >= this.lines.length){
@@ -172,78 +216,45 @@ tok:Token;
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
         SerializeStructVector(this.lines, writer)
-
-        this.tok.serialize(writer);
     }
 
     static Deserialize(reader:ByteReader): Markdown {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
         var _lines = Deserialize(reader);
 
-        var _tok = Token.Deserialize(reader);
-
-        return new Markdown(_lines, _tok);
+        return new Markdown(_lines);
     }
 }
 
 
 
-export class Line extends ASTNode<ASTType> {
+export class Header extends ASTNode<ASTType> {
     
-    header:(Header | Ol | Ul | Quote | Paragraph);
-content:(InlineCode | MarkerA | MarkerB | QueryStart | QueryEnd | AnchorStart | AnchorImageStart | AnchorEnd | AnchorMiddle | Text)[];
-tok:Token;
+    length:number;
+content:c_Content[];
 
     constructor(
-        _header:(Header | Ol | Ul | Quote | Paragraph),
-        _content:(InlineCode | MarkerA | MarkerB | QueryStart | QueryEnd | AnchorStart | AnchorImageStart | AnchorEnd | AnchorMiddle | Text)[],
-        _tok:Token,) 
+        _length:number,
+        _content:c_Content[],) 
     {
         super();
-            this.header = _header;
+            this.length = _length;
         this.content = _content;
-        this.tok = _tok;
         
     }
-    replace_header(child: ASTNode<ASTType>) : null | ASTNode<ASTType> {
-        
-        if(Header.nodeIs(child)
-    || Ol.nodeIs(child)
-    || Ul.nodeIs(child)
-    || Quote.nodeIs(child)
-    || Paragraph.nodeIs(child)){
-            
-            let old = this.header;           
-
-            this.header = child;
-            
-            return old;
-        }
-        return null;
-    }
-
     replace_content(child: ASTNode<ASTType>,j:number) : null | ASTNode<ASTType> {
         
         if(child === null){
             if(j < this.content.length && j >= 0){
                 return this.content.splice(j, 1)[0];
             }
-        }else if(InlineCode.nodeIs(child)
-    || MarkerA.nodeIs(child)
-    || MarkerB.nodeIs(child)
-    || QueryStart.nodeIs(child)
-    || QueryEnd.nodeIs(child)
-    || AnchorStart.nodeIs(child)
-    || AnchorImageStart.nodeIs(child)
-    || AnchorEnd.nodeIs(child)
-    || AnchorMiddle.nodeIs(child)
-    || Text.nodeIs(child)){
+        }else if(isContent(child)){
             if(j < 0){
                 this.content.unshift(child);
             }else if(j >= this.content.length){
@@ -263,17 +274,14 @@ tok:Token;
     ) {
         if (!_yield(this, parent, i, j)) { return };
     
-        this.header.$$____Iterate_$_$_$( _yield, this, 0, 0);
-    
         for(let i = 0; i < this.content.length; i++){
-            this.content[i].$$____Iterate_$_$_$(_yield, this, 1, i);
+            this.content[i].$$____Iterate_$_$_$(_yield, this, 0, i);
         } 
     }
     Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {
 
         switch(i){
-            case 0: return this.replace_header(child);
-    case 1: return this.replace_content(child, j);
+            case 0: return this.replace_content(child, j);
     }
         return null;
     }
@@ -282,62 +290,76 @@ tok:Token;
         return this.tok;
     } */
 
-    static is(s:any ): s is Line {
+    static is(s:any ): s is Header {
         if(typeof s == "object")
-            return s instanceof Line;
+            return s instanceof Header;
         return false;
     }
 
-    static nodeIs(s:ASTNode<ASTType> ): s is Line {
-        return s.type == ASTType.Line;
+    static nodeIs(s:ASTNode<ASTType> ): s is Header {
+        return s.type == ASTType.Header;
     }
 
-    static Type(): ASTType.Line {
-        return ASTType.Line;
+    static Type(): ASTType.Header {
+        return ASTType.Header;
     }
 
-    get type(): ASTType.Line {
-        return ASTType.Line;
+    get type(): ASTType.Header {
+        return ASTType.Header;
     }
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
-        
-        this.header.serialize(writer);
+        writer.write_byte(0);
+                    writer.write_double(this.length)
 
         SerializeStructVector(this.content, writer)
-
-        this.tok.serialize(writer);
     }
 
-    static Deserialize(reader:ByteReader): Line {
+    static Deserialize(reader:ByteReader): Header {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
-        
-        var _header = Deserialize(reader)
+                    var _length = reader.read_double()
 
         var _content = Deserialize(reader);
 
-        var _tok = Token.Deserialize(reader);
-
-        return new Line(_header, _content, _tok);
+        return new Header(_length, _content);
     }
 }
 
 
 
-export class Paragraph extends ASTNode<ASTType> {
+export class OL extends ASTNode<ASTType> {
     
-    text:string;
+    spaces:string;
+content:c_Content[];
 
     constructor(
-        _text:string,) 
+        _spaces:string,
+        _content:c_Content[],) 
     {
         super();
-            this.text = _text;
+            this.spaces = _spaces;
+        this.content = _content;
         
+    }
+    replace_content(child: ASTNode<ASTType>,j:number) : null | ASTNode<ASTType> {
+        
+        if(child === null){
+            if(j < this.content.length && j >= 0){
+                return this.content.splice(j, 1)[0];
+            }
+        }else if(isContent(child)){
+            if(j < 0){
+                this.content.unshift(child);
+            }else if(j >= this.content.length){
+                this.content.push(child);
+            }else {
+                return this.content.splice(j, 1, child)[0];
+            } 
+        }
+        return null;
     }
 
     $$____Iterate_$_$_$(
@@ -348,10 +370,305 @@ export class Paragraph extends ASTNode<ASTType> {
     ) {
         if (!_yield(this, parent, i, j)) { return };
     
+        for(let i = 0; i < this.content.length; i++){
+            this.content[i].$$____Iterate_$_$_$(_yield, this, 0, i);
+        } 
     }
-    
-    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {return null;}
+    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {
 
+        switch(i){
+            case 0: return this.replace_content(child, j);
+    }
+        return null;
+    }
+
+    /* Token(): Token{
+        return this.tok;
+    } */
+
+    static is(s:any ): s is OL {
+        if(typeof s == "object")
+            return s instanceof OL;
+        return false;
+    }
+
+    static nodeIs(s:ASTNode<ASTType> ): s is OL {
+        return s.type == ASTType.OL;
+    }
+
+    static Type(): ASTType.OL {
+        return ASTType.OL;
+    }
+
+    get type(): ASTType.OL {
+        return ASTType.OL;
+    }
+
+    serialize(writer:ByteWriter){
+
+        writer.write_byte(0);
+                 writer.write_string(this.spaces)
+
+        SerializeStructVector(this.content, writer)
+    }
+
+    static Deserialize(reader:ByteReader): OL {
+
+        reader.assert_byte(0);
+
+                 var _spaces = reader.read_string()
+
+        var _content = Deserialize(reader);
+
+        return new OL(_spaces, _content);
+    }
+}
+
+
+
+export class UL extends ASTNode<ASTType> {
+    
+    spaces:string;
+content:c_Content[];
+
+    constructor(
+        _spaces:string,
+        _content:c_Content[],) 
+    {
+        super();
+            this.spaces = _spaces;
+        this.content = _content;
+        
+    }
+    replace_content(child: ASTNode<ASTType>,j:number) : null | ASTNode<ASTType> {
+        
+        if(child === null){
+            if(j < this.content.length && j >= 0){
+                return this.content.splice(j, 1)[0];
+            }
+        }else if(isContent(child)){
+            if(j < 0){
+                this.content.unshift(child);
+            }else if(j >= this.content.length){
+                this.content.push(child);
+            }else {
+                return this.content.splice(j, 1, child)[0];
+            } 
+        }
+        return null;
+    }
+
+    $$____Iterate_$_$_$(
+        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
+        parent: ASTNode<ASTType>,
+        i: number,
+        j: number,
+    ) {
+        if (!_yield(this, parent, i, j)) { return };
+    
+        for(let i = 0; i < this.content.length; i++){
+            this.content[i].$$____Iterate_$_$_$(_yield, this, 0, i);
+        } 
+    }
+    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {
+
+        switch(i){
+            case 0: return this.replace_content(child, j);
+    }
+        return null;
+    }
+
+    /* Token(): Token{
+        return this.tok;
+    } */
+
+    static is(s:any ): s is UL {
+        if(typeof s == "object")
+            return s instanceof UL;
+        return false;
+    }
+
+    static nodeIs(s:ASTNode<ASTType> ): s is UL {
+        return s.type == ASTType.UL;
+    }
+
+    static Type(): ASTType.UL {
+        return ASTType.UL;
+    }
+
+    get type(): ASTType.UL {
+        return ASTType.UL;
+    }
+
+    serialize(writer:ByteWriter){
+
+        writer.write_byte(0);
+                 writer.write_string(this.spaces)
+
+        SerializeStructVector(this.content, writer)
+    }
+
+    static Deserialize(reader:ByteReader): UL {
+
+        reader.assert_byte(0);
+
+                 var _spaces = reader.read_string()
+
+        var _content = Deserialize(reader);
+
+        return new UL(_spaces, _content);
+    }
+}
+
+
+
+export class Quote extends ASTNode<ASTType> {
+    
+    spaces:string;
+content:c_Content[];
+
+    constructor(
+        _spaces:string,
+        _content:c_Content[],) 
+    {
+        super();
+            this.spaces = _spaces;
+        this.content = _content;
+        
+    }
+    replace_content(child: ASTNode<ASTType>,j:number) : null | ASTNode<ASTType> {
+        
+        if(child === null){
+            if(j < this.content.length && j >= 0){
+                return this.content.splice(j, 1)[0];
+            }
+        }else if(isContent(child)){
+            if(j < 0){
+                this.content.unshift(child);
+            }else if(j >= this.content.length){
+                this.content.push(child);
+            }else {
+                return this.content.splice(j, 1, child)[0];
+            } 
+        }
+        return null;
+    }
+
+    $$____Iterate_$_$_$(
+        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
+        parent: ASTNode<ASTType>,
+        i: number,
+        j: number,
+    ) {
+        if (!_yield(this, parent, i, j)) { return };
+    
+        for(let i = 0; i < this.content.length; i++){
+            this.content[i].$$____Iterate_$_$_$(_yield, this, 0, i);
+        } 
+    }
+    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {
+
+        switch(i){
+            case 0: return this.replace_content(child, j);
+    }
+        return null;
+    }
+
+    /* Token(): Token{
+        return this.tok;
+    } */
+
+    static is(s:any ): s is Quote {
+        if(typeof s == "object")
+            return s instanceof Quote;
+        return false;
+    }
+
+    static nodeIs(s:ASTNode<ASTType> ): s is Quote {
+        return s.type == ASTType.Quote;
+    }
+
+    static Type(): ASTType.Quote {
+        return ASTType.Quote;
+    }
+
+    get type(): ASTType.Quote {
+        return ASTType.Quote;
+    }
+
+    serialize(writer:ByteWriter){
+
+        writer.write_byte(0);
+                 writer.write_string(this.spaces)
+
+        SerializeStructVector(this.content, writer)
+    }
+
+    static Deserialize(reader:ByteReader): Quote {
+
+        reader.assert_byte(0);
+
+                 var _spaces = reader.read_string()
+
+        var _content = Deserialize(reader);
+
+        return new Quote(_spaces, _content);
+    }
+}
+
+
+
+export class Paragraph extends ASTNode<ASTType> {
+    
+    spaces:string;
+content:c_Content[];
+
+    constructor(
+        _spaces:string,
+        _content:c_Content[],) 
+    {
+        super();
+            this.spaces = _spaces;
+        this.content = _content;
+        
+    }
+    replace_content(child: ASTNode<ASTType>,j:number) : null | ASTNode<ASTType> {
+        
+        if(child === null){
+            if(j < this.content.length && j >= 0){
+                return this.content.splice(j, 1)[0];
+            }
+        }else if(isContent(child)){
+            if(j < 0){
+                this.content.unshift(child);
+            }else if(j >= this.content.length){
+                this.content.push(child);
+            }else {
+                return this.content.splice(j, 1, child)[0];
+            } 
+        }
+        return null;
+    }
+
+    $$____Iterate_$_$_$(
+        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
+        parent: ASTNode<ASTType>,
+        i: number,
+        j: number,
+    ) {
+        if (!_yield(this, parent, i, j)) { return };
+    
+        for(let i = 0; i < this.content.length; i++){
+            this.content[i].$$____Iterate_$_$_$(_yield, this, 0, i);
+        } 
+    }
+    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {
+
+        switch(i){
+            case 0: return this.replace_content(child, j);
+    }
+        return null;
+    }
 
     /* Token(): Token{
         return this.tok;
@@ -377,17 +694,21 @@ export class Paragraph extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
-                 writer.write_string(this.text)
+        writer.write_byte(0);
+                 writer.write_string(this.spaces)
+
+        SerializeStructVector(this.content, writer)
     }
 
     static Deserialize(reader:ByteReader): Paragraph {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
-                 var _text = reader.read_string()
+                 var _spaces = reader.read_string()
 
-        return new Paragraph(_text);
+        var _content = Deserialize(reader);
+
+        return new Paragraph(_spaces, _content);
     }
 }
 
@@ -395,11 +716,11 @@ export class Paragraph extends ASTNode<ASTType> {
 
 export class CodeBlock extends ASTNode<ASTType> {
     
-    syntax:Text| null;
+    syntax:string;
 data:Text[];
 
     constructor(
-        _syntax:Text| null,
+        _syntax:string,
         _data:Text[],) 
     {
         super();
@@ -407,27 +728,6 @@ data:Text[];
         this.data = _data;
         
     }
-    replace_syntax(child: ASTNode<ASTType>) : null | ASTNode<ASTType> {
-        
-        if(child === null){
-            let old = this.syntax;           
-
-            this.syntax = null;
-            
-            return old;
-        }
-                     else 
-        if(Text.nodeIs(child)){
-            
-            let old = this.syntax;           
-
-            this.syntax = child;
-            
-            return old;
-        }
-        return null;
-    }
-
     replace_data(child: ASTNode<ASTType>,j:number) : null | ASTNode<ASTType> {
         
         if(child === null){
@@ -454,18 +754,14 @@ data:Text[];
     ) {
         if (!_yield(this, parent, i, j)) { return };
     
-        if(this.syntax instanceof ASTNode)
-            this.syntax.$$____Iterate_$_$_$( _yield, this, 0, 0);
-    
         for(let i = 0; i < this.data.length; i++){
-            this.data[i].$$____Iterate_$_$_$(_yield, this, 1, i);
+            this.data[i].$$____Iterate_$_$_$(_yield, this, 0, i);
         } 
     }
     Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {
 
         switch(i){
-            case 0: return this.replace_syntax(child);
-    case 1: return this.replace_data(child, j);
+            case 0: return this.replace_data(child, j);
     }
         return null;
     }
@@ -494,23 +790,17 @@ data:Text[];
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
-        
-        if(!this.syntax)
-            writer.write_null();
-        else 
-            this.syntax.serialize(writer);
-        
+        writer.write_byte(0);
+                 writer.write_string(this.syntax)
 
         SerializeStructVector(this.data, writer)
     }
 
     static Deserialize(reader:ByteReader): CodeBlock {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
-        
-        var _syntax = reader.assert_null() ? null : Text.Deserialize(reader);
+                 var _syntax = reader.read_string()
 
         var _data = Deserialize(reader);
 
@@ -569,277 +859,17 @@ export class Text extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
                  writer.write_string(this.value)
     }
 
     static Deserialize(reader:ByteReader): Text {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
                  var _value = reader.read_string()
 
         return new Text(_value);
-    }
-}
-
-
-
-export class Header extends ASTNode<ASTType> {
-    
-    length:number;
-
-    constructor(
-        _length:number,) 
-    {
-        super();
-            this.length = _length;
-        
-    }
-
-    $$____Iterate_$_$_$(
-        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
-        parent: ASTNode<ASTType>,
-        i: number,
-        j: number,
-    ) {
-        if (!_yield(this, parent, i, j)) { return };
-    
-    }
-    
-    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {return null;}
-
-
-    /* Token(): Token{
-        return this.tok;
-    } */
-
-    static is(s:any ): s is Header {
-        if(typeof s == "object")
-            return s instanceof Header;
-        return false;
-    }
-
-    static nodeIs(s:ASTNode<ASTType> ): s is Header {
-        return s.type == ASTType.Header;
-    }
-
-    static Type(): ASTType.Header {
-        return ASTType.Header;
-    }
-
-    get type(): ASTType.Header {
-        return ASTType.Header;
-    }
-
-    serialize(writer:ByteWriter){
-
-        writer.write_byte(1);
-                    writer.write_double(this.length)
-    }
-
-    static Deserialize(reader:ByteReader): Header {
-
-        reader.assert_byte(1);
-
-                    var _length = reader.read_double()
-
-        return new Header(_length);
-    }
-}
-
-
-
-export class Ol extends ASTNode<ASTType> {
-    
-    offset:number;
-
-    constructor(
-        _offset:number,) 
-    {
-        super();
-            this.offset = _offset;
-        
-    }
-
-    $$____Iterate_$_$_$(
-        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
-        parent: ASTNode<ASTType>,
-        i: number,
-        j: number,
-    ) {
-        if (!_yield(this, parent, i, j)) { return };
-    
-    }
-    
-    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {return null;}
-
-
-    /* Token(): Token{
-        return this.tok;
-    } */
-
-    static is(s:any ): s is Ol {
-        if(typeof s == "object")
-            return s instanceof Ol;
-        return false;
-    }
-
-    static nodeIs(s:ASTNode<ASTType> ): s is Ol {
-        return s.type == ASTType.Ol;
-    }
-
-    static Type(): ASTType.Ol {
-        return ASTType.Ol;
-    }
-
-    get type(): ASTType.Ol {
-        return ASTType.Ol;
-    }
-
-    serialize(writer:ByteWriter){
-
-        writer.write_byte(1);
-                    writer.write_double(this.offset)
-    }
-
-    static Deserialize(reader:ByteReader): Ol {
-
-        reader.assert_byte(1);
-
-                    var _offset = reader.read_double()
-
-        return new Ol(_offset);
-    }
-}
-
-
-
-export class Ul extends ASTNode<ASTType> {
-    
-    offset:number;
-
-    constructor(
-        _offset:number,) 
-    {
-        super();
-            this.offset = _offset;
-        
-    }
-
-    $$____Iterate_$_$_$(
-        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
-        parent: ASTNode<ASTType>,
-        i: number,
-        j: number,
-    ) {
-        if (!_yield(this, parent, i, j)) { return };
-    
-    }
-    
-    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {return null;}
-
-
-    /* Token(): Token{
-        return this.tok;
-    } */
-
-    static is(s:any ): s is Ul {
-        if(typeof s == "object")
-            return s instanceof Ul;
-        return false;
-    }
-
-    static nodeIs(s:ASTNode<ASTType> ): s is Ul {
-        return s.type == ASTType.Ul;
-    }
-
-    static Type(): ASTType.Ul {
-        return ASTType.Ul;
-    }
-
-    get type(): ASTType.Ul {
-        return ASTType.Ul;
-    }
-
-    serialize(writer:ByteWriter){
-
-        writer.write_byte(1);
-                    writer.write_double(this.offset)
-    }
-
-    static Deserialize(reader:ByteReader): Ul {
-
-        reader.assert_byte(1);
-
-                    var _offset = reader.read_double()
-
-        return new Ul(_offset);
-    }
-}
-
-
-
-export class Quote extends ASTNode<ASTType> {
-    
-    offset:number;
-
-    constructor(
-        _offset:number,) 
-    {
-        super();
-            this.offset = _offset;
-        
-    }
-
-    $$____Iterate_$_$_$(
-        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
-        parent: ASTNode<ASTType>,
-        i: number,
-        j: number,
-    ) {
-        if (!_yield(this, parent, i, j)) { return };
-    
-    }
-    
-    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {return null;}
-
-
-    /* Token(): Token{
-        return this.tok;
-    } */
-
-    static is(s:any ): s is Quote {
-        if(typeof s == "object")
-            return s instanceof Quote;
-        return false;
-    }
-
-    static nodeIs(s:ASTNode<ASTType> ): s is Quote {
-        return s.type == ASTType.Quote;
-    }
-
-    static Type(): ASTType.Quote {
-        return ASTType.Quote;
-    }
-
-    get type(): ASTType.Quote {
-        return ASTType.Quote;
-    }
-
-    serialize(writer:ByteWriter){
-
-        writer.write_byte(1);
-                    writer.write_double(this.offset)
-    }
-
-    static Deserialize(reader:ByteReader): Quote {
-
-        reader.assert_byte(1);
-
-                    var _offset = reader.read_double()
-
-        return new Quote(_offset);
     }
 }
 
@@ -893,13 +923,13 @@ export class InlineCode extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): InlineCode {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -957,13 +987,13 @@ export class MarkerA extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): MarkerA {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1021,13 +1051,13 @@ export class MarkerB extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): MarkerB {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1085,13 +1115,13 @@ export class QueryStart extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): QueryStart {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1149,13 +1179,13 @@ export class QueryEnd extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): QueryEnd {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1213,13 +1243,13 @@ export class AnchorStart extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): AnchorStart {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1277,13 +1307,13 @@ export class AnchorImageStart extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): AnchorImageStart {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1341,13 +1371,13 @@ export class AnchorEnd extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): AnchorEnd {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1405,17 +1435,81 @@ export class AnchorMiddle extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): AnchorMiddle {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
         return new AnchorMiddle();
+    }
+}
+
+
+
+export class MetaStart extends ASTNode<ASTType> {
+    
+    
+
+    constructor() 
+    {
+        super();
+            
+        
+    }
+
+    $$____Iterate_$_$_$(
+        _yield: (a:ASTNode<ASTType>, b:ASTNode<ASTType>, c:number, d:number) => boolean,
+        parent: ASTNode<ASTType>,
+        i: number,
+        j: number,
+    ) {
+        if (!_yield(this, parent, i, j)) { return };
+    
+    }
+    
+    Replace(child: ASTNode<ASTType>, i: number, j: number) : ASTNode<ASTType> | null {return null;}
+
+
+    /* Token(): Token{
+        return this.tok;
+    } */
+
+    static is(s:any ): s is MetaStart {
+        if(typeof s == "object")
+            return s instanceof MetaStart;
+        return false;
+    }
+
+    static nodeIs(s:ASTNode<ASTType> ): s is MetaStart {
+        return s.type == ASTType.MetaStart;
+    }
+
+    static Type(): ASTType.MetaStart {
+        return ASTType.MetaStart;
+    }
+
+    get type(): ASTType.MetaStart {
+        return ASTType.MetaStart;
+    }
+
+    serialize(writer:ByteWriter){
+
+        writer.write_byte(0);
+        
+    }
+
+    static Deserialize(reader:ByteReader): MetaStart {
+
+        reader.assert_byte(0);
+
+        
+
+        return new MetaStart();
     }
 }
 
@@ -1469,13 +1563,13 @@ export class EmptyLine extends ASTNode<ASTType> {
 
     serialize(writer:ByteWriter){
 
-        writer.write_byte(1);
+        writer.write_byte(0);
         
     }
 
     static Deserialize(reader:ByteReader): EmptyLine {
 
-        reader.assert_byte(1);
+        reader.assert_byte(0);
 
         
 
@@ -1487,66 +1581,100 @@ export class EmptyLine extends ASTNode<ASTType> {
 
 /**
 ```
-{ t_Markdown, lines:$1, tok }
+{ t_Markdown, lines:$1 }
 ```*/
 function _FN0_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:Markdown = new Markdown(
         v0,
-        tok,
    );;
 
                                 args.push(ref_0) 
                             }
 /**
 ```
-{ t_Line, header:$1, content:$2, tok }
+{ t_Header, c_Line, length:f64($1), content:$2 }
 ```*/
 function _FN1_ (args: any[], tok: Token) : any { 
                         let v1 = args.pop();
 let v0 = args.pop();
                                 
- let ref_0:Line = new Line(
-        v0,
+ let ref_0:Header = new Header(
+        v0.length,
         v1,
-        tok,
    );;
 
                                 args.push(ref_0) 
                             }
 /**
 ```
-{ 
-
-    t_Line,
-
-    header:{ t_Paragraph, text:str("") },
-
-    content:$1,
-
-    tok
- }
+{ t_OL, c_Line, spaces:str($1), content:$3 }
 ```*/
 function _FN2_ (args: any[], tok: Token) : any { 
-                        let v0 = args.pop();
+                        let v2 = args.pop();
+let v1 = args.pop();
+let v0 = args.pop();
                                 
- let ref_0:Paragraph = new Paragraph(
-        "",
-   );;
- let ref_1:Line = new Line(
-        ref_0,
-        v0,
-        tok,
+ let ref_0:OL = new OL(
+        v0.toString(),
+        v2,
    );;
 
-                                args.push(ref_1) 
+                                args.push(ref_0) 
                             }
 /**
 ```
-{ t_CodeBlock, syntax:$2, data:$3 }
+{ t_UL, c_Line, spaces:str($1), content:$3 }
 ```*/
 function _FN3_ (args: any[], tok: Token) : any { 
+                        let v2 = args.pop();
+let v1 = args.pop();
+let v0 = args.pop();
+                                
+ let ref_0:UL = new UL(
+        v0.toString(),
+        v2,
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
+{ t_Quote, c_Line, spaces:str($1), content:$3 }
+```*/
+function _FN4_ (args: any[], tok: Token) : any { 
+                        let v2 = args.pop();
+let v1 = args.pop();
+let v0 = args.pop();
+                                
+ let ref_0:Quote = new Quote(
+        v0.toString(),
+        v2,
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
+{ t_Paragraph, c_Line, spaces:str($1), content:$2 }
+```*/
+function _FN5_ (args: any[], tok: Token) : any { 
+                        let v1 = args.pop();
+let v0 = args.pop();
+                                
+ let ref_0:Paragraph = new Paragraph(
+        v0.toString(),
+        v1,
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
+{ t_CodeBlock, c_Line, syntax:str($2), data:$3 }
+```*/
+function _FN6_ (args: any[], tok: Token) : any { 
                         let v3 = args.pop();
 let v2 = args.pop();
 let v1 = args.pop();
@@ -1561,15 +1689,14 @@ let v0 = args.pop();
                             }
 /**
 ```
-{ t_CodeBlock, syntax:$NULL, data:$2 }
+{ t_OL, c_Line, spaces:str($NULL), content:$2 }
 ```*/
-function _FN4_ (args: any[], tok: Token) : any { 
-                        let v2 = args.pop();
-let v1 = args.pop();
+function _FN7_ (args: any[], tok: Token) : any { 
+                        let v1 = args.pop();
 let v0 = args.pop();
                                 
- let ref_0:CodeBlock = new CodeBlock(
-        null,
+ let ref_0:OL = new OL(
+        "",
         v1,
    );;
 
@@ -1577,9 +1704,69 @@ let v0 = args.pop();
                             }
 /**
 ```
-{ t_CodeBlock, syntax:$2, data:$NULL }
+{ t_UL, c_Line, spaces:str($NULL), content:$2 }
 ```*/
-function _FN5_ (args: any[], tok: Token) : any { 
+function _FN8_ (args: any[], tok: Token) : any { 
+                        let v1 = args.pop();
+let v0 = args.pop();
+                                
+ let ref_0:UL = new UL(
+        "",
+        v1,
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
+{ t_Quote, c_Line, spaces:str($NULL), content:$2 }
+```*/
+function _FN9_ (args: any[], tok: Token) : any { 
+                        let v1 = args.pop();
+let v0 = args.pop();
+                                
+ let ref_0:Quote = new Quote(
+        "",
+        v1,
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
+{ t_Paragraph, c_Line, spaces:str($NULL), content:$1 }
+```*/
+function _FN10_ (args: any[], tok: Token) : any { 
+                        let v0 = args.pop();
+                                
+ let ref_0:Paragraph = new Paragraph(
+        "",
+        v0,
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
+{ t_CodeBlock, c_Line, syntax:str($NULL), data:$2 }
+```*/
+function _FN11_ (args: any[], tok: Token) : any { 
+                        let v2 = args.pop();
+let v1 = args.pop();
+let v0 = args.pop();
+                                
+ let ref_0:CodeBlock = new CodeBlock(
+        "",
+        v1,
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
+{ t_CodeBlock, c_Line, syntax:str($2), data:$NULL }
+```*/
+function _FN12_ (args: any[], tok: Token) : any { 
                         let v2 = args.pop();
 let v1 = args.pop();
 let v0 = args.pop();
@@ -1593,14 +1780,14 @@ let v0 = args.pop();
                             }
 /**
 ```
-{ t_CodeBlock, syntax:$NULL, data:$NULL }
+{ t_CodeBlock, c_Line, syntax:str($NULL), data:$NULL }
 ```*/
-function _FN6_ (args: any[], tok: Token) : any { 
+function _FN13_ (args: any[], tok: Token) : any { 
                         let v1 = args.pop();
 let v0 = args.pop();
                                 
  let ref_0:CodeBlock = new CodeBlock(
-        null,
+        "",
         [],
    );;
 
@@ -1608,9 +1795,9 @@ let v0 = args.pop();
                             }
 /**
 ```
-{ t_Text, value:str($2) }
+{ t_Text, c_Content, value:str($2) }
 ```*/
-function _FN7_ (args: any[], tok: Token) : any { 
+function _FN14_ (args: any[], tok: Token) : any { 
                         let v1 = args.pop();
 let v0 = args.pop();
                                 
@@ -1622,9 +1809,9 @@ let v0 = args.pop();
                             }
 /**
 ```
-{ t_Text, value:str($NULL) }
+{ t_Text, c_Content, value:str($NULL) }
 ```*/
-function _FN8_ (args: any[], tok: Token) : any { 
+function _FN15_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:Text = new Text(
@@ -1635,9 +1822,9 @@ function _FN8_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_Text, value:$1 }
+{ t_Text, c_Content, value:$1 }
 ```*/
-function _FN9_ (args: any[], tok: Token) : any { 
+function _FN16_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:Text = new Text(
@@ -1648,61 +1835,9 @@ function _FN9_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_Header, length:f64($1) }
+{ t_InlineCode, c_Content }
 ```*/
-function _FN10_ (args: any[], tok: Token) : any { 
-                        let v0 = args.pop();
-                                
- let ref_0:Header = new Header(
-        v0.length,
-   );;
-
-                                args.push(ref_0) 
-                            }
-/**
-```
-{ t_Ol, offset:f64($1) }
-```*/
-function _FN11_ (args: any[], tok: Token) : any { 
-                        let v0 = args.pop();
-                                
- let ref_0:Ol = new Ol(
-        v0.length,
-   );;
-
-                                args.push(ref_0) 
-                            }
-/**
-```
-{ t_Ul, offset:f64($1) }
-```*/
-function _FN12_ (args: any[], tok: Token) : any { 
-                        let v0 = args.pop();
-                                
- let ref_0:Ul = new Ul(
-        v0.length,
-   );;
-
-                                args.push(ref_0) 
-                            }
-/**
-```
-{ t_Quote, offset:f64($1) }
-```*/
-function _FN13_ (args: any[], tok: Token) : any { 
-                        let v0 = args.pop();
-                                
- let ref_0:Quote = new Quote(
-        v0.length,
-   );;
-
-                                args.push(ref_0) 
-                            }
-/**
-```
-{ t_InlineCode }
-```*/
-function _FN14_ (args: any[], tok: Token) : any { 
+function _FN17_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:InlineCode = new InlineCode(
@@ -1713,9 +1848,9 @@ function _FN14_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_MarkerA }
+{ t_MarkerA, c_Content }
 ```*/
-function _FN15_ (args: any[], tok: Token) : any { 
+function _FN18_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:MarkerA = new MarkerA(
@@ -1726,9 +1861,9 @@ function _FN15_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_MarkerB }
+{ t_MarkerB, c_Content }
 ```*/
-function _FN16_ (args: any[], tok: Token) : any { 
+function _FN19_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:MarkerB = new MarkerB(
@@ -1739,9 +1874,9 @@ function _FN16_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_QueryStart }
+{ t_QueryStart, c_Content }
 ```*/
-function _FN17_ (args: any[], tok: Token) : any { 
+function _FN20_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:QueryStart = new QueryStart(
@@ -1752,9 +1887,9 @@ function _FN17_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_QueryEnd }
+{ t_QueryEnd, c_Content }
 ```*/
-function _FN18_ (args: any[], tok: Token) : any { 
+function _FN21_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:QueryEnd = new QueryEnd(
@@ -1765,9 +1900,9 @@ function _FN18_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_AnchorStart }
+{ t_AnchorStart, c_Content }
 ```*/
-function _FN19_ (args: any[], tok: Token) : any { 
+function _FN22_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:AnchorStart = new AnchorStart(
@@ -1778,9 +1913,9 @@ function _FN19_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_AnchorImageStart }
+{ t_AnchorImageStart, c_Content }
 ```*/
-function _FN20_ (args: any[], tok: Token) : any { 
+function _FN23_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:AnchorImageStart = new AnchorImageStart(
@@ -1791,9 +1926,9 @@ function _FN20_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_AnchorEnd }
+{ t_AnchorEnd, c_Content }
 ```*/
-function _FN21_ (args: any[], tok: Token) : any { 
+function _FN24_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:AnchorEnd = new AnchorEnd(
@@ -1804,9 +1939,9 @@ function _FN21_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-{ t_AnchorMiddle }
+{ t_AnchorMiddle, c_Content }
 ```*/
-function _FN22_ (args: any[], tok: Token) : any { 
+function _FN25_ (args: any[], tok: Token) : any { 
                         let v0 = args.pop();
                                 
  let ref_0:AnchorMiddle = new AnchorMiddle(
@@ -1817,136 +1952,71 @@ function _FN22_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
+{ t_MetaStart, c_Content, c_Meta }
+```*/
+function _FN26_ (args: any[], tok: Token) : any { 
+                        let v0 = args.pop();
+                                
+ let ref_0:MetaStart = new MetaStart(
+        
+   );;
+
+                                args.push(ref_0) 
+                            }
+/**
+```
 [$2]
 ```*/
-function _FN23_ (args: any[], tok: Token) : any { 
+function _FN27_ (args: any[], tok: Token) : any { 
                                 let v1 = args.pop();
 let v0 = args.pop();
                                 
- let ref_0:(CodeBlock)[] = [v1];
+ let ref_0:(Header | OL | UL | Quote | Paragraph | CodeBlock)[] = [v1];
  
                                 args.push(ref_0) } 
 /**
 ```
 $1+[$3]
 ```*/
-function _FN24_ (args: any[], tok: Token) : any { 
+function _FN28_ (args: any[], tok: Token) : any { 
                                 let v2 = args.pop();
 let v1 = args.pop();
 let v0 = args.pop();
                                 
- let ref_0:(CodeBlock | CodeBlock | Line | EmptyLine)[] = [v2];
+ let ref_0:(Header | OL | UL | Quote | Paragraph | CodeBlock | Header | OL | UL | Quote | Paragraph | CodeBlock | EmptyLine)[] = [v2];
 ref_0.unshift(...v0);
  
                                 args.push(ref_0) } 
 /**
 ```
-$1+[{ t_EmptyLine }]
+$1+[{ t_EmptyLine, c_Line }]
 ```*/
-function _FN25_ (args: any[], tok: Token) : any { 
+function _FN29_ (args: any[], tok: Token) : any { 
                                 let v1 = args.pop();
 let v0 = args.pop();
                                 
  let ref_0:EmptyLine = new EmptyLine(
         
    );;
- let ref_1:(EmptyLine | EmptyLine | CodeBlock | Line)[] = [ref_0];
+ let ref_1:(EmptyLine | EmptyLine | Header | OL | UL | Quote | Paragraph | CodeBlock)[] = [ref_0];
 ref_1.unshift(...v0);
  
                                 args.push(ref_1) } 
 /**
 ```
-[$2]
-```*/
-function _FN26_ (args: any[], tok: Token) : any { 
-                                let v1 = args.pop();
-let v0 = args.pop();
-                                
- let ref_0:(Line)[] = [v1];
- 
-                                args.push(ref_0) } 
-/**
-```
-$1+[$3]
-```*/
-function _FN27_ (args: any[], tok: Token) : any { 
-                                let v2 = args.pop();
-let v1 = args.pop();
-let v0 = args.pop();
-                                
- let ref_0:(Line | Line | CodeBlock | EmptyLine)[] = [v2];
-ref_0.unshift(...v0);
- 
-                                args.push(ref_0) } 
-/**
-```
 [$1]
 ```*/
-function _FN28_ (args: any[], tok: Token) : any { 
+function _FN30_ (args: any[], tok: Token) : any { 
                                 let v0 = args.pop();
                                 
- let ref_0:(CodeBlock)[] = [v0];
+ let ref_0:(Header | OL | UL | Quote | Paragraph | CodeBlock)[] = [v0];
  
                                 args.push(ref_0) } 
 /**
 ```
 [$1]
 ```*/
-function _FN29_ (args: any[], tok: Token) : any { 
-                                let v0 = args.pop();
-                                
- let ref_0:(Line)[] = [v0];
- 
-                                args.push(ref_0) } 
-/**
-```
-str($1)
-```*/
-function _FN30_ (args: any[], tok: Token) : any { let v0 = args.pop(); 
- args.push(v0.toString())}
-/**
-```
-str($__first__)+str($__last__)
-```*/
-function _FN31_ (args: any[], tok: Token) : any { let v1 = args.pop();
-let v0 = args.pop(); 
- args.push(v0 + v1.toString())}
-/**
-```
-[$1]
-```*/
-function _FN32_ (args: any[], tok: Token) : any { 
-                                let v0 = args.pop();
-                                
- let ref_0:(InlineCode | MarkerA | MarkerB | QueryStart | QueryEnd | AnchorStart | AnchorImageStart | AnchorEnd | AnchorMiddle)[] = [v0];
- 
-                                args.push(ref_0) } 
-/**
-```
-$__first__+$__last__
-```*/
-function _FN33_ (args: any[], tok: Token) : any { 
-                                let v1 = args.pop();
-let v0 = args.pop();
-                                
-v0.push(v1);
- 
-                                args.push(v0) } 
-/**
-```
-[$1]
-```*/
-function _FN34_ (args: any[], tok: Token) : any { 
-                                let v0 = args.pop();
-                                
- let ref_0:(Text)[] = [v0];
- 
-                                args.push(ref_0) } 
-/**
-```
-[$1]
-```*/
-function _FN35_ (args: any[], tok: Token) : any {
+function _FN31_ (args: any[], tok: Token) : any {
                             let v0 = args.pop(); 
                                 
  let ref_0:Token[] = [v0];
@@ -1955,76 +2025,70 @@ function _FN35_ (args: any[], tok: Token) : any {
                             }
 /**
 ```
-[$1]
+$__first__+$__last__
 ```*/
-function _FN36_ (args: any[], tok: Token) : any {
-                            let v2 = args.pop();
-let v1 = args.pop();
-let v0 = args.pop(); 
-                                
- let ref_0:( string | number | boolean | Token )[][] = [...v0];
-
-                                args.push(ref_0) 
-                            }
-/**
-```
-[$NULL]
-```*/
-function _FN37_ (args: any[], tok: Token) : any {
+function _FN32_ (args: any[], tok: Token) : any {
                             let v1 = args.pop();
 let v0 = args.pop(); 
                                 
- let ref_0:null[] = [];
+v0.push(v1);
 
-                                args.push(ref_0) 
+                                args.push(v0) 
                             }
+/**
+```
+str($1)
+```*/
+function _FN33_ (args: any[], tok: Token) : any { let v0 = args.pop(); 
+ args.push(v0.toString())}
+/**
+```
+str($__first__)+str($__last__)
+```*/
+function _FN34_ (args: any[], tok: Token) : any { let v1 = args.pop();
+let v0 = args.pop(); 
+ args.push(v0 + v1.toString())}
 /**
 ```
 [$1]
 ```*/
-function _FN38_ (args: any[], tok: Token) : any {
-                            let v1 = args.pop();
-let v0 = args.pop(); 
+function _FN35_ (args: any[], tok: Token) : any { 
+                                let v0 = args.pop();
                                 
- let ref_0:( string | number | boolean | Token )[][] = [...v0];
-
-                                args.push(ref_0) 
-                            }
+ let ref_0:(InlineCode | MarkerA | MarkerB | QueryStart | QueryEnd | AnchorStart | AnchorImageStart | AnchorEnd | AnchorMiddle | MetaStart)[] = [v0];
+ 
+                                args.push(ref_0) } 
 /**
 ```
-[$NULL]
+[$1]
 ```*/
-function _FN39_ (args: any[], tok: Token) : any {
-                            let v0 = args.pop(); 
+function _FN36_ (args: any[], tok: Token) : any { 
+                                let v0 = args.pop();
                                 
- let ref_0:null[] = [];
-
-                                args.push(ref_0) 
-                            }
+ let ref_0:(Text)[] = [v0];
+ 
+                                args.push(ref_0) } 
 /**
 ```
 
 ```*/
-function _FN40_ (args: any[], tok: Token) : any {  let v1 = args.pop();
+function _FN37_ (args: any[], tok: Token) : any {  let v1 = args.pop();
 let v0 = args.pop();
  args.push(v1); }
 /**
 ```
 
 ```*/
-function _FN41_ (args: any[], tok: Token) : any {}
+function _FN38_ (args: any[], tok: Token) : any {}
 
 
 
 export  const FunctionMaps = [
     _FN0_,
-_FN23_,
-_FN24_,
-_FN25_,
-_FN26_,
 _FN27_,
 _FN28_,
 _FN29_,
+_FN30_,
 _FN1_,
 _FN2_,
 _FN3_,
@@ -2033,59 +2097,60 @@ _FN5_,
 _FN6_,
 _FN7_,
 _FN8_,
-_FN30_,
-_FN31_,
-_FN30_,
-_FN30_,
-_FN30_,
-_FN31_,
-_FN31_,
-_FN31_,
-_FN40_,
-_FN41_,
-_FN32_,
-_FN33_,
-_FN34_,
-_FN33_,
-_FN35_,
-_FN33_,
 _FN9_,
-_FN41_,
-_FN41_,
-_FN41_,
-_FN41_,
-_FN41_,
-_FN40_,
-_FN41_,
-_FN40_,
 _FN10_,
 _FN11_,
 _FN12_,
 _FN13_,
-_FN35_,
-_FN33_,
-_FN36_,
+_FN31_,
+_FN32_,
+_FN31_,
+_FN32_,
 _FN37_,
 _FN38_,
 _FN38_,
-_FN39_,
-_FN39_,
 _FN38_,
-_FN39_,
-_FN35_,
-_FN33_,
 _FN14_,
 _FN15_,
+_FN38_,
+_FN37_,
+_FN38_,
+_FN38_,
+_FN33_,
+_FN34_,
+_FN33_,
+_FN33_,
+_FN33_,
+_FN34_,
+_FN34_,
+_FN34_,
+_FN37_,
+_FN35_,
+_FN32_,
+_FN36_,
+_FN32_,
 _FN16_,
+_FN38_,
+_FN38_,
+_FN38_,
+_FN38_,
+_FN38_,
+_FN37_,
+_FN38_,
+_FN37_,
 _FN17_,
 _FN18_,
 _FN19_,
 _FN20_,
 _FN21_,
 _FN22_,
-_FN21_,
-_FN34_,
+_FN23_,
+_FN24_,
+_FN25_,
+_FN24_,
+_FN26_,
+_FN36_,
+_FN32_,
 _FN33_,
-_FN30_,
-_FN31_,
+_FN34_,
 ];

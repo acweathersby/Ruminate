@@ -3,6 +3,7 @@ import {
     AnchorImageStart,
     AnchorMiddle,
     AnchorStart,
+    c_Content,
     InlineCode,
     MarkerA,
     MarkerB,
@@ -18,16 +19,7 @@ import {
  */
 ///
 
-export type Content = MDText |
-    MarkerA |
-    MarkerB |
-    QueryStart |
-    QueryEnd |
-    InlineCode |
-    AnchorStart |
-    AnchorImageStart |
-    AnchorMiddle |
-    AnchorEnd;
+export type Content = c_Content;
 
 export const enum LineType {
     PARAGRAPH,
