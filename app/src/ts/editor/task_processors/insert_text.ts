@@ -1,5 +1,6 @@
 import { TodoError } from '../errors/todo_error';
 import { EditLine } from '../section/line';
+import { QueryDisplay } from '../section/query';
 import { TextSection } from '../section/text';
 import { EditHost } from "../types/edit_host";
 import { ResultType } from '../types/result';
@@ -42,7 +43,10 @@ function redoInsertText(redo_data: HistoryTask[TextCommand.INSERT_TEXT]["redo_da
 
     let node = getAtomicSectionAtOffset(offset, edit_host);
 
-    if (node instanceof EditLine) {
+    if (node instanceof EditLine
+        ||
+        node instanceof QueryDisplay
+    ) {
 
         //Insert in the previous edit line if it exists
         const text = getPrevTextSection(node);

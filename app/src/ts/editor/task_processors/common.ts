@@ -430,16 +430,17 @@ export function getPrevTextSection(section: Section, START = false) {
 export function getSectionFromElement(ele: HTMLElement) {
     while (ele) {
 
-        if (ele instanceof HTMLElement)
+        if (ele instanceof HTMLElement) {
 
-            if (ele.classList.contains(SectionBase.class_name)) {
+            if (ele.classList.contains(SectionBase.class_name)) 
                 //@ts-ignore
                 return ele.ruminate_host;
-            }
+            
+        }
+        //@ts-ignore
+        else if (ele.ruminate_host)
             //@ts-ignore
-            else if (ele.ruminate_host)
-                //@ts-ignore
-                return ele.ruminate_host;
+            return ele.ruminate_host;
 
         ele = ele.parentElement;
     }
