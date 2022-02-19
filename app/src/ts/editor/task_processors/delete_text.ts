@@ -1,6 +1,6 @@
-import { parseMarkdownText } from '../parser/parse_markdown';
+import { convertMDASTToEditLines, parseMarkdownText } from '../parser/parse_markdown';
 import { EditLine } from "../section/line";
-import { convertMDASTToEditLines } from "../parser/parse_markdown";
+import { TextSection } from '../section/text';
 import { EditHost } from "../types/edit_host";
 import {
     DeletionComplexity,
@@ -9,9 +9,7 @@ import {
     TextCommandTask
 } from "../types/text_command_types";
 import {
-    getEditLine,
-    getTextSectionAtOffset,
-    setSelection,
+    getAtomicSectionAtOffset, getEditLine, getTextSectionAtOffset, setSelection,
     setZeroLengthSelection,
     updateMetrics,
     updateUIElements
@@ -31,10 +29,8 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
     const
         offset_start = command.data.offset,
         offset_end = command.data.offset + command.data.length,
-        start_text_section = getTextSectionAtOffset(offset_start, edit_host, true),
-        end_text_section = getTextSectionAtOffset(offset_end, edit_host),
-        start_line = getEditLine(start_text_section),
-        end_line = getEditLine(end_text_section),
+        start_section = getAtomicSectionAtOffset(offset_start, edit_host),
+        end_section = getAtomicSectionAtOffset(offset_end, edit_host),
         original_length = offset_end - offset_start;
 
     let
@@ -44,47 +40,32 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
         input_text = "--undefined--";
 
     const
-        SAME_SECTION = start_text_section == end_text_section,
-        SAME_LINE = start_line == end_line,
-        IS_LINE_DELETION =
-            start_line.head == offset_start
-            && (start_line.head + 1) == offset_end;
+        SAME_SECTION = start_section == end_section,
+        IS_TEXT = SAME_SECTION
+            && start_section instanceof TextSection
+            && end_section instanceof TextSection;
 
-    if (SAME_SECTION && !IS_LINE_DELETION) {
+    if (SAME_SECTION && IS_TEXT) {
 
         complexity = DeletionComplexity.TEXT_SECTION;
 
-        const seg_start = offset_start - start_text_section.head;
-        const seg_end = offset_end - start_text_section.head;
+        const seg_start = offset_start - start_section.head;
+        const seg_end = offset_end - start_section.head;
 
-        input_text = start_text_section.text.slice(seg_start, seg_end);
-
-    } else if (SAME_LINE && !IS_LINE_DELETION) {
-
-        const edit_line = getEditLine(start_text_section);
-
-        complexity = DeletionComplexity.SECTION_OVERLAP;
-
-        input_text = edit_line.toString();
-
-        first_edit_line = edit_line.index;
+        input_text = start_section.text.slice(seg_start, seg_end);
 
     } else {
 
         complexity = DeletionComplexity.EDIT_LINE_OVERLAP;
 
         const effected_lines = edit_host.root.children
-            .filter(c => c.head <= offset_end && c.tail >= offset_start);
+            .filter(c => c.head <= offset_end && c.tail >= offset_start && c.head < offset_end);
 
         input_text = effected_lines
             .map(v => v.toString()).join("\n");
 
         first_edit_line = effected_lines[0].index;
-        last_edit_line = first_edit_line + 1;
-
-        if (end_text_section.tail == offset_end)
-            last_edit_line = -1;
-
+        last_edit_line = effected_lines[effected_lines.length - 1].index;
     }
 
     command.data.complexity = complexity;
@@ -115,95 +96,61 @@ function redoDeleteText(
 
     updateMetrics(edit_host);
 
-
     let {
         complexity,
         length,
         offset
     } = redo_data;
 
-    switch (complexity) {
+    if (complexity == DeletionComplexity.TEXT_SECTION) {
+        //Get the target text section
 
-        case DeletionComplexity.TEXT_SECTION: {
-            //Get the target text section
+        const text: TextSection = <any>getAtomicSectionAtOffset(offset, edit_host);
 
-            const text = getTextSectionAtOffset(offset, edit_host);
+        text.removeText(offset - text.head, length);
 
-            text.removeText(offset - text.head, length);
+        if (text.length == 0) {
+            //Update markdown
+            const edit_line = getEditLine(text);
 
-            if (text.length == 0) {
-                //Update markdown
-                const edit_line = getEditLine(text);
+            edit_line.updateElement();
 
-                edit_line.updateElement();
-
-                const node = getTextSectionAtOffset(offset, edit_host);
-
-
-                setZeroLengthSelection(node.ele, offset - node.head);
-            } else {
-                setZeroLengthSelection(text.ele, offset - text.head);
-            }
-
-        } break;
-        case DeletionComplexity.SECTION_OVERLAP: {
-            const edit_line = getEditLine(getTextSectionAtOffset(offset, edit_host));
-
-            modifySections(edit_line, offset, offset + length,
-                {
-                    on_text_segment: (s, start, end, mf) => {
-                        s.removeText(start, end);
-                    },
-                    on_section_segment: (s, start, end, mf) => {
-                        modifySections(s, start, end, mf);
-                    },
-                    on_seg_overlap: (s, start, end, mf) => {
-                        s.remove();
-                    },
-                }
-            );
-
-            updateMetrics(edit_host, true);
-
-            updateUIElements(edit_host);
-
-            const node = getTextSectionAtOffset(offset, edit_host);
+            const node = getAtomicSectionAtOffset(offset, edit_host, true);
 
             setZeroLengthSelection(node.ele, offset - node.head);
+        } else {
+            setZeroLengthSelection(text.ele, offset - text.head);
+        }
 
-        } break;
+    } else {
+        //Merge edit lines that overlap the deletion region
+        const end_offset = length + offset;
 
-        case DeletionComplexity.EDIT_LINE_OVERLAP: {
-            //Merge edit lines that overlap the deletion region
-            const end_offset = length + offset;
-
-            modifySections(edit_host.root, offset, end_offset, {
-                on_text_segment: (s, start, len, mf) => {
-                    s.removeText(start, len);
-                },
-                on_section_segment: (s, start, end, mf) => {
-                    if (s instanceof EditLine) {
-                        if (start <= s.head && end > s.head) {
-                            s.mergeLeft();
-                        }
+        modifySections(edit_host.root, offset, end_offset, {
+            on_text_segment: (s, start, len, mf) => {
+                s.removeText(start, len);
+            },
+            on_section_segment: (s, start, end, mf) => {
+                if (s instanceof EditLine) {
+                    if (start <= s.head && end > s.head) {
+                        s.mergeLeft();
                     }
-                    modifySections(s, start, end, mf);
-                },
-                on_seg_overlap: (s, start, end, mf) => {
-                    s.remove();
-                },
-            });
+                }
+                modifySections(s, start, end, mf);
+            },
+            on_seg_overlap: (s, start, end, mf) => {
+                s.remove();
+            },
+        });
 
-            updateMetrics(edit_host, true);
+        updateMetrics(edit_host, true);
 
-            updateUIElements(edit_host);
+        updateUIElements(edit_host);
 
-            const node = getTextSectionAtOffset(offset, edit_host);
+        const node = getTextSectionAtOffset(offset, edit_host, true);
 
-            setZeroLengthSelection(node.ele, offset - node.head);
-        } break;
+        setZeroLengthSelection(node.ele, offset - node.head);
     }
-
     // End -- Update Selection  
 }
 
@@ -227,7 +174,7 @@ function undoDeleteText(
     switch (complexity) {
         case DeletionComplexity.TEXT_SECTION: {
 
-            const text = getTextSectionAtOffset(offset, edit_host);
+            const text = getAtomicSectionAtOffset(offset, edit_host);
 
             text.insertText(offset - text.head, input_text);
 
@@ -236,28 +183,6 @@ function undoDeleteText(
                 offset - text.head,
                 text.ele,
                 offset - text.head + input_text.length
-            );
-
-        } break;
-        case DeletionComplexity.SECTION_OVERLAP: {
-
-            replaceEditLineContent(
-                input_text,
-                edit_host.root.children[first_edit_line],
-                edit_host
-            );
-
-            updateUIElements(edit_host);
-            updateMetrics(edit_host, true);
-
-            const node_start = getTextSectionAtOffset(offset, edit_host);
-            const node_end = getTextSectionAtOffset(offset + original_length, edit_host);
-
-            setSelection(
-                node_start.ele,
-                offset,
-                node_end.ele,
-                offset + original_length - node_end.head
             );
 
         } break;
@@ -274,8 +199,8 @@ function undoDeleteText(
             updateUIElements(edit_host);
             updateMetrics(edit_host, true);
 
-            const node_start = getTextSectionAtOffset(offset, edit_host, true);
-            const node_end = getTextSectionAtOffset(offset + original_length, edit_host);
+            const node_start = getAtomicSectionAtOffset(offset, edit_host, true);
+            const node_end = getAtomicSectionAtOffset(offset + original_length, edit_host);
 
             setSelection(
                 node_start.ele,

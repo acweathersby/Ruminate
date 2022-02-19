@@ -44,6 +44,7 @@ export class Node extends SectionBase {
         }
     }
 
+
     toElement(host_element?: HTMLElement): Section | null {
 
         this.ele = this.createElement(this.tag);

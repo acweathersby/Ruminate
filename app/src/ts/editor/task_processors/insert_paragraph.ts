@@ -8,7 +8,7 @@ import { Section } from '../types/types';
 import {
     addChildrenStartingAt,
     getEditLine,
-    getTextSectionAtOffset,
+    getAtomicSectionAtOffset,
     setZeroLengthSelection,
     updateMetrics,
     updateUIElements
@@ -59,7 +59,7 @@ function redoInsertParagraph(
 
     const new_paragraph = new Paragraph();
 
-    const prev_edit_line = getEditLine(getTextSectionAtOffset(offset, edit_host));
+    const prev_edit_line = getEditLine(getAtomicSectionAtOffset(offset, edit_host));
 
     const right = splitSection(edit_host, offset);
 
@@ -71,7 +71,7 @@ function redoInsertParagraph(
     if (new_paragraph) {
         updateUIElements(edit_host);
         updateMetrics(edit_host, true);
-        const node = getTextSectionAtOffset(new_paragraph.head + 1, edit_host);
+        const node = getAtomicSectionAtOffset(new_paragraph.head + 1, edit_host);
         setZeroLengthSelection(node.ele, 0);
     }
 }
@@ -79,7 +79,7 @@ function redoInsertParagraph(
 function splitSection(edit_host: EditHost, offset: number): Section {
 
     //Begin -- Update history data 
-    let section: Section = getTextSectionAtOffset(offset, edit_host);
+    let section: Section = getAtomicSectionAtOffset(offset, edit_host);
 
     let parent = section.parent;
 
@@ -121,7 +121,7 @@ function undoInsertParagraph(
     const { offset } = undo_data;
 
     //Begin -- Update history data 
-    const start_text_section = getTextSectionAtOffset(offset, edit_host);
+    const start_text_section = getAtomicSectionAtOffset(offset, edit_host);
 
     const line = getEditLine(start_text_section);
 
@@ -131,7 +131,7 @@ function undoInsertParagraph(
 
     updateMetrics(edit_host, true);
 
-    const node = getTextSectionAtOffset(offset, edit_host);
+    const node = getAtomicSectionAtOffset(offset, edit_host);
 
     setZeroLengthSelection(node.ele, offset - node.head);
 }

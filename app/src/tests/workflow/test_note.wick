@@ -1,0 +1,13 @@
+import test from "@test";
+import * as txt from "../../ts/editor/text_editor.ts";
+import { updateMetrics } from "../../ts/editor/task_processors/common.ts";
+import { getProcessor } from "../../ts/editor/task_processors/register_task.ts";
+import { TextCommand, DeletionComplexity } from '../../ts/editor/types/text_command_types.ts';
+
+export default <div></div>;
+
+test: { 
+    assert_group("Test Notes", skip, ()=>{  
+        assert(false == true)
+    });
+}

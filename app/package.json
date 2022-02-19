@@ -1,5 +1,5 @@
 {
-  "name": "Ruminate App",
+  "name": "ruminate-app",
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
@@ -12,16 +12,19 @@
     "build": "npm run build:release",
     "build:release": "cargo tauri build",
     "build:debug": "cargo tauri dev",
-    "test:fe": "candle.wick test ./src/tests/"
+    "test:fe": "candle.wick test ./src/tests/",
+    "copy_cm_css": "cp node_modules/codemirror/lib/codemirror.css ./src/css/cm.css"
   },
   "dependencies": {
     "@candlelib/glow": "^0.5.10",
     "@candlelib/spark": "^0.3.10",
     "@candlelib/wick": "^0.18.9",
     "@hctoolkit/runtime": "^0.0.6",
-    "@tauri-apps/api": "^1.0.0-beta.8"
+    "@tauri-apps/api": "^1.0.0-beta.8",
+    "codemirror": "^5.65.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.0.0-beta.10"
+    "@tauri-apps/cli": "^1.0.0-beta.10",
+    "@types/codemirror": "^5.60.5"
   }
 }

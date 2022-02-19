@@ -1,12 +1,26 @@
 import { SectionRoot } from "../section/base/root";
 import { HistoryTask, TextCommand } from './text_command_types';
 
+
 /**
  * General store of editing data for a 
  * single note.
  */
 export interface EditHost {
-    DEBUGGER_ENABLED: boolean,
+
+    debug_data: {
+
+        DEBUGGER_ENABLED: boolean;
+
+        cursor_start: number;
+
+        cursor_end: number;
+
+        ele?: HTMLDivElement;
+    };
+
+    READ_ONLY: boolean;
+
     DIRTY_METRICS: boolean;
 
     root: SectionRoot;
@@ -15,7 +29,6 @@ export interface EditHost {
 
     options?: {};
 
-    markdown_debugger_element?: HTMLDivElement;
 
     command_history: (HistoryTask[TextCommand])[];
 
@@ -29,5 +42,7 @@ export interface EditHost {
         keydown(arg: KeyboardEvent): void;
         keyup(arg: KeyboardEvent): void;
         beforeinput(arg: InputEvent): void;
+        pointerup(arg: PointerEvent): void;
     };
 }
+

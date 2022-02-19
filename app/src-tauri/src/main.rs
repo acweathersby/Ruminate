@@ -5,6 +5,7 @@
 
 mod rumi_app {
     use lib_ruminate::primitives::uuid::UUID;
+    use lib_ruminate::query::query::*;
     use lib_ruminate::store::store::*;
     use lib_ruminate::*;
     use log::{debug, info, LevelFilter, Metadata, Record};
@@ -24,6 +25,15 @@ mod rumi_app {
             return note_create(store);
         }
         return 0;
+    }
+
+    #[tauri::command]
+    pub fn get_notes_from_query(query: String) -> Vec<NoteLocalID> {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            execute_query(store, query.as_str());
+        } else {
+            vec![]
+        }
     }
 
     #[tauri::command]

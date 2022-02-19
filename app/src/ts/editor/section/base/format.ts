@@ -1,6 +1,6 @@
 import { modifySections } from '../../task_processors/modify_sections.js';
-import { Node } from './node';
-import { TextSection } from '../text';
+import { Node } from './node.js';
+import { TextSection } from '../text.js';
 
 
 export class FormatNode extends Node {

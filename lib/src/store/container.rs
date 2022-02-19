@@ -1,4 +1,4 @@
-use super::super::primitives::uuid::UUID;
+use super::{super::primitives::uuid::UUID, store::NoteLocalID};
 use std::collections::HashSet;
 
 ///
@@ -8,7 +8,7 @@ pub struct Container {
     pub id: usize,
     pub parent_id: usize,
     pub name: String,
-    pub uuids: HashSet<UUID>,
+    pub uuids: HashSet<NoteLocalID>,
     pub containers: Vec<usize>,
 }
 

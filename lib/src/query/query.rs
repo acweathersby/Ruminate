@@ -1,4 +1,5 @@
 use crate::store::container::Container;
+use crate::store::store::NoteLocalID;
 
 use super::super::store::store::Store;
 use super::super::UUID;
@@ -13,7 +14,7 @@ use std::thread;
 /// ```
 /// println!("Hello World");
 /// ```
-fn execute_query(query_input: &'static str, root_store: &Store) -> Vec<UUID> {
+pub fn execute_query(root_store: &Store, query_input: &'static str) -> Vec<NoteLocalID> {
     if let Ok(query) = parse(query_input) {
         // Reduce inputs to containers found within container portion. If this is
         // an infinite result then the entire store MUST be made available for
@@ -86,14 +87,14 @@ fn execute_query(query_input: &'static str, root_store: &Store) -> Vec<UUID> {
                 }
             }
 
-            let mut UUIDS: Vec<UUID> = Vec::new();
+            let mut IDs: Vec<NoteLocalID> = Vec::new();
 
             for ctr_id in container_result {
                 if let Some(ctr) = ctr_store.containers.get(ctr_id) {
                     for &uuid in (&ctr.uuids).into_iter() {
                         if HAS_NOTE_SPECIFIER {
                         } else {
-                            UUIDS.push(uuid);
+                            IDs.push(uuid);
                         }
                     }
                 }
@@ -103,7 +104,7 @@ fn execute_query(query_input: &'static str, root_store: &Store) -> Vec<UUID> {
 
             // Sort uuids
 
-            return UUIDS;
+            return IDs;
         }
 
         // Filter the set of UUIDs based on filter clause
@@ -130,9 +131,7 @@ fn test_basic_container_query() {
         .containers
         .createContainer("testC".to_string(), 1);
 
-    root_store.containers.containers[3]
-        .uuids
-        .insert(UUID::new(1));
+    root_store.containers.containers[3].uuids.insert(1);
 
-    execute_query("[testA/testC/]", &root_store);
+    execute_query(&root_store, "[testA/testC/]");
 }

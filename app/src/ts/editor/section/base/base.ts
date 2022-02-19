@@ -20,6 +20,10 @@ export class SectionBase {
 
     tail: number;
 
+    static get class_name(): string {
+        return "section-ele";
+    }
+
     constructor() {
         this.length = 0;
         this.ele = null;
@@ -50,6 +54,9 @@ export class SectionBase {
         const ele = document.createElement(tag);
         //@ts-ignore
         ele.ruminate_host = this;
+
+        ele.classList.add(SectionBase.class_name);
+
         this.ele = ele;
         return ele;
     }

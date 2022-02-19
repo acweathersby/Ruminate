@@ -1,0 +1,127 @@
+import {id} from "@model";
+import * as editor from "../../ts/editor/text_editor.ts";
+import * as rm from "../../ts/tauri/bridge.ts";
+import {test_data} from "./test_note.txt";
+
+import header from "./header";
+import paragraph from "./paragraph";
+import codeblock from "./codeblock";
+import cursor from "./cursor";
+
+let path = "/rumi-tutorials/";
+let name = "test";
+let temp = "test";
+
+export const config = { name:"readOnlyNote" };
+
+async function onload(){
+    const edit_host = await editor.constructEditHost(-1/* id */, "@.note-body", test_data);
+    editor.makeReadOnly(edit_host);
+    rm.get_text(id).then(n=>temp=n);
+    rm.get_note_name(id).then(n=>name=n);
+    rm.get_note_container_path(id).then(p=>path=p);
+}
+
+export default <div class=note> 
+        <div class=note-header>
+        <h3 class=note-path>{path}</h3>
+        <h1 class=note-title>{name}</h1>
+    </div>
+    <div class=note-body></div>
+    <div class=note-md-preview></div>
+</div>;
+
+<style>
+root {
+    outline:none;
+    width:100%;
+}
+
+.note-body h1,
+.note-body h2,
+.note-body h3,
+.note-body h4,
+.note-body h5,
+.note-body h6
+ {
+     color:#5a5176;
+ }
+
+.note-body h1::selection,
+.note-body h2::selection,
+.note-body h3::selection,
+.note-body h4::selection,
+.note-body p::selection {
+    color:white;
+    background:#767676; 
+}
+
+
+.note-body h1 {
+    color:#5a5176;
+    width: 100%;
+    padding-bottom:20px;
+    border-bottom: 1px solid #5a517650;
+}
+
+.note-body a {
+   color: #ef677a;
+}
+
+.note-body {
+    background:#FDFDFD;
+    padding:80px;
+    border-radius:10px;
+    outline:none;
+    font-size:1.3em;
+    white-space: pre-wrap; 
+    color:#222222
+}
+
+.note-insert {
+    display:inline-block;
+    position:relative;
+    width:300px;
+    height:120px;
+    border: 1px solid black;
+}
+
+.note-body:hover {
+    background:white;
+}
+
+.note-header {
+    padding-left:20px;
+}
+
+.note-body code{
+    caret-color:red;
+    font-family:monospace;
+    color:#707070;
+    font-size:0.8em;
+    background:#f2f3e8;
+    padding:5px 2px;
+    border-radius:3px;
+}
+
+.note-body code::selection {
+    color:white;
+    background: #ffb7b7; 
+}
+
+.note-md-preview pre{
+    white-space: pre-wrap;
+    background:#f2f3e8;
+    padding:20px;
+    border-radius:10px;
+    outline:none;
+    font-size:1.1em;
+    white-space: pre-wrap; 
+    color:#707070
+}
+
+i {
+    color:black;
+}
+
+</style>

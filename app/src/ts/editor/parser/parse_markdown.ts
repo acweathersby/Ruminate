@@ -5,7 +5,7 @@ import { CodeBlock } from '../section/code';
 import { BoldSection, InlineCode, ItalicSection } from "../section/decorator";
 import { Header } from '../section/header ';
 import { EditLine } from "../section/line";
-import { NoteSlotSection } from "../section/note";
+import { QueryDisplay } from "../section/query";
 import { Paragraph } from '../section/paragraph';
 import { TextSection } from "../section/text";
 import { Content } from "../section/types";
@@ -55,7 +55,7 @@ export function parseMarkdownText(text: string): Markdown {
         else
             token.throw(`Expected [ ${expected} ] but found [ ${token} ]`);
     }
-    console.log(result);
+
     return result;
 }
 
@@ -197,10 +197,16 @@ export function convertOuterContent(raw_content: (Content | InlineCode)[], offse
                     let end = -1;
                     for (let j = i + 1; j < length; j++) {
                         let obj2 = raw_content[j];
+
                         if (obj2 instanceof AnchorMiddle)
                             mid = j;
-                        if (obj2 instanceof AnchorEnd)
+
+
+                        if (mid >= 0 && obj2 instanceof AnchorEnd) {
                             end = j;
+                            break;
+                        }
+
                     }
 
                     if (mid - 1 > 0 && mid > 0 && mid < end && end > i) {
@@ -228,7 +234,7 @@ export function convertOuterContent(raw_content: (Content | InlineCode)[], offse
                     let end = raw_content[j];
                     if (end.type == ASTType.QueryEnd) {
                         const data = raw_content.slice(i + 1, j);
-                        line_contents.push(new NoteSlotSection(data.map(getText).join("")));
+                        line_contents.push(new QueryDisplay(data.map(getText).join("")));
                         i = j;
                         continue outer;
                     }

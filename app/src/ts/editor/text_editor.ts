@@ -1,5 +1,5 @@
 import { TodoError } from './errors/todo_error.js';
-import { attachListeners } from './events';
+import { attachListeners, removeListeners } from './events';
 import { convertMDASTToEditLines, parseMarkdownText } from './parser/parse_markdown.js';
 import { SectionRoot } from "./section/base/root";
 import { EditHost } from './types/edit_host.js';
@@ -14,7 +14,8 @@ import "./task_processors/insert_paragraph.js";
 import "./task_processors/insert_text.js";
 import "./task_processors/toggle_bold.js";
 import "./task_processors/toggle_italics.js";
-import { toggleEditable, updateMarkdownDebugger } from './task_processors/common.js';
+import { setEditable, toggleEditable, updateMarkdownDebugger } from './task_processors/common.js';
+import { get_text } from '../tauri/bridge.js';
 
 export * from "./task_processors/history.js";
 export * from "./task_processors/register_task.js";
@@ -26,33 +27,33 @@ function updateHost(edit_host: EditHost) {
 
 export async function constructEditHost(
     note_id: number,
-    host_ele: HTMLDivElement,
     input_string = "Welcome To Ruminate"
 ): Promise<EditHost> {
-
-    if (!host_ele || !(host_ele instanceof HTMLDivElement))
-        throw new Error("Expected a DIV element for the edit area host.");
 
     let string = "";
 
     if (note_id == -1) {
         string = input_string;
     } else {
-        throw new TodoError("Pull note text data from store");
+        string = await get_text(note_id);
     }
 
     const edit_host: EditHost = {
-        DEBUGGER_ENABLED: true,
+        debug_data: {
+            cursor_start: 0,
+            cursor_end: 0,
+            ele: null,
+            DEBUGGER_ENABLED: true,
+        },
         DIRTY_METRICS: true,
+        READ_ONLY: false,
         command_history: [],
         root: null,
-        host_ele,
+        host_ele: null,
         history_pointer: 0,
         options: {},
     };
 
-    // -- enabling content editable on host node
-    toggleEditable(edit_host);
 
     const result = parseMarkdownText(string);
 
@@ -61,10 +62,6 @@ export async function constructEditHost(
 
     edit_host.root = new SectionRoot(lines);
 
-    attachListeners(edit_host);
-
-    updateHost(edit_host);
-
     return edit_host;
 }
 
@@ -72,12 +69,36 @@ export function addMarkdownPreviewTarget(edit_host: EditHost, target: HTMLDivEle
 
     if (edit_host) {
 
-        edit_host.markdown_debugger_element = target;
+        edit_host.debug_data.ele = target;
 
         updateMarkdownDebugger(edit_host);
     }
 }
 
+export function setHostElement(edit_host: EditHost, element: HTMLDivElement) {
+
+    removeListeners(edit_host);
+
+    if (element) {
+        edit_host.host_ele = element;
+        setReadOnly(edit_host, edit_host.READ_ONLY);
+        updateHost(edit_host);
+    } else {
+        edit_host.host_ele = null;
+    }
+}
+
 export function renderMarkdown(edit_host: EditHost) {
     return edit_host.root.toString();
+}
+
+export function setReadOnly(edit_host: EditHost, READ_ONLY: boolean = true) {
+
+    if (READ_ONLY) {
+        setEditable(edit_host, false);
+        removeListeners(edit_host);
+    } else {
+        setEditable(edit_host, true);
+        attachListeners(edit_host);
+    }
 }

@@ -1,8 +1,10 @@
 import { TodoError } from '../errors/todo_error';
+import { EditLine } from '../section/line';
+import { TextSection } from '../section/text';
 import { EditHost } from "../types/edit_host";
 import { ResultType } from '../types/result';
 import { HistoryTask, TextCommand, TextCommandTask } from "../types/text_command_types";
-import { getTextSectionAtOffset, setZeroLengthSelection, updateMetrics, updateUIElements } from './common';
+import { getAtomicSectionAtOffset, getPrevTextSection, getTextSectionAtOffset, setZeroLengthSelection, updateMetrics, updateUIElements } from './common';
 import { addOperation } from './history';
 import { registerTask } from './register_task';
 
@@ -38,38 +40,61 @@ function redoInsertText(redo_data: HistoryTask[TextCommand.INSERT_TEXT]["redo_da
 
     //Begin -- Resolve insertion point
 
-    const node = getTextSectionAtOffset(offset, edit_host, true);
+    let node = getAtomicSectionAtOffset(offset, edit_host);
 
-    if (!node)
+    if (node instanceof EditLine) {
+
+        //Insert in the previous edit line if it exists
+        const text = getPrevTextSection(node);
+
+        if (text && text.tail == node.head) {
+            node = text;
+        } else if (node.prev) {
+            node = node.prev;
+            const child = new TextSection("");
+            child.link(node.last_child, node);
+            node.updateMetrics(node.head);
+            node = child;
+        } else {
+            node = node.first_child;
+            const child = new TextSection("");
+            child.link(null, node);
+            node.updateMetrics(node.head);
+            node = child;
+        }
+    }
+
+    if (node instanceof TextSection) {
+
+
+
+        //End -- Resolve insertion point
+
+        //Begin -- Update or Create insertion nodes. 
+
+        if (APPLY_MARKDOWN_FORMAT) {
+            throw new TodoError("Implement insertText with Markdown Formatting");
+        } else {
+            node.insertText(offset - node.head, input_text);
+        }
+
+        //End -- Update or Create insertion nodes. 
+
+        // Begin -- Update Selection
+
+        if (APPLY_MARKDOWN_FORMAT) {
+            throw new TodoError("Implement insertText with Markdown Formatting");
+        } else {
+
+            updateUIElements(edit_host);
+
+            setZeroLengthSelection(node.ele, offset - node.head + input_text.length);
+        }
+    } else
         return {
             type: ResultType.Failed, code: -1,
             message: `Unable to locate acceptable text section at offset ${offset}`
         };
-
-    //End -- Resolve insertion point
-
-    //Begin -- Update or Create insertion nodes. 
-
-    if (APPLY_MARKDOWN_FORMAT) {
-        throw new TodoError("Implement insertText with Markdown Formatting");
-    } else {
-        node.insertText(offset - node.head, input_text);
-    }
-
-    //End -- Update or Create insertion nodes. 
-
-    // Begin -- Update Selection
-
-    if (APPLY_MARKDOWN_FORMAT) {
-        throw new TodoError("Implement insertText with Markdown Formatting");
-    } else {
-
-        updateUIElements(edit_host);
-
-        setZeroLengthSelection(node.ele, offset - node.head + input_text.length);
-    }
-
-
 
     // End -- Update Selection
 }
@@ -81,6 +106,9 @@ function undoInsertText(undo_data: HistoryTask[TextCommand.INSERT_TEXT]["undo_da
     const node = getTextSectionAtOffset(undo_data.offset_start, edit_host);
 
     node.removeText(undo_data.offset_start - node.head, undo_data.length);
+
+    if (node.length == 0)
+        node.remove();
 
     updateUIElements(edit_host);
 

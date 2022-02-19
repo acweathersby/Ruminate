@@ -1,21 +1,18 @@
 import {id} from "@model";
 import * as editor from "../../ts/editor/text_editor.ts";
 import * as rm from "../../ts/tauri/bridge.ts";
-
-import header from "./header";
-import paragraph from "./paragraph";
-import codeblock from "./codeblock";
-import cursor from "./cursor";
+import {test_data} from "./test_note.txt";
+import note_body from "./note_body"
 
 let path = "/rumi-tutorials/";
 let name = "test";
 let temp = "test";
-
-const temp_data = "## a \\`test me now!\\`"
+let host = null;
 
 async function onload(){
-    const edit_host = await editor.constructEditHost(-1/* id */, "@.note-body", temp_data);
-    editor.addMarkdownPreviewTarget(edit_host, "@.note-md-preview");
+    host = await editor.constructEditHost(1/* id */, "@.note-body", test_data);
+    editor.addMarkdownPreviewTarget(host, "@.note-md-preview");
+    editor.setReadOnly(false);
     rm.get_text(id).then(n=>temp=n);
     rm.get_note_name(id).then(n=>name=n);
     rm.get_note_container_path(id).then(p=>path=p);
@@ -26,7 +23,7 @@ export default <div class=note>
         <h3 class=note-path>{path}</h3>
         <h1 class=note-title>{name}</h1>
     </div>
-    <div class=note-body></div>
+    <note_body {host}/>
     <div class=note-md-preview></div>
 </div>;
 
@@ -36,62 +33,11 @@ root {
     width:100%;
 }
 
-.note-body h1,
-.note-body h2,
-.note-body h3,
-.note-body h4,
-.note-body h5,
-.note-body h6
- {
-     color:#5a5176;
- }
-
-.note-body h1::selection,
-.note-body h2::selection,
-.note-body h3::selection,
-.note-body h4::selection,
-.note-body p::selection {
-    color:white;
-    background:#767676; 
+i {
+    color:black;
 }
 
-
-.note-body h1 {
-    color:#5a5176;
-    width: 100%;
-    padding-bottom:20px;
-    border-bottom: 1px solid #5a517650;
-}
-
-.note-body a {
-   color: #ef677a;
-}
-
-.note-body {
-    background:#FDFDFD;
-    padding:80px;
-    border-radius:10px;
-    outline:none;
-    font-size:1.3em;
-    white-space: pre-wrap; 
-    color:#222222
-}
-
-.note-insert {
-    position:relative;
-    width:100%;
-    border: 1px solid black;
-}
-
-.note-body:hover {
-    background:white;
-}
-
-.note-header {
-    padding-left:20px;
-}
-
-.note-body code{
+ code{
     caret-color:red;
     font-family:monospace;
     color:#707070;
@@ -101,24 +47,8 @@ root {
     border-radius:3px;
 }
 
-.note-body code::selection {
+ code::selection {
     color:white;
     background: #ffb7b7; 
 }
-
-.note-md-preview pre{
-    white-space: pre-wrap;
-    background:#f2f3e8;
-    padding:20px;
-    border-radius:10px;
-    outline:none;
-    font-size:1.1em;
-    white-space: pre-wrap; 
-    color:#707070
-}
-
-i {
-    color:black;
-}
-
 </style>

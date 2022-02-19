@@ -5,17 +5,15 @@ import { TextSection } from './text';
 
 export class EditLine extends Node {
 
-    /**
-     * An indicator of how the element type should be adjusted.
-     */
-    meta_value: number;
-
     prev: EditLine;
     next: EditLine;
 
     updateLength(): number {
+
         const length_adjust = 1;
+
         this.length = super.updateLength() + length_adjust;
+
         return this.length;
     }
 
@@ -32,13 +30,13 @@ export class EditLine extends Node {
     }
 
     updateElement(): void {
-        this.ensureIsEditable();
+        //this.ensureIsEditable();
         return super.updateElement();
     }
 
     mergeLeft() {
         if (this.prev) {
-            this.prev.removePlaceholder();
+            //this.prev.removePlaceholder();
 
             if (this.first_child) {
                 if (this.prev.last_child) {
@@ -81,5 +79,4 @@ export class EditLine extends Node {
         empty.IS_PARAGRAPH_PLACEHOLDER = true;
         empty.link(null, this);
     }
-
 }

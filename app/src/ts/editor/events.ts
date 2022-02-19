@@ -6,7 +6,22 @@ import { DeletionComplexity, FormatType, TextCommand, TextCommandTask } from './
 
 export function attachListeners(edit_host: EditHost) {
 
+    if (!edit_host.host_ele)
+        return;
+
+    function updatePointerData(edit_host: EditHost) {
+        if (edit_host.debug_data.DEBUGGER_ENABLED) {
+            const { start_offset, end_offset } = getOffsetsFromSelection();
+            edit_host.debug_data.cursor_start = start_offset;
+            edit_host.debug_data.cursor_end = end_offset;
+            updateMarkdownDebugger(edit_host);
+        }
+    }
+
     edit_host.event_handlers = {
+        pointerup(e: PointerEvent) {
+            updatePointerData(edit_host);
+        },
         cut(e: ClipboardEvent) {
             debugger;
         },
@@ -17,11 +32,13 @@ export function attachListeners(edit_host: EditHost) {
             //debugger;
         },
         keypress(e: KeyboardEvent) {
+            updatePointerData(edit_host);
             /*  if (e.code == "Space") {
                  insertText(" ", edit_host);
              } */
         },
         keyup(e: KeyboardEvent) {
+            updatePointerData(edit_host);
             console.log(e);
         },
         keydown(e: KeyboardEvent) {
@@ -45,9 +62,10 @@ export function attachListeners(edit_host: EditHost) {
                 }
             }
 
-            if (NO_DEFAULT)
+            if (NO_DEFAULT) {
                 e.preventDefault();
-            e.stopImmediatePropagation();
+                e.stopImmediatePropagation();
+            }
         },
         beforeinput(e: InputEvent) {
             console.log("A");
@@ -221,7 +239,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
     }
 
 
-    if (edit_host.DEBUGGER_ENABLED)
+    if (edit_host.debug_data.DEBUGGER_ENABLED)
         updateMarkdownDebugger(edit_host);
 }
 

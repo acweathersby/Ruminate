@@ -1,0 +1,90 @@
+import {host} from "@props";
+import * as editor from "../../ts/editor/text_editor.ts";
+import * as rm from "../../ts/tauri/bridge.ts";
+
+async function $host(host){ 
+    debugger; 
+    if(host)
+        editor.setHostElement(host, "@root");
+}
+
+export default <div class=note-body></div>;
+
+<style>
+root {
+    background:#FDFDFD;
+    padding:80px;
+    border-radius:10px;
+    outline:none;
+    font-size:1.3em;
+    white-space: pre-wrap; 
+    color:#222222
+}
+
+ h1, h2, h3, h4, h5, h6
+ {
+     color:#5a5176;
+ }
+
+ h1::selection, h2::selection, h3::selection, h4::selection, p::selection {
+    color:white;
+    background:#767676; 
+}
+
+
+ h1 {
+    color:#5a5176;
+    width: 100%;
+    padding-bottom:20px;
+    border-bottom: 1px solid #5a517650;
+}
+
+a {
+   color: #ef677a;
+}
+
+.CodeMirror {
+    height:auto
+}
+
+.query-field,
+.code-field
+ {
+    display:block;
+    position:relative;
+    width:100%;
+    border: 1px solid #00000020;
+}
+
+.query-field {
+    margin: 10px 0
+}
+
+a:hover {
+    background:white;
+}
+
+.note-header {
+    padding-left:20px;
+}
+
+ code{
+    caret-color:red;
+    font-family:monospace;
+    color:#707070;
+    font-size:0.8em;
+    background:#f2f3e8;
+    padding:5px 2px;
+    border-radius:3px;
+}
+
+ code::selection {
+    color:white;
+    background: #ffb7b7; 
+}
+
+i {
+    color:black;
+}
+
+</style>

@@ -37,7 +37,6 @@ pub struct Store {
     pub containers: ContainerStore,
     pub notes: BTreeMap<UUID, Box<Note>>,
 
-    //Deprecate the following
     pub note_uuid_to_local_id: HashMap<NoteUUID, NoteLocalID>,
     pub note_local_id_to_uuid: HashMap<NoteLocalID, NoteUUID>,
     pub note_id_to_note_content: HashMap<NoteLocalID, Box<NoteInternalCRDT>>,

@@ -1,12 +1,12 @@
+import { SectionBase } from '../section/base/base';
 import { EditLine } from "../section/line";
+import { NoteSlotSection } from '../section/note';
 import { TextSection } from "../section/text";
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
+import { IS_ATOMIC_SECTION, IS_TEXT, IS_TEXT_WRAPPER } from './format_rules';
 
-export function getSectionFromElement(ele: Node): Section {
-    //@ts-ignore
-    return ele.ruminate_host;
-}
+
 /**
  * Traverse a node tree, looking for instance of a given type.
  * if a node matches the instance type, it is yielded, and its
@@ -166,15 +166,16 @@ export function getTextSectionAtOffset(
 ): TextSection | null {
 
     for (const line of edit_host.root.children) {
+
         if (line.overlaps(offset)) {
             let candidates: Section[] = [line];
+
             for (const candidate of candidates) {
                 if (candidate.first_child)
                     for (const node of candidate.first_child.traverse_horizontal()) {
                         console.log({ head: node.head, offset });
                         if (offset >= node.head && (offset < node.tail || (TAIL_CAPTURE && offset == node.tail))) {
                             if (node instanceof TextSection) {
-
                                 return node;
                             } else {
                                 candidates.push(node);
@@ -200,6 +201,60 @@ export function getTextSectionAtOffset(
     return null;
 }
 
+/**
+ * Retrieves the irreducible node which intersects the givin offset point.
+ * 
+ * If the offset is outside the bounds of the editable areas, then null is 
+ * returned. 
+ */
+export function getAtomicSectionAtOffset(
+    offset: number,
+    edit_host: EditHost,
+    TAIL_CAPTURE: boolean = false
+): TextSection |
+    NoteSlotSection |
+    EditLine |
+    null {
+
+    for (const line of edit_host.root.children) {
+
+        if (line.overlaps(offset)) {
+
+            if (offset == line.head)
+                return line;
+
+            let candidates: Section[] = [line];
+
+            for (const candidate of candidates) {
+                if (candidate.first_child)
+                    for (const node of candidate.first_child.traverse_horizontal()) {
+
+                        if (offset >= node.head && (offset < node.tail || (TAIL_CAPTURE && offset == node.tail))) {
+                            if (IS_ATOMIC_SECTION(node)) {
+                                return node;
+                            } else {
+                                candidates.push(node);
+                                break;
+                            };
+                        }
+                    }
+            }
+        }
+    }
+
+    if (edit_host.root.last_child) {
+
+        let sec: Section = edit_host.root.last_child;
+
+        while (sec && !IS_ATOMIC_SECTION(sec))
+            sec = sec.last_child;
+
+        if (sec)
+            return <any>sec;
+    }
+
+    return null;
+}
 /**
  * Retrieve the EditLine of the givin section. 
  * 
@@ -249,17 +304,24 @@ export function updateUIElements(host: EditHost) {
 }
 
 export function updateMarkdownDebugger(host: EditHost) {
-    if (host.markdown_debugger_element) {
-        if (host.DEBUGGER_ENABLED) {
+    if (host.debug_data.ele) {
+        if (host.debug_data.DEBUGGER_ENABLED) {
 
-            if (!host.markdown_debugger_element.firstElementChild) {
+            if (!host.debug_data.ele.firstElementChild) {
                 const pre = document.createElement("pre");
-                host.markdown_debugger_element.appendChild(pre);
+                host.debug_data.ele.appendChild(pre);
             }
 
-            host.markdown_debugger_element.firstElementChild.innerHTML = host.root.toString();
+            host.debug_data.ele.firstElementChild.innerHTML =
+                `
+Start offset: ${host.debug_data.cursor_start}
+End offset  : ${host.debug_data.cursor_end}
+=====================Markdown===================
+${host.root.toString()}
+================================================
+`;
         } else {
-            host.markdown_debugger_element.innerHTML = "";
+            host.debug_data.ele.innerHTML = "";
         }
     }
 }
@@ -285,9 +347,102 @@ export function toggleEditable(edit_host: EditHost) {
  * Set the editable state of the host element
  */
 export function setEditable(edit_host: EditHost, EDITABLE: boolean = true) {
+    if (edit_host.host_ele)
+        if (EDITABLE)
+            edit_host.host_ele.setAttribute("contenteditable", "true");
+        else
+            edit_host.host_ele.setAttribute("contenteditable", "false");
+}
+/**
+ * Retrieve the next text section or null
+ * @param section 
+ */
+export function getNextTextSection(section: Section): TextSection | null {
 
-    if (EDITABLE)
-        edit_host.host_ele.setAttribute("contenteditable", "true");
-    else
-        edit_host.host_ele.setAttribute("contenteditable", "false");
+    if (section) {
+
+        if (IS_TEXT_WRAPPER(section)) {
+            return getNextTextSection(section.first_child);
+        } else if (IS_TEXT(section)) {
+            if (section.next) {
+                if (IS_TEXT(section.next)) {
+                    return section.next;
+                } else {
+                    return getNextTextSection(section.next);
+                }
+            }
+        }
+
+        if (section.parent) {
+
+            let parent = section.parent;
+
+            while (parent && !parent.next)
+                parent = parent.parent;
+
+            if (parent)
+                return getNextTextSection(parent.next);
+        }
+    }
+
+    return null;
+}
+/**
+ * Retrieve the prev text section or null
+ * @param section 
+ */
+export function getPrevTextSection(section: Section, START = false) {
+    if (section) {
+
+        if (IS_TEXT_WRAPPER(section)) {
+            return getPrevTextSection(section.last_child);
+        } else if (IS_TEXT(section)) {
+            if (START && section.prev) {
+                if (IS_TEXT(section.prev)) {
+                    return section.prev;
+                } else {
+                    return getPrevTextSection(section.prev);
+                }
+            } else {
+                return section;
+            }
+        }
+
+        if (section.prev)
+            return getPrevTextSection(section.prev);
+
+        if (section.parent) {
+
+            let parent = section.parent;
+
+            while (parent && !parent.prev)
+                parent = parent.parent;
+
+            if (parent)
+                return getNextTextSection(parent.prev);
+        }
+    }
+
+    return null;
+}
+
+
+export function getSectionFromElement(ele: HTMLElement) {
+    while (ele) {
+
+        if (ele instanceof HTMLElement)
+
+            if (ele.classList.contains(SectionBase.class_name)) {
+                //@ts-ignore
+                return ele.ruminate_host;
+            }
+            //@ts-ignore
+            else if (ele.ruminate_host)
+                //@ts-ignore
+                return ele.ruminate_host;
+
+        ele = ele.parentElement;
+    }
+
+    return null;
 }

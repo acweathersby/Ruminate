@@ -9,12 +9,14 @@ function onload(){
     active_note = [{id:1}]
 }
 
-
 export default <div id="app">
+    <head>
+        <link rel="stylesheet" href="css/cm.css">
+    </head>
     <div class=leftsb></div>
     <div class=main>
         <div class=search>
-            <input class=search-input type=text placeholder="test">
+            <input class=search-input type=text placeholder="Begin your note journey">
         </div>
         <container class=note-view data={active_note}>
             <editable_note/>
@@ -92,6 +94,13 @@ export default <div id="app">
         border:none;
         padding:10px 20px;
         border-radius:20px;
+        outline:none;
+        transition:background 200ms;
+    }
+
+    .search-input:active,
+    .search-input:hover{ 
+        background:#E0E0E0;
     }
 
 </style>
