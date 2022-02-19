@@ -11,6 +11,8 @@ export function attachListeners(edit_host: EditHost) {
 
     function updatePointerData(edit_host: EditHost) {
         if (edit_host.debug_data.DEBUGGER_ENABLED) {
+            invalidateMetrics(edit_host);
+            updateMetrics(edit_host);
             const { start_offset, end_offset } = getOffsetsFromSelection();
             edit_host.debug_data.cursor_start = start_offset;
             edit_host.debug_data.cursor_end = end_offset;
@@ -68,7 +70,6 @@ export function attachListeners(edit_host: EditHost) {
             }
         },
         beforeinput(e: InputEvent) {
-            console.log("A");
             if (e.preventDefault)
                 e.preventDefault();
             processInputEvent(e, edit_host);
