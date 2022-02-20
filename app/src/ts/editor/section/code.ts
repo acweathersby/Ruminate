@@ -1,5 +1,5 @@
-import { basicSetup, EditorView } from "@codemirror/basic-setup";
-import { EditorSelection, EditorState, Facet } from "@codemirror/state";
+import { EditorView } from "@codemirror/basic-setup";
+import { EditorState } from "@codemirror/state";
 import { setZeroLengthSelection } from '../task_processors/common';
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';

@@ -1,62 +1,15 @@
 import { SectionBase } from '../section/base/base';
 import { CodeLine } from '../section/code';
 import { EditLine } from "../section/line";
-import { Paragraph } from '../section/paragraph';
 import { QueryDisplay } from '../section/query';
 import { TextSection } from "../section/text";
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
-import { IS_ATOMIC_SECTION, IS_CARRET_TARGET, IS_TEXT, IS_TEXT_WRAPPER } from './format_rules';
+import { IS_ATOMIC_SECTION, IS_CARRET_TARGET, IS_TEXT_WRAPPER } from './format_rules';
+import * as view from "./view.js";
 
 
-/**
- * Traverse a node tree, looking for instance of a given type.
- * if a node matches the instance type, it is yielded, and its
- * child nodes are not traversed. Otherwise the full node
- * tree is traversed.
- */
-function* getNodesOfType(root: Section, type: any) {
-    if (root instanceof type) {
-        yield root;
-    } else {
-        if (root.first_child) {
-            for (const node of root.first_child.traverse_horizontal())
-                yield* getNodesOfType(node, type);
-        }
-    }
-}
-export function getRoot(section: Section): EditLine {
-    let par = section.parent;
 
-    while (par) {
-        if (!par.parent)
-            return <EditLine>par;
-        par = par.parent;
-    }
-
-    return <EditLine>section;
-}
-
-
-export function getSectionFromNode(node: Node, edit_host: EditHost) {
-    let par = node;
-    while (par) {
-        for (let section of edit_host.root.children)
-            if (section.ele == par)
-                return section;
-        par = par.parentElement;
-    }
-
-    return null;
-}
-
-/**
- * Returns true if the node is the first child of 
- * a section's element.
- */
-export function nodeIsAtSectionRoot(node: Node, edit_host: EditHost): boolean {
-    return true;
-}
 /**
  * Move selection cursor to an offset based on a Text node
  */
@@ -115,15 +68,6 @@ export function setSelection(
     selection.addRange(range);
 }
 
-export function removeListeners(edit_host: EditHost) {
-    for (const name in edit_host.event_handlers)
-        edit_host.host_ele.removeEventListener(name, edit_host.event_handlers[name]);
-}
-
-
-export function mergeSections(section: Section, prev_section: Section, edit_host: EditHost) {
-    debugger;
-}
 
 /**
  * Retrieves the TextSection node which intersects the givin offset point.
@@ -145,8 +89,12 @@ export function getTextSectionAtOffset(
             for (const candidate of candidates) {
                 if (candidate.first_child)
                     for (const node of candidate.first_child.traverse_horizontal()) {
-                        console.log({ head: node.head, offset });
-                        if (offset >= node.head && (offset < node.tail || (TAIL_CAPTURE && offset == node.tail))) {
+
+                        if (
+                            offset >= node.head && (offset < node.tail
+                                ||
+                                (TAIL_CAPTURE && offset == node.tail))
+                        ) {
                             if (node instanceof TextSection) {
                                 return node;
                             } else {
@@ -191,7 +139,6 @@ export function getAtomicSectionAtOffset(
     for (const line of edit_host.root.children) {
 
         if (line.overlaps(offset)) {
-            console.log(offset, line.head, line.tail);
 
             if (offset == line.head || IS_ATOMIC_SECTION(line))
                 return line;
@@ -290,7 +237,7 @@ export function updateMarkdownDebugger(host: EditHost) {
 Start offset: ${host.debug_data.cursor_start}
 End offset  : ${host.debug_data.cursor_end}
 =====================Markdown===================
-${host.root.toString()}
+${view.toMDString(host.root)}
 ================================================
 `;
         } else {

@@ -5,21 +5,6 @@ import { TextSection } from '../text.js';
 
 export class FormatNode extends Node {
 
-
-    /**
-    * Replaces itself with its children elements
-    */
-    dissolve() {
-        if (this.parent) {
-            let prev = this.prev;
-            for (const child of this.children) {
-                child.link(prev, this.parent);
-                prev = child;
-            }
-            this.remove();
-        }
-    }
-
     /**
      * Joins adjacent ItalicSection together
      * and removes redundancies within the italic
@@ -36,11 +21,7 @@ export class FormatNode extends Node {
         } else {
             while (this.next) {
                 if (this.next instanceof Type) {
-                    let prev = this.last_child;
-                    for (const child of this.next.children) {
-                        child.link(prev, this);
-                        prev = child;
-                    }
+                    this.mergeLeft();
                     this.tail = this.next.tail;
                     this.next.remove();
                 } else

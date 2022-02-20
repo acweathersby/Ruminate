@@ -30,6 +30,15 @@ export class AnchorSection extends Node {
         return this.next;
     }
 
+    heal(): void {
+        if (this.next instanceof AnchorSection && this.next.href == this.href) {
+            this.next.mergeLeft();
+            this.next.remove();
+            return this.heal();
+        }
+        super.heal();
+    }
+
     toString(): string {
         return `[${this.children.map(c => c.toString()).join("")}](${this.href})`;
     }

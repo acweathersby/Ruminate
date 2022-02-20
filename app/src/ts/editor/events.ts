@@ -1,5 +1,5 @@
 import { CodeLine } from './section/code';
-import { adaptSelectionPosition, getOffsetsFromSelection, getSectionFromElement, invalidateMetrics, setUISelection, toggleEditable, updateMarkdownDebugger, updateMetrics, updatePointerData } from './task_processors/common';
+import { getOffsetsFromSelection, getSectionFromElement, invalidateMetrics, setUISelection, toggleEditable, updateMarkdownDebugger, updateMetrics, updatePointerData } from './task_processors/common';
 import { redo, undo } from './task_processors/history';
 import { getProcessor } from './task_processors/register_task';
 import { EditHost } from "./types/edit_host";
@@ -9,7 +9,6 @@ export function attachListeners(edit_host: EditHost) {
 
     if (!edit_host.host_ele)
         return;
-
 
     let SELECTION_UPDATE_TARGET = null;
 
@@ -31,7 +30,6 @@ export function attachListeners(edit_host: EditHost) {
             const selection = getSectionFromElement(e.target);
 
             if (selection instanceof CodeLine) {
-
                 invalidateMetrics(edit_host);
                 updateMetrics(edit_host);
                 const offset = selection.head + 1 + selection.view.posAtCoords({ x: e.x, y: e.y });
@@ -41,8 +39,6 @@ export function attachListeners(edit_host: EditHost) {
             } else {
                 SELECTION_UPDATE_TARGET = e.target;
             }
-
-
             //If the selected node is a non-selectable, update it's selection
         },
         cut(e: ClipboardEvent) {
@@ -165,6 +161,9 @@ function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
     setUISelection(edit_host);
 
     e.preventDefault();
+
+
+    updatePointerData(edit_host);
 
     return false;
 }
@@ -328,7 +327,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
 
 
     if (edit_host.debug_data.DEBUGGER_ENABLED)
-        updateMarkdownDebugger(edit_host);
+        updatePointerData(edit_host);
 }
 
 function insertText(edit_host: EditHost, text_data: string) {

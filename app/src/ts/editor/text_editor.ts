@@ -1,9 +1,8 @@
-import { TodoError } from './errors/todo_error.js';
+import { get_text } from '../tauri/bridge.js';
 import { attachListeners, removeListeners } from './events';
-import { convertMDASTToEditLines, parseMarkdownText } from './parser/parse_markdown.js';
-import { SectionRoot } from "./section/base/root";
-import { EditHost } from './types/edit_host.js';
-
+import { convertMDASTToEditLines as convertMDASTToMDNodeLines, parseMarkdownText } from './parser/parse_markdown.js';
+import { MDNode, NodeType } from './section/base/md_node.js';
+import { setEditable, updateMarkdownDebugger } from './task_processors/common.js';
 import "./task_processors/delete_text.js";
 import "./task_processors/insert_paragraph.js";
 /**
@@ -12,10 +11,11 @@ import "./task_processors/insert_paragraph.js";
  * through the `getProcessor` function.
  */
 import "./task_processors/insert_text.js";
+import { setChildren } from './task_processors/operators.js';
 import "./task_processors/toggle_bold.js";
 import "./task_processors/toggle_italics.js";
-import { setEditable, toggleEditable, updateMarkdownDebugger } from './task_processors/common.js';
-import { get_text } from '../tauri/bridge.js';
+import { EditHost } from './types/edit_host.js';
+
 
 export * from "./task_processors/history.js";
 export * from "./task_processors/register_task.js";
@@ -59,10 +59,14 @@ export async function constructEditHost(
 
     const result = parseMarkdownText(string);
 
-    //Convert Markdown to Editable Content
-    const lines = convertMDASTToEditLines(result, edit_host);
+    edit_host.root = new MDNode(NodeType.ROOT);
 
-    edit_host.root = new SectionRoot(lines);
+    //Convert Markdown to Editable Content
+    const lines = convertMDASTToMDNodeLines(result, edit_host);
+
+    debugger;
+
+    edit_host.root = setChildren(edit_host.root, ...lines);
 
     return edit_host;
 }
@@ -90,9 +94,6 @@ export function setHostElement(edit_host: EditHost, element: HTMLDivElement) {
     }
 }
 
-export function renderMarkdown(edit_host: EditHost) {
-    return edit_host.root.toString();
-}
 
 export function setReadOnly(edit_host: EditHost, READ_ONLY: boolean = true) {
 

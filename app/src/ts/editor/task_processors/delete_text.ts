@@ -11,9 +11,9 @@ import {
     TextCommandTask
 } from "../types/text_command_types";
 import {
-    getAtomicSectionAtOffset, getEditLine, getTextSectionAtOffset, setSelection,
+    getAtomicSectionAtOffset,
+    getEditLine,
     setUISelection,
-    setZeroLengthSelection,
     updateMetrics,
     updateUIElements
 } from './common.js';
@@ -68,7 +68,7 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
             .filter(c => c.head <= offset_end && c.tail >= offset_start && c.head < offset_end);
 
         input_text = effected_lines
-            .map(v => v.toString()).join("\n");
+            .map(v => v.toString()).join("\n\n");
 
         first_edit_line = effected_lines[0].index;
         last_edit_line = effected_lines[effected_lines.length - 1].index;
@@ -140,6 +140,10 @@ function redoDeleteText(
                 s.remove();
             },
         });
+
+        updateMetrics(edit_host, true);
+
+        getEditLine(getAtomicSectionAtOffset(offset, edit_host)).heal();
     }
 
     updateUIElements(edit_host);
@@ -155,6 +159,8 @@ function undoDeleteText(
     undo_data: HistoryTask[TextCommand.DELETE_TEXT]["undo_data"],
     edit_host: EditHost
 ) {
+
+    debugger;
 
     updateMetrics(edit_host);
 
@@ -188,8 +194,9 @@ function undoDeleteText(
 
             const children = edit_host.root.children;
 
-            if (first_edit_line < 0) {
-                insertEditLineContent(input_text, children[first_edit_line], edit_host);
+
+            if (first_edit_line == last_edit_line) {
+                insertEditLineContent(input_text, children[first_edit_line - 1], edit_host);
             } else {
                 replaceEditLineContent(input_text, children[first_edit_line], edit_host);
             }

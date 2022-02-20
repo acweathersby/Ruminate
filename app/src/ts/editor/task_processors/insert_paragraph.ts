@@ -70,10 +70,10 @@ function redoInsertParagraph(
         const right = line.split(offset - line.head);
     }
 
-    updateUIElements(edit_host);
+    updateMetrics(edit_host, true);
     edit_host.start_offset = offset + 1;
     edit_host.end_offset = offset + 1;
-    updateMetrics(edit_host, true);
+    updateUIElements(edit_host);
     setUISelection(edit_host);
 }
 
@@ -98,10 +98,10 @@ function undoInsertParagraph(
         line.mergeLeft();
     }
 
-    updateUIElements(edit_host);
+    updateMetrics(edit_host, true);
     edit_host.start_offset = offset;
     edit_host.end_offset = offset;
-    updateMetrics(edit_host, true);
+    updateUIElements(edit_host);
     setUISelection(edit_host);
 }
 

@@ -12,9 +12,7 @@ import {
 } from "../types/text_command_types";
 import {
     getAtomicSectionAtOffset,
-    getPrevTarget,
-    getTextSectionAtOffset,
-    setUISelection,
+    getPrevTarget, setUISelection,
     updateMetrics,
     updateUIElements
 } from './common';
@@ -27,8 +25,6 @@ type InsertTextTask = TextCommandTask[TextCommand.INSERT_TEXT];
 function insertText(command: InsertTextTask, edit_host: EditHost) {
 
     updateMetrics(edit_host);
-
-    const offset = edit_host.start_offset;
 
     redoInsertText(command.data, edit_host);
 
@@ -110,10 +106,10 @@ function redoInsertText(redo_data: HistoryTask[TextCommand.INSERT_TEXT]["redo_da
                 throw new TodoError("Implement insertText with Markdown Formatting");
             } else {
 
-                updateUIElements(edit_host);
+                updateMetrics(edit_host, true);
                 edit_host.start_offset = offset + input_text.length;
                 edit_host.end_offset = offset + input_text.length;
-                updateMetrics(edit_host, true);
+                updateUIElements(edit_host);
                 setUISelection(edit_host);
             }
         } else

@@ -109,9 +109,22 @@ This is a [test](#rainbow) of the emergency broadcast system. {chocolates} This 
 
 [st](#rainbow) of the emergency broadcast system. {chocolates}
 
-\`\`\`code.22 df
+\`\`\`javascript
 
-Gart et espun
+import { Section } from '../types/types';
+import { Node } from './base/node';
+
+const history_command = <HistoryTask[TextCommand.TOGGLE_ITALICS]>{
+    type: TextCommand.TOGGLE_ITALICS,
+    redo_data: {
+        ranges,
+        type: ADD_ITALICS ? FormatType.ADD : FormatType.REMOVE
+    },
+    undo_data: {
+        ranges,
+        type: ADD_ITALICS ? FormatType.REMOVE : FormatType.ADD
+    },
+};
 
 \`\`\`
 

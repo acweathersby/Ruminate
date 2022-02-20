@@ -1,12 +1,12 @@
 import { AnchorSection } from '../section/anchor';
 import { BoldSection, InlineCode, ItalicSection } from "../section/decorator";
-import { Header } from '../section/header .js';
 import { EditLine } from "../section/line.js";
 import { QueryDisplay } from '../section/query.js';
 import { Paragraph } from '../section/paragraph.js';
 import { TextSection } from '../section/text.js';
 import { Section } from '../types/types';
 import { CodeLine } from '../section/code';
+import { Header } from '../section/header ';
 export function CAN_WRAP_IN_BOLD(section: Section): boolean {
     return !(section instanceof ItalicSection) && !(section instanceof EditLine);
 }
@@ -53,6 +53,7 @@ export function IS_TEXT_WRAPPER(section: Section):
         BoldSection,
         InlineCode,
         AnchorSection,
+        Header
     );
 }
 

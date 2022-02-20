@@ -1,4 +1,4 @@
-import { SectionRoot } from "../section/base/root";
+import { MDNode, NodeType } from '../section/base/md_node';
 import { HistoryTask, TextCommand } from './text_command_types';
 
 
@@ -26,12 +26,11 @@ export interface EditHost {
 
     DIRTY_METRICS: boolean;
 
-    root: SectionRoot;
+    root: MDNode<NodeType.ROOT>;
 
     host_ele: HTMLDivElement;
 
     options?: {};
-
 
     command_history: (HistoryTask[TextCommand])[];
 

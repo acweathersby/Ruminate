@@ -36,6 +36,29 @@ export class Node extends SectionBase {
         return new this.Type([]);
     }
 
+
+
+    /**
+    * Replaces itself with its children elements
+    */
+    dissolve() {
+        if (this.parent) {
+            let prev = this.prev;
+            for (const child of this.children) {
+                child.link(prev, this.parent);
+                prev = child;
+            }
+            this.remove();
+        }
+    }
+
+    heal() {
+        if (this.first_child)
+            for (const ele of this.first_child.traverse_horizontal())
+                ele.heal();
+
+    }
+
     split(local_offset: number) {
 
         let right = this.splitCounterpart();
@@ -111,5 +134,15 @@ export class Node extends SectionBase {
         if (this.first_child)
             return this.children.join("");
         return "";
+    }
+
+    mergeLeft() {
+        if (this.prev) {
+            let prev = this.prev.last_child;
+            for (const child of this.children) {
+                child.link(prev, this.prev);
+                prev = child;
+            }
+        }
     }
 }

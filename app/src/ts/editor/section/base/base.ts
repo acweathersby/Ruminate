@@ -97,6 +97,9 @@ export class SectionBase {
         this.ele = ele;
         return ele;
     }
+
+    heal() { }
+
     /**
      * Remove the section from its list if it belongs to
      * one.
