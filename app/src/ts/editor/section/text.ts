@@ -27,6 +27,10 @@ export class TextSection extends SectionBase {
         return this.tail;
     }
 
+    get caret_target() {
+        return this.ele;
+    }
+
     merge() {
         if (this.prev instanceof TextSection) {
             this.prev.merge();

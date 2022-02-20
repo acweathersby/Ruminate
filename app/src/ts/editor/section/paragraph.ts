@@ -5,4 +5,8 @@ export class Paragraph extends EditLine {
     constructor(content: Section[] = []) {
         super("p", content);
     }
+
+    get Type(): any {
+        return Paragraph;
+    }
 }

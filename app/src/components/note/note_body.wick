@@ -87,4 +87,11 @@ i {
     color:black;
 }
 
+p {
+    margin: 40px 0;
+    background-color:#F8f8f8;
+    padding: 10px 20px;
+    box-sizing:border-box;
+}
+
 </style>

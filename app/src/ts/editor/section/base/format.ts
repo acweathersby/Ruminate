@@ -5,9 +5,10 @@ import { TextSection } from '../text.js';
 
 export class FormatNode extends Node {
 
+
     /**
-     * Replaces itself with its children elements
-     */
+    * Replaces itself with its children elements
+    */
     dissolve() {
         if (this.parent) {
             let prev = this.prev;
@@ -17,39 +18,6 @@ export class FormatNode extends Node {
             }
             this.remove();
         }
-    }
-
-    split(offset: number) {
-
-        let right = new this.Type([]);
-
-        right.link(this);
-
-        const head = this.head;
-
-        right.tail = this.tail;
-
-        this.tail = this.head + offset;
-
-        right.head = this.tail;
-
-        for (const child of this.children) {
-            if ((child.tail - head) >= offset) {
-                const child_right = (child.tail - head) == offset
-                    ? child.next
-                    : child.split((head + offset) - (child.head));
-                if (child_right) {
-                    let prev = null;
-                    for (const child of child_right.traverse_horizontal()) {
-                        child.link(prev, right);
-                        prev = child;
-                    }
-                }
-                break;
-            }
-        }
-
-        return right;
     }
 
     /**

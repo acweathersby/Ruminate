@@ -105,7 +105,9 @@ export const get_text = assert_DB_decorator(
 
     `# Hello World
 
-This is a [test](#rainbow) of the emergency broadcast system. {chocolates} This is a [test](#rainbow) of the emergency broadcast system. {chocolates}
+This is a [test](#rainbow) of the emergency broadcast system. {chocolates} This is a [te](#rainbow)
+
+[st](#rainbow) of the emergency broadcast system. {chocolates}
 
 \`\`\`code.22 df
 

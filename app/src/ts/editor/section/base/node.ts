@@ -31,6 +31,44 @@ export class Node extends SectionBase {
         }
     }
 
+
+    splitCounterpart(): any {
+        return new this.Type([]);
+    }
+
+    split(local_offset: number) {
+
+        let right = this.splitCounterpart();
+
+        right.link(this);
+
+        const head = this.head;
+
+        right.tail = this.tail;
+
+        this.tail = this.head + local_offset;
+
+        right.head = this.tail;
+
+        for (const child of this.children) {
+            if ((child.tail - head) >= local_offset) {
+                const child_right = (child.tail - head) == local_offset
+                    ? child.next
+                    : child.split((head + local_offset) - (child.head));
+                if (child_right) {
+                    let prev = null;
+                    for (const child of child_right.traverse_horizontal()) {
+                        child.link(prev, right);
+                        prev = child;
+                    }
+                }
+                break;
+            }
+        }
+
+        return right;
+    }
+
     isEmpty(): boolean {
         this.toElement();
         return this.ele.innerText.trim() == "";

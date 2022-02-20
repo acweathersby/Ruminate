@@ -1,4 +1,6 @@
+import { CodeBlock } from '../parser/ast';
 import { convertMDASTToEditLines, parseMarkdownText } from '../parser/parse_markdown';
+import { CodeLine } from '../section/code';
 import { EditLine } from "../section/line";
 import { TextSection } from '../section/text';
 import { EditHost } from "../types/edit_host";
@@ -10,6 +12,7 @@ import {
 } from "../types/text_command_types";
 import {
     getAtomicSectionAtOffset, getEditLine, getTextSectionAtOffset, setSelection,
+    setUISelection,
     setZeroLengthSelection,
     updateMetrics,
     updateUIElements
@@ -41,11 +44,14 @@ function deleteText(command: DeleteTextTask, edit_host: EditHost) {
 
     const
         SAME_SECTION = start_section == end_section,
-        IS_TEXT = SAME_SECTION
-            && start_section instanceof TextSection
-            && end_section instanceof TextSection;
+        IS_CODE = SAME_SECTION && start_section instanceof CodeLine,
+        IS_TEXT = SAME_SECTION && start_section instanceof TextSection;
 
-    if (SAME_SECTION && IS_TEXT) {
+    if (SAME_SECTION && IS_CODE) {
+        complexity = DeletionComplexity.CODE_SECTION;
+
+        input_text = start_section.slice(offset_start, offset_end);
+    } else if (SAME_SECTION && IS_TEXT) {
 
         complexity = DeletionComplexity.TEXT_SECTION;
 
@@ -101,26 +107,18 @@ function redoDeleteText(
         length,
         offset
     } = redo_data;
+    if (complexity == DeletionComplexity.CODE_SECTION) {
 
-    if (complexity == DeletionComplexity.TEXT_SECTION) {
+        const code: CodeLine = <any>getAtomicSectionAtOffset(offset, edit_host);
+
+        code.removeText(offset, offset + length);
+
+    } else if (complexity == DeletionComplexity.TEXT_SECTION) {
         //Get the target text section
 
         const text: TextSection = <any>getAtomicSectionAtOffset(offset, edit_host);
 
         text.removeText(offset - text.head, length);
-
-        if (text.length == 0) {
-            //Update markdown
-            const edit_line = getEditLine(text);
-
-            edit_line.updateElement();
-
-            const node = getAtomicSectionAtOffset(offset, edit_host, true);
-
-            setZeroLengthSelection(node.ele, offset - node.head);
-        } else {
-            setZeroLengthSelection(text.ele, offset - text.head);
-        }
 
     } else {
         //Merge edit lines that overlap the deletion region
@@ -142,15 +140,13 @@ function redoDeleteText(
                 s.remove();
             },
         });
-
-        updateMetrics(edit_host, true);
-
-        updateUIElements(edit_host);
-
-        const node = getTextSectionAtOffset(offset, edit_host, true);
-
-        setZeroLengthSelection(node.ele, offset - node.head);
     }
+
+    updateUIElements(edit_host);
+    edit_host.start_offset = offset;
+    edit_host.end_offset = offset;
+    updateMetrics(edit_host, true);
+    setUISelection(edit_host);
     // End -- Update Selection  
 }
 
@@ -172,18 +168,20 @@ function undoDeleteText(
     } = undo_data;
 
     switch (complexity) {
+        case DeletionComplexity.CODE_SECTION: {
+            const code = getAtomicSectionAtOffset(offset, edit_host);
+            code.insertText(offset, input_text);
+            edit_host.start_offset = offset;
+            edit_host.end_offset = offset + input_text.length;
+        } break;
         case DeletionComplexity.TEXT_SECTION: {
 
             const text = getAtomicSectionAtOffset(offset, edit_host);
 
             text.insertText(offset - text.head, input_text);
 
-            setSelection(
-                text.ele,
-                offset - text.head,
-                text.ele,
-                offset - text.head + input_text.length
-            );
+            edit_host.start_offset = offset;
+            edit_host.end_offset = offset + input_text.length;
 
         } break;
         case DeletionComplexity.EDIT_LINE_OVERLAP: {
@@ -196,22 +194,15 @@ function undoDeleteText(
                 replaceEditLineContent(input_text, children[first_edit_line], edit_host);
             }
 
-            updateUIElements(edit_host);
-            updateMetrics(edit_host, true);
-
-            const node_start = getAtomicSectionAtOffset(offset, edit_host, true);
-            const node_end = getAtomicSectionAtOffset(offset + original_length, edit_host);
-
-            setSelection(
-                node_start.ele,
-                node_start.IS_PARAGRAPH_PLACEHOLDER ? 0 :
-                    offset - node_start.head,
-                node_end.ele,
-                offset + original_length - node_end.head
-            );
+            edit_host.start_offset = offset;
+            edit_host.end_offset = offset + original_length;
 
         } break;
     }
+
+    updateUIElements(edit_host);
+    updateMetrics(edit_host, true);
+    setUISelection(edit_host);
 }
 
 
@@ -226,7 +217,7 @@ function insertEditLineContent(
 ) {
     const md = parseMarkdownText(input_text);
 
-    const edit_lines = convertMDASTToEditLines(md);
+    const edit_lines = convertMDASTToEditLines(md, edit_host);
 
     let last = prev_edit_line;
 

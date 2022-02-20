@@ -19,6 +19,9 @@ export interface EditHost {
         ele?: HTMLDivElement;
     };
 
+    start_offset: number;
+    end_offset: number;
+
     READ_ONLY: boolean;
 
     DIRTY_METRICS: boolean;
@@ -35,6 +38,7 @@ export interface EditHost {
     history_pointer: number;
 
     event_handlers?: {
+        selectionchange(): void,
         cut(arg: ClipboardEvent): void;
         copy(arg: ClipboardEvent): void;
         paste(arg: ClipboardEvent): void;
@@ -43,6 +47,7 @@ export interface EditHost {
         keyup(arg: KeyboardEvent): void;
         beforeinput(arg: InputEvent): void;
         pointerup(arg: PointerEvent): void;
+        pointerdown(arg: PointerEvent): void;
     };
 }
 

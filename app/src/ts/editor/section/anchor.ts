@@ -16,6 +16,12 @@ export class AnchorSection extends Node {
         this.href = link;
     }
 
+    splitCounterpart(): any {
+        return new AnchorSection([], this.href);
+    }
+
+    get Type() { return AnchorSection; }
+
     toElement(host_element?: HTMLElement): Section {
         super.toElement(host_element);
 

@@ -9,6 +9,8 @@ export class QueryDisplay extends Node {
 
     handler_name: string;
 
+    straggler: Text;
+
     constructor(query: string, handler_name: string = "default") {
 
         super("span", [/* new TextSection(String.fromCodePoint(8203)) */]);
@@ -17,21 +19,30 @@ export class QueryDisplay extends Node {
         this.notes = [];
         this.length = 1;
         this.runQuery();
+        this.note_ele = null;
+        this.straggler = null;
+    }
+
+    get caret_target() {
+        return this.straggler;
     }
 
     async runQuery() {
         this.notes = await get_notes_from_query(this.query);
 
-        if (this.ele) {
-            this.ele.innerHTML == "";
+        if (this.ele && this.note_ele) {
+            //this.ele.innerHTML == "";
+            this.note_ele.innerHTML == "";
             this.setNotes();
         }
     }
 
     setNotes() {
+
         for (const note of this.notes) {
             const div = document.createElement("div");
-            this.ele.appendChild(div);
+            //this.ele.appendChild(div);
+            this.note_ele.appendChild(div);
             div.innerHTML = "Hello World";
             /* debugger;
            
@@ -54,9 +65,17 @@ export class QueryDisplay extends Node {
     toElement(host_element?: HTMLElement): Section {
         super.toElement(host_element);
 
-        this.ele.setAttribute("contentEditable", "false");
+        this.note_ele = document.createElement("div");
+        this.note_ele.setAttribute("contentEditable", "false");
+        //this.ele.setAttribute("contentEditable", "false");
 
         this.ele.classList.add("query-field");
+
+        this.ele.appendChild(this.note_ele);
+
+        this.straggler = new Text(String.fromCodePoint(8203));
+
+        this.ele.appendChild(this.straggler);
 
         this.setNotes();
 

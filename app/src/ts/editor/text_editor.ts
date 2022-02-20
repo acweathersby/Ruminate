@@ -52,13 +52,15 @@ export async function constructEditHost(
         host_ele: null,
         history_pointer: 0,
         options: {},
+        end_offset: 0,
+        start_offset: 0
     };
 
 
     const result = parseMarkdownText(string);
 
     //Convert Markdown to Editable Content
-    const lines = convertMDASTToEditLines(result);
+    const lines = convertMDASTToEditLines(result, edit_host);
 
     edit_host.root = new SectionRoot(lines);
 

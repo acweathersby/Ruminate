@@ -1,27 +1,22 @@
 import { ASTNode, complete, state_index_mask } from "@hctoolkit/runtime";
 import { Token } from '@hctoolkit/runtime/build';
 import { AnchorSection } from "../section/anchor";
-import { CodeBlock } from '../section/code';
+import { CodeLine } from '../section/code';
 import { BoldSection, InlineCode, ItalicSection } from "../section/decorator";
 import { Header } from '../section/header ';
 import { EditLine } from "../section/line";
-import { QueryDisplay } from "../section/query";
 import { Paragraph } from '../section/paragraph';
+import { QueryDisplay } from "../section/query";
 import { TextSection } from "../section/text";
 import { Content } from "../section/types";
+import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
-
 import {
     AnchorEnd,
     AnchorMiddle,
     ASTType,
-    FunctionMaps,
-    Markdown,
-    InlineCode as MDInlineCode,
-    Text as MDText,
-    Header as MDHeader
+    FunctionMaps, Header as MDHeader, InlineCode as MDInlineCode, Markdown, Text as MDText
 } from "./ast.js";
-
 import {
     Bytecode,
     Entrypoint,
@@ -29,6 +24,8 @@ import {
     ReduceNames,
     TokenLookup
 } from "./parser_data.js";
+
+
 
 const { md } = Entrypoint;
 
@@ -95,7 +92,7 @@ export function getText(obj: any): string {
 }
 
 
-export function convertMDASTToEditLines(md: Markdown): EditLine[] {
+export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost): EditLine[] {
     const lines: EditLine[] = [];
 
     let prev = null;
@@ -103,7 +100,11 @@ export function convertMDASTToEditLines(md: Markdown): EditLine[] {
     for (const line of md.lines) {
         switch (line.type) {
             case ASTType.CodeBlock: {
-                const section = new CodeBlock(getText(line.syntax), line.data.map(getText));
+                const section = new CodeLine(
+                    getText(line.syntax),
+                    line.data.map(getText),
+                    edit_host
+                );
                 lines.push(section);
                 prev = section;
             } break;

@@ -1,4 +1,5 @@
 import { SectionRoot } from "../section/base/root";
+import { CodeLine } from '../section/code';
 import { ItalicSection } from "../section/decorator";
 import { Paragraph } from '../section/paragraph';
 import { TextSection } from "../section/text";
@@ -11,7 +12,8 @@ import {
     getAtomicSectionAtOffset,
     setZeroLengthSelection,
     updateMetrics,
-    updateUIElements
+    updateUIElements,
+    setUISelection
 } from './common';
 import { addOperation } from './history';
 import { registerTask } from './register_task';
@@ -54,64 +56,25 @@ function redoInsertParagraph(
     //   two lines
 
     // Get the root element
-
     const { offset } = redo_data;
 
-    const new_paragraph = new Paragraph();
+    const section = getAtomicSectionAtOffset(offset, edit_host, true);
 
-    const prev_edit_line = getEditLine(getAtomicSectionAtOffset(offset, edit_host));
+    if (section instanceof CodeLine && section.head < offset) {
 
-    const right = splitSection(edit_host, offset);
+        section.insertText(offset, "\n");
 
-    new_paragraph.link(prev_edit_line);
+    } else {
+        const line = getEditLine(section);
 
-    if (right)
-        addChildrenStartingAt(new_paragraph, right);
-
-    if (new_paragraph) {
-        updateUIElements(edit_host);
-        updateMetrics(edit_host, true);
-        const node = getAtomicSectionAtOffset(new_paragraph.head + 1, edit_host);
-        setZeroLengthSelection(node.ele, 0);
-    }
-}
-
-function splitSection(edit_host: EditHost, offset: number): Section {
-
-    //Begin -- Update history data 
-    let section: Section = getAtomicSectionAtOffset(offset, edit_host);
-
-    let parent = section.parent;
-
-    let split_right = null;
-
-    while (!(parent instanceof SectionRoot)) {
-        // Check to see if section is at a boundary. 
-        let AT_SECTION_HEAD = offset == section.head;
-        let AT_SECTION_TAIL = offset == section.tail;
-
-        if (!AT_SECTION_HEAD && !AT_SECTION_TAIL) {
-            if (section instanceof TextSection) {
-                split_right = section.split(offset - section.head);
-            } else if (section instanceof ItalicSection) {
-                const new_section = new ItalicSection([]);
-                if (split_right)
-                    addChildrenStartingAt(new_section, split_right);
-                new_section.link(section, parent);
-                parent.updateMetrics(parent.head);
-                split_right = new_section;
-            }
-        } else if (AT_SECTION_HEAD) {
-            split_right = section;
-        } else if (AT_SECTION_TAIL) {
-            split_right = section.next;
-        }
-
-        section = parent;
-        parent = section.parent;
+        const right = line.split(offset - line.head);
     }
 
-    return split_right;
+    updateUIElements(edit_host);
+    edit_host.start_offset = offset + 1;
+    edit_host.end_offset = offset + 1;
+    updateMetrics(edit_host, true);
+    setUISelection(edit_host);
 }
 
 function undoInsertParagraph(
@@ -123,17 +86,23 @@ function undoInsertParagraph(
     //Begin -- Update history data 
     const start_text_section = getAtomicSectionAtOffset(offset, edit_host);
 
-    const line = getEditLine(start_text_section);
+    const section = getAtomicSectionAtOffset(offset, edit_host, true);
 
-    line.mergeLeft();
+    if (section instanceof CodeLine && section.head < offset) {
+
+        section.removeText(offset, offset + 1);
+
+    } else {
+        const line = getEditLine(start_text_section);
+
+        line.mergeLeft();
+    }
 
     updateUIElements(edit_host);
-
+    edit_host.start_offset = offset;
+    edit_host.end_offset = offset;
     updateMetrics(edit_host, true);
-
-    const node = getAtomicSectionAtOffset(offset, edit_host);
-
-    setZeroLengthSelection(node.ele, offset - node.head);
+    setUISelection(edit_host);
 }
 
 

@@ -1,10 +1,12 @@
 import { SectionBase } from '../section/base/base';
+import { CodeLine } from '../section/code';
 import { EditLine } from "../section/line";
-import { NoteSlotSection } from '../section/note';
+import { Paragraph } from '../section/paragraph';
+import { QueryDisplay } from '../section/query';
 import { TextSection } from "../section/text";
 import { EditHost } from '../types/edit_host';
 import { Section } from '../types/types';
-import { IS_ATOMIC_SECTION, IS_TEXT, IS_TEXT_WRAPPER } from './format_rules';
+import { IS_ATOMIC_SECTION, IS_CARRET_TARGET, IS_TEXT, IS_TEXT_WRAPPER } from './format_rules';
 
 
 /**
@@ -33,36 +35,6 @@ export function getRoot(section: Section): EditLine {
     }
 
     return <EditLine>section;
-}
-/**
- * Returns offset and selection node information
- * from the primary selection range.
- */
-export function getOffsetsFromSelection(): {
-    start_node: Section;
-    end_node: Section;
-    start_offset: number;
-    end_offset: number;
-} {
-    const selection = window.getSelection(), {
-        focusNode, focusOffset, anchorOffset, anchorNode,
-    } = selection;
-
-    let anchor = getSectionFromElement(anchorNode);
-    let focus = getSectionFromElement(focusNode);
-    let anchor_offset = anchor.head + anchorOffset;
-    let focus_offset = focus.head + focusOffset;
-    let FOCUS_IS_HEAD = anchor_offset > focus_offset;
-
-    let start_offset = FOCUS_IS_HEAD ? focus_offset : anchor_offset;
-    let end_offset = FOCUS_IS_HEAD ? anchor_offset : focus_offset;
-
-    return {
-        start_offset,
-        end_offset,
-        start_node: FOCUS_IS_HEAD ? focus : anchor,
-        end_node: FOCUS_IS_HEAD ? anchor : focus
-    };
 }
 
 
@@ -212,15 +184,16 @@ export function getAtomicSectionAtOffset(
     edit_host: EditHost,
     TAIL_CAPTURE: boolean = false
 ): TextSection |
-    NoteSlotSection |
+    CodeLine |
     EditLine |
     null {
 
     for (const line of edit_host.root.children) {
 
         if (line.overlaps(offset)) {
+            console.log(offset, line.head, line.tail);
 
-            if (offset == line.head)
+            if (offset == line.head || IS_ATOMIC_SECTION(line))
                 return line;
 
             let candidates: Section[] = [line];
@@ -357,23 +330,21 @@ export function setEditable(edit_host: EditHost, EDITABLE: boolean = true) {
  * Retrieve the next text section or null
  * @param section 
  */
-export function getNextTextSection(section: Section): TextSection | null {
+export function getNextTarget<T>(
+    section: Section,
+    target_fn: (t: any) => t is T,
+    START: boolean = true
+): T | null {
 
     if (section) {
 
-        if (IS_TEXT_WRAPPER(section)) {
-            return getNextTextSection(section.first_child);
-        } else if (IS_TEXT(section)) {
-            if (section.next) {
-                if (IS_TEXT(section.next)) {
-                    return section.next;
-                } else {
-                    return getNextTextSection(section.next);
-                }
-            }
-        }
-
-        if (section.parent) {
+        if (!START && target_fn(section)) {
+            return section;
+        } else if (IS_TEXT_WRAPPER(section) && !START) {
+            return getNextTarget<T>(section.first_child, target_fn, false);
+        } else if (section.next) {
+            return getNextTarget<T>(section.next, target_fn, false);
+        } else if (section.parent) {
 
             let parent = section.parent;
 
@@ -381,7 +352,7 @@ export function getNextTextSection(section: Section): TextSection | null {
                 parent = parent.parent;
 
             if (parent)
-                return getNextTextSection(parent.next);
+                return getNextTarget<T>(parent.next, target_fn, false);
         }
     }
 
@@ -391,27 +362,20 @@ export function getNextTextSection(section: Section): TextSection | null {
  * Retrieve the prev text section or null
  * @param section 
  */
-export function getPrevTextSection(section: Section, START = false) {
+export function getPrevTarget<T>(
+    section: Section,
+    target_fn: (t: any) => t is T,
+    START: boolean = true
+): T | null {
     if (section) {
 
-        if (IS_TEXT_WRAPPER(section)) {
-            return getPrevTextSection(section.last_child);
-        } else if (IS_TEXT(section)) {
-            if (START && section.prev) {
-                if (IS_TEXT(section.prev)) {
-                    return section.prev;
-                } else {
-                    return getPrevTextSection(section.prev);
-                }
-            } else {
-                return section;
-            }
-        }
-
-        if (section.prev)
-            return getPrevTextSection(section.prev);
-
-        if (section.parent) {
+        if (IS_TEXT_WRAPPER(section) && !START) {
+            return getPrevTarget<T>(section.last_child, target_fn, false);
+        } else if (!START && target_fn(section)) {
+            return section;
+        } else if (section.prev) {
+            return getPrevTarget<T>(section.prev, target_fn, false);
+        } else if (section.parent) {
 
             let parent = section.parent;
 
@@ -419,7 +383,7 @@ export function getPrevTextSection(section: Section, START = false) {
                 parent = parent.parent;
 
             if (parent)
-                return getNextTextSection(parent.prev);
+                return getPrevTarget<T>(parent.prev, target_fn, false);
         }
     }
 
@@ -427,15 +391,15 @@ export function getPrevTextSection(section: Section, START = false) {
 }
 
 
-export function getSectionFromElement(ele: HTMLElement) {
+export function getSectionFromElement(ele: any) {
     while (ele) {
 
         if (ele instanceof HTMLElement) {
 
-            if (ele.classList.contains(SectionBase.class_name)) 
+            if (ele.classList.contains(SectionBase.class_name))
                 //@ts-ignore
                 return ele.ruminate_host;
-            
+
         }
         //@ts-ignore
         else if (ele.ruminate_host)
@@ -446,4 +410,161 @@ export function getSectionFromElement(ele: HTMLElement) {
     }
 
     return null;
+}
+
+export function correctSelection(edit_host: EditHost) {
+
+    updateMetrics(edit_host);
+    let selection = window.getSelection(), {
+        focusNode, focusOffset, anchorOffset, anchorNode,
+    } = selection;
+
+    ({ node: focusNode, offset: focusOffset } = getNodeData(focusNode, focusOffset));
+    ({ node: anchorNode, offset: anchorOffset } = getNodeData(anchorNode, anchorOffset));
+
+    setSelection(focusNode, focusOffset, anchorNode, anchorOffset);
+}
+
+function getNodeData(node: Node, offset: number) {
+    const section = getSectionFromElement(node);
+
+    if (section instanceof QueryDisplay) {
+        if (offset > 0) {
+            const text = getNextCaretTarget(section);
+            if (text) {
+                node = text.caret_target;
+                offset = 0;
+            } else {
+                node = section.straggler;
+                offset = 0;
+            }
+        } else {
+            const text = getPrevCaretTarget(section);
+            if (text) {
+                node = text.caret_target;
+                offset = 0;
+            } else {
+                node = section.straggler;
+                offset = 0;
+            }
+        }
+    }
+    return { node, offset };
+}
+
+export function getTextOffsetAtNode(ele: Node, pixel_offset: number) {
+    // get_stats
+
+
+
+    if (ele) {
+
+    }
+}
+
+export function updatePointerData(edit_host: EditHost) {
+    if (edit_host.debug_data.DEBUGGER_ENABLED) {
+        invalidateMetrics(edit_host);
+        updateMetrics(edit_host);
+        const { start_offset, end_offset } = edit_host;
+        edit_host.debug_data.cursor_start = start_offset;
+        edit_host.debug_data.cursor_end = end_offset;
+        updateMarkdownDebugger(edit_host);
+    }
+}
+
+export function setUISelection(edit_host: EditHost) {
+    if (edit_host.start_offset != edit_host.end_offset) {
+        const { ele: start, offset: start_offset } = getOffsetTuple(edit_host.start_offset, edit_host);
+        const { ele: end, offset: end_offset } = getOffsetTuple(edit_host.end_offset, edit_host);
+        setSelection(start, start_offset, end, end_offset);
+    } else {
+        const result = getOffsetTuple(edit_host.start_offset, edit_host);
+        if (result) {
+            const { ele, offset } = result;
+            setZeroLengthSelection(ele, offset);
+        };
+    }
+}
+
+function getOffsetTuple(md_offset: number, edit_host: EditHost, IN_RANGE: boolean = false) {
+
+    let section = getAtomicSectionAtOffset(md_offset, edit_host);
+
+    if (section instanceof CodeLine) {
+
+        if (md_offset == section.head) {
+            let text = getPrevTarget(section, IS_CARRET_TARGET);
+            if (text)
+                return { ele: text.caret_target, offset: text.length };
+        } else {
+            if (IN_RANGE) {
+
+            } else {
+                section.setOffset(md_offset);
+                return null;
+            }
+        }
+    }
+
+    if (section instanceof EditLine) {
+
+        let text = getPrevTarget(section, IS_CARRET_TARGET);
+        if (text)
+            return { ele: text.caret_target, offset: text.length };
+        else if (section instanceof QueryDisplay) {
+            let text = getNextTarget(section, IS_CARRET_TARGET);
+            if (!text || getEditLine(text) != getEditLine(section)) {
+                return { ele: section.straggler, offset: 1 };
+            }
+            return { ele: text.caret_target, offset: 0 };
+        }
+    }
+
+    return { ele: section.ele, offset: md_offset - section.head };
+}
+
+export function adaptSelectionPosition(edit_host: EditHost, target: HTMLElement) {
+    invalidateMetrics(edit_host);
+    updateMetrics(edit_host);
+
+    const section = getSectionFromElement(target);
+
+    if (section instanceof CodeLine) {
+        return section.getOffset();
+    } else {
+        return getOffsetTuple(section, edit_host).offset;
+    }
+}
+
+
+/**
+ * Returns offset and selection node information
+ * from the primary selection range.
+ */
+export function getOffsetsFromSelection(edit_host: EditHost) {
+
+    const selection = window.getSelection(), {
+        focusNode, focusOffset, anchorOffset, anchorNode,
+    } = selection;
+
+    let anchor = getSectionFromElement(anchorNode);
+    let focus = getSectionFromElement(focusNode);
+
+    let anchor_offset = anchor.head + anchorOffset;
+    let focus_offset = focus.head + focusOffset;
+    let FOCUS_IS_HEAD = anchor_offset > focus_offset;
+    let start_offset = FOCUS_IS_HEAD ? focus_offset : anchor_offset;
+    let end_offset = FOCUS_IS_HEAD ? anchor_offset : focus_offset;
+
+    edit_host.start_offset = anchor_offset;
+    edit_host.end_offset = focus_offset;
+}
+
+export function getPrevNonCharacterOffset() {
+
+}
+
+export function getNextNonCharacterOffset() {
+
 }

@@ -8,6 +8,10 @@ export class EditLine extends Node {
     prev: EditLine;
     next: EditLine;
 
+    get Type(): any {
+        return Node;
+    }
+
     updateLength(): number {
 
         const length_adjust = 1;
@@ -30,13 +34,13 @@ export class EditLine extends Node {
     }
 
     updateElement(): void {
-        //this.ensureIsEditable();
+        this.ensureIsEditable();
         return super.updateElement();
     }
 
     mergeLeft() {
         if (this.prev) {
-            //this.prev.removePlaceholder();
+            this.prev.removePlaceholder();
 
             if (this.first_child) {
                 if (this.prev.last_child) {
@@ -75,6 +79,7 @@ export class EditLine extends Node {
     }
 
     addPlaceholder() {
+
         const empty = new TextSection("");
         empty.IS_PARAGRAPH_PLACEHOLDER = true;
         empty.link(null, this);

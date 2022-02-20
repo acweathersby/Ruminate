@@ -37,7 +37,7 @@ i {
     color:black;
 }
 
- code{
+code{
     caret-color:red;
     font-family:monospace;
     color:#707070;
@@ -50,5 +50,9 @@ i {
  code::selection {
     color:white;
     background: #ffb7b7; 
+}
+
+.note-md-preview pre {
+    white-space: pre-wrap
 }
 </style>

@@ -1,4 +1,5 @@
-import { getOffsetsFromSelection, invalidateMetrics, toggleEditable, updateMarkdownDebugger, updateMetrics } from './task_processors/common';
+import { CodeLine } from './section/code';
+import { adaptSelectionPosition, getOffsetsFromSelection, getSectionFromElement, invalidateMetrics, setUISelection, toggleEditable, updateMarkdownDebugger, updateMetrics, updatePointerData } from './task_processors/common';
 import { redo, undo } from './task_processors/history';
 import { getProcessor } from './task_processors/register_task';
 import { EditHost } from "./types/edit_host";
@@ -9,20 +10,40 @@ export function attachListeners(edit_host: EditHost) {
     if (!edit_host.host_ele)
         return;
 
-    function updatePointerData(edit_host: EditHost) {
-        if (edit_host.debug_data.DEBUGGER_ENABLED) {
-            invalidateMetrics(edit_host);
-            updateMetrics(edit_host);
-            const { start_offset, end_offset } = getOffsetsFromSelection();
-            edit_host.debug_data.cursor_start = start_offset;
-            edit_host.debug_data.cursor_end = end_offset;
-            updateMarkdownDebugger(edit_host);
-        }
-    }
+
+    let SELECTION_UPDATE_TARGET = null;
 
     edit_host.event_handlers = {
+        selectionchange() {
+            //Update offsets. 
+            if (SELECTION_UPDATE_TARGET) {
+                SELECTION_UPDATE_TARGET = null;
+                invalidateMetrics(edit_host);
+                updateMetrics(edit_host);
+
+                getOffsetsFromSelection(edit_host);
+                updatePointerData(edit_host);
+            }
+        },
         pointerup(e: PointerEvent) {
-            updatePointerData(edit_host);
+        },
+        pointerdown(e: PointerEvent) {
+            const selection = getSectionFromElement(e.target);
+
+            if (selection instanceof CodeLine) {
+
+                invalidateMetrics(edit_host);
+                updateMetrics(edit_host);
+                const offset = selection.head + 1 + selection.view.posAtCoords({ x: e.x, y: e.y });
+                edit_host.start_offset = offset;
+                edit_host.end_offset = offset;
+                updatePointerData(edit_host);
+            } else {
+                SELECTION_UPDATE_TARGET = e.target;
+            }
+
+
+            //If the selected node is a non-selectable, update it's selection
         },
         cut(e: ClipboardEvent) {
             debugger;
@@ -40,11 +61,15 @@ export function attachListeners(edit_host: EditHost) {
              } */
         },
         keyup(e: KeyboardEvent) {
-            updatePointerData(edit_host);
-            console.log(e);
+            // updatePointerData(edit_host);
         },
         keydown(e: KeyboardEvent) {
             const sel = window.getSelection();
+
+            if (
+                ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
+            )
+                return adaptArrowPress(e, edit_host);
 
             let NO_DEFAULT = false;
 
@@ -76,15 +101,75 @@ export function attachListeners(edit_host: EditHost) {
         },
     };
 
-    for (const [name, listener] of Object.entries(edit_host.event_handlers))
-        edit_host.host_ele.addEventListener(name, <any>listener);
+    for (const [name, listener] of Object.entries(edit_host.event_handlers)) {
+        if (name == "selectionchange") {
+            document.addEventListener(name, <any>listener);
+        } else {
+            edit_host.host_ele.addEventListener(name, <any>listener);
+        }
+    }
 }
 
 export function removeListeners(edit_host: EditHost) {
     if (edit_host.event_handlers)
+
         for (const [name, listener] of Object.entries(edit_host.event_handlers))
-            edit_host.host_ele.removeEventListener(name, <any>listener);
+            if (name == "selectionchange")
+                document.addEventListener(name, <any>listener);
+            else
+                edit_host.host_ele.removeEventListener(name, <any>listener);
 }
+
+function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
+
+    invalidateMetrics(edit_host);
+    updateMetrics(edit_host);
+    let { start_offset, end_offset } = edit_host;
+
+    switch (e.key) {
+        case "ArrowUp":
+            break;
+        case "ArrowDown":
+            break;
+        case "ArrowLeft":
+            if (e.shiftKey) {
+                start_offset -= 1;
+            } else if (start_offset != end_offset) {
+                end_offset = start_offset;
+            } else {
+                start_offset -= 1;
+                end_offset = start_offset;
+            }
+            break;
+        case "ArrowRight":
+            if (e.shiftKey) {
+                end_offset += 1;
+            } else if (start_offset != end_offset) {
+                start_offset = end_offset;
+            } else {
+                end_offset += 1;
+                start_offset = end_offset;
+            }
+            break;
+    }
+
+    //Keep end > start
+
+    edit_host.start_offset = Math.min(end_offset, start_offset);
+    edit_host.end_offset = Math.max(end_offset, start_offset);
+
+    console.log({ start_offset, end_offset });
+
+    //Update selection
+
+    setUISelection(edit_host);
+
+    e.preventDefault();
+
+    return false;
+}
+
+
 /**
  * Decouples the event handling from the event process, preventing
  * event timing violations.
@@ -98,12 +183,12 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
     switch (e.inputType) {
         case "insertText": insertText(edit_host, e.data); break;
 
-        case "insertLineBreak": debugger; break;
+        case "insertLineBreak":
         case "insertParagraph": {
             const command = <TextCommandTask[TextCommand.INSERT_PARAGRAPH]>{
                 command: TextCommand.INSERT_PARAGRAPH,
                 data: {
-                    offset: getOffsetsFromSelection().start_offset
+                    offset: edit_host.start_offset
                 }
             };
             getProcessor("edit", TextCommand.INSERT_PARAGRAPH)(command, edit_host);
@@ -144,7 +229,8 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "deleteContent": debugger; break;
         case "deleteContentBackward": {
 
-            const { start_offset, end_offset } = getOffsetsFromSelection();
+            const { start_offset, end_offset } = edit_host;
+
             const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
                 command: TextCommand.DELETE_TEXT,
                 data: {
@@ -163,7 +249,8 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         } break;
         case "deleteContentForward": {
 
-            const { start_offset, end_offset } = getOffsetsFromSelection();
+            const { start_offset, end_offset } = edit_host;
+
             const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
                 command: TextCommand.DELETE_TEXT,
                 data: {
@@ -184,7 +271,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "historyUndo": { undo(edit_host); } break;
         case "historyRedo": { redo(edit_host); } break;
         case "formatBold": {
-            const { start_offset, end_offset } = getOffsetsFromSelection();
+            const { start_offset, end_offset } = edit_host;
 
             if (start_offset == end_offset)
                 break;
@@ -203,7 +290,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
             getProcessor("edit", TextCommand.TOGGLE_BOLD)(command, edit_host);
         }; break;
         case "formatItalic": {
-            const { start_offset, end_offset } = getOffsetsFromSelection();
+            const { start_offset, end_offset } = edit_host;
 
             if (start_offset == end_offset)
                 break;
@@ -246,7 +333,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
 
 function insertText(edit_host: EditHost, text_data: string) {
 
-    const { start_offset, end_offset } = getOffsetsFromSelection();
+    const { start_offset, end_offset } = edit_host;
 
     if (start_offset - end_offset !== 0) {
         const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{

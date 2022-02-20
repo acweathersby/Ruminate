@@ -248,7 +248,7 @@ export const enum DeletionComplexity {
     /**
      * Deletion occurs across multiple sections within a single EditLine
      */
-    SECTION_OVERLAP,
+    CODE_SECTION,
     /**
      * Deletion occurs across multiple sections and multiple edit lines.
      */

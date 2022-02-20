@@ -16,6 +16,15 @@ export class Header extends EditLine {
 
     }
 
+
+    splitCounterpart() {
+        return new Header(this.level, []);
+    }
+
+    get Type(): any {
+        return Header;
+    }
+
     toString(): string {
         return `${"#".repeat(this.level)} ${super.toString()}`;
     }
