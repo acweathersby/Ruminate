@@ -1,5 +1,5 @@
-import { MDNode, NodeType } from '../section/base/md_node';
-import { HistoryTask, TextCommand } from './text_command_types';
+import { MDNode, NodeType } from '../task_processors/md_node';
+import { HistoryTask } from './text_command_types';
 
 
 /**
@@ -32,7 +32,7 @@ export interface EditHost {
 
     options?: {};
 
-    command_history: (HistoryTask[TextCommand])[];
+    command_history: HistoryTask[];
 
     history_pointer: number;
 

@@ -1,4 +1,4 @@
-import { MDNode, NodeType, NodeClass as NC, NodeMeta } from "../section/base/md_node";
+import { MDNode, NodeType, NodeClass as NC, NodeMeta } from "./md_node";
 
 
 /**
@@ -11,6 +11,8 @@ export function clone<T extends NodeType>(node: MDNode<T>): MDNode<T> {
     new_node.meta = node.meta;
 
     new_node.children = node.children;
+
+    new_node.length = node.length;
 
     return new_node;
 }
@@ -36,7 +38,7 @@ export function newNode<T extends NodeType>(
  * children. 
  */
 export function heal<T extends NodeType>(node: MDNode<T>): MDNode<T> {
-
+    return node;
 }
 
 /**
@@ -51,7 +53,7 @@ export function split(
     node: MDNode,
     index: number = (node.length / 2) | 0
 ): MDNode {
-
+    return node;
 }
 
 /**
@@ -225,3 +227,4 @@ function setChildrenMut<T extends NodeType>(
 
     return parent;
 }
+

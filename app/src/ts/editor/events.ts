@@ -1,9 +1,8 @@
-import { CodeLine } from './section/code';
-import { getOffsetsFromSelection, getSectionFromElement, invalidateMetrics, setUISelection, toggleEditable, updateMarkdownDebugger, updateMetrics, updatePointerData } from './task_processors/common';
-import { redo, undo } from './task_processors/history';
-import { getProcessor } from './task_processors/register_task';
+import { getProcessor } from './task_processors/actions/register_action';
+import { redo, undo, updatePointer } from './task_processors/history';
+import { getOffsetsFromSelection, toggleEditable, updateHost, updatePointerData } from './task_processors/view';
 import { EditHost } from "./types/edit_host";
-import { DeletionComplexity, FormatType, TextCommand, TextCommandTask } from './types/text_command_types';
+import { TextCommand } from './types/text_command_types';
 
 export function attachListeners(edit_host: EditHost) {
 
@@ -17,8 +16,6 @@ export function attachListeners(edit_host: EditHost) {
             //Update offsets. 
             if (SELECTION_UPDATE_TARGET) {
                 SELECTION_UPDATE_TARGET = null;
-                invalidateMetrics(edit_host);
-                updateMetrics(edit_host);
 
                 getOffsetsFromSelection(edit_host);
                 updatePointerData(edit_host);
@@ -27,18 +24,8 @@ export function attachListeners(edit_host: EditHost) {
         pointerup(e: PointerEvent) {
         },
         pointerdown(e: PointerEvent) {
-            const selection = getSectionFromElement(e.target);
+            SELECTION_UPDATE_TARGET = e.target;
 
-            if (selection instanceof CodeLine) {
-                invalidateMetrics(edit_host);
-                updateMetrics(edit_host);
-                const offset = selection.head + 1 + selection.view.posAtCoords({ x: e.x, y: e.y });
-                edit_host.start_offset = offset;
-                edit_host.end_offset = offset;
-                updatePointerData(edit_host);
-            } else {
-                SELECTION_UPDATE_TARGET = e.target;
-            }
             //If the selected node is a non-selectable, update it's selection
         },
         cut(e: ClipboardEvent) {
@@ -118,8 +105,6 @@ export function removeListeners(edit_host: EditHost) {
 
 function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
 
-    invalidateMetrics(edit_host);
-    updateMetrics(edit_host);
     let { start_offset, end_offset } = edit_host;
 
     switch (e.key) {
@@ -158,7 +143,7 @@ function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
 
     //Update selection
 
-    setUISelection(edit_host);
+    // setUISelection(edit_host);
 
     e.preventDefault();
 
@@ -176,21 +161,13 @@ function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
  * @param edit_host 
  */
 async function processInputEvent(e: InputEvent, edit_host: EditHost) {
-    invalidateMetrics(edit_host);
-    updateMetrics(edit_host);
-
+    updatePointer(edit_host);
     switch (e.inputType) {
         case "insertText": insertText(edit_host, e.data); break;
 
         case "insertLineBreak":
         case "insertParagraph": {
-            const command = <TextCommandTask[TextCommand.INSERT_PARAGRAPH]>{
-                command: TextCommand.INSERT_PARAGRAPH,
-                data: {
-                    offset: edit_host.start_offset
-                }
-            };
-            getProcessor("edit", TextCommand.INSERT_PARAGRAPH)(command, edit_host);
+            getProcessor("edit", TextCommand.INSERT_PARAGRAPH)(edit_host);
         } break;
         case "insertOrderedList": debugger; break;
         case "insertUnorderedList": debugger; break;
@@ -230,82 +207,18 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
 
             const { start_offset, end_offset } = edit_host;
 
-            const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
-                command: TextCommand.DELETE_TEXT,
-                data: {
-                    complexity: DeletionComplexity.UNDEFINED,
-                    offset: start_offset,
-                    length: end_offset - start_offset,
-                }
-            };
-
-            if (start_offset == end_offset) {
-                if (start_offset == 0) break;
-                command.data.offset = start_offset - 1;
-                command.data.length = 1;
-            }
-            getProcessor("edit", TextCommand.DELETE_TEXT)(command, edit_host);
+            getProcessor("edit", TextCommand.DELETE_TEXT)(edit_host);
         } break;
         case "deleteContentForward": {
-
-            const { start_offset, end_offset } = edit_host;
-
-            const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
-                command: TextCommand.DELETE_TEXT,
-                data: {
-                    complexity: DeletionComplexity.UNDEFINED,
-                    offset: start_offset,
-                    length: end_offset - start_offset,
-                }
-            };
-
-            if (start_offset == end_offset) {
-                if (start_offset == 0) break;
-                command.data.offset = start_offset;
-                command.data.length = 1;
-            }
-
-            getProcessor("edit", TextCommand.DELETE_TEXT)(command, edit_host);
+            getProcessor("edit", TextCommand.DELETE_TEXT)(edit_host);
         }; break;
         case "historyUndo": { undo(edit_host); } break;
         case "historyRedo": { redo(edit_host); } break;
         case "formatBold": {
-            const { start_offset, end_offset } = edit_host;
-
-            if (start_offset == end_offset)
-                break;
-
-            const command = <TextCommandTask[TextCommand.TOGGLE_BOLD]>{
-                command: TextCommand.TOGGLE_BOLD,
-                data: {
-                    type: FormatType.UNDEFINED,
-                    ranges: [{
-                        start_offset,
-                        end_offset
-                    }]
-                }
-            };
-
-            getProcessor("edit", TextCommand.TOGGLE_BOLD)(command, edit_host);
+            getProcessor("edit", TextCommand.TOGGLE_BOLD)(edit_host);
         }; break;
         case "formatItalic": {
-            const { start_offset, end_offset } = edit_host;
-
-            if (start_offset == end_offset)
-                break;
-
-            const command = <TextCommandTask[TextCommand.TOGGLE_ITALICS]>{
-                command: TextCommand.TOGGLE_ITALICS,
-                data: {
-                    type: FormatType.UNDEFINED,
-                    ranges: [{
-                        start_offset,
-                        end_offset
-                    }]
-                }
-            };
-
-            getProcessor("edit", TextCommand.TOGGLE_ITALICS)(command, edit_host);
+            getProcessor("edit", TextCommand.TOGGLE_ITALICS)(edit_host);
         }; break;
         case "formatUnderline": debugger; break;
         case "formatStrikeThrough": debugger; break;
@@ -328,32 +241,16 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
 
     if (edit_host.debug_data.DEBUGGER_ENABLED)
         updatePointerData(edit_host);
+
+    updateHost(edit_host);
 }
 
 function insertText(edit_host: EditHost, text_data: string) {
 
     const { start_offset, end_offset } = edit_host;
 
-    if (start_offset - end_offset !== 0) {
-        const command = <TextCommandTask[TextCommand.DELETE_TEXT]>{
-            command: TextCommand.DELETE_TEXT,
-            data: {
-                complexity: DeletionComplexity.UNDEFINED,
-                offset: start_offset,
-                length: end_offset - start_offset,
-            }
-        };
-        getProcessor("edit", TextCommand.DELETE_TEXT)(command, edit_host);
-        updateMetrics(edit_host, true);
-    }
+    if (start_offset - end_offset !== 0)
+        getProcessor("edit", TextCommand.DELETE_TEXT)(edit_host);
 
-    const command = <TextCommandTask[TextCommand.INSERT_TEXT]>{
-        command: TextCommand.INSERT_TEXT,
-        data: {
-            APPLY_MARKDOWN_FORMAT: false,
-            input_text: text_data,
-            offset: start_offset
-        }
-    };
-    getProcessor("edit", TextCommand.INSERT_TEXT)(command, edit_host);
+    getProcessor("edit", TextCommand.INSERT_TEXT)(edit_host, text_data);
 }

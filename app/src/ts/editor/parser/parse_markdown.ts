@@ -1,6 +1,6 @@
 import { ASTNode, complete, state_index_mask } from "@hctoolkit/runtime";
 import { Token } from '@hctoolkit/runtime/build';
-import { LineNode, MDNode, NodeType } from '../section/base/md_node';
+import { LineNode, MDNode, NodeType } from '../task_processors/md_node';
 import { newNode } from '../task_processors/operators';
 import { EditHost } from '../types/edit_host';
 import {

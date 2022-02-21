@@ -1,10 +1,10 @@
-import { TextCommand } from '../types/text_command_types';
+import { TextCommand } from '../../types/text_command_types';
 
 type TaskProcessor = (..._: any) => any;
 
 const task_registry: Map<string, Map<TextCommand, TaskProcessor>> = new Map;
 
-export function registerTask(type: string, key: TextCommand, processor: TaskProcessor) {
+export function registerAction(type: string, key: TextCommand, processor: TaskProcessor) {
     if (!task_registry.has(type))
         task_registry.set(type, new Map);
 

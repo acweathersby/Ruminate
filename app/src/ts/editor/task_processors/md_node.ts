@@ -125,7 +125,8 @@ export class MDNode<T extends NodeType = NodeType> {
     #class: NodeClass;
     #meta: NodeMeta[T];
     #children: MDNode[];
-
+    length: number;
+    ele: HTMLElement;
     get type(): T {
         return this.#type;
     }
@@ -166,7 +167,7 @@ export class MDNode<T extends NodeType = NodeType> {
     }
 
     isClass(_class: NodeClass): boolean {
-        return (this.#class & _class) == this.#class;
+        return this.#class != 0 && (this.#class & _class) == this.#class;
     }
 
     containsClass(..._class: NodeClass[]): boolean {
@@ -183,6 +184,8 @@ export class MDNode<T extends NodeType = NodeType> {
         this.#class = NodeClasses[type];
         this.#meta = null;
         this.#children = null;
+        this.length = 0;
+        this.ele = null;
     }
 }
 

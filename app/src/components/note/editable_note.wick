@@ -55,4 +55,9 @@ code{
 .note-md-preview pre {
     white-space: pre-wrap
 }
+
+:empty{
+    display: block;
+    height: 1em;
+}
 </style>
