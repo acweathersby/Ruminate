@@ -3,7 +3,7 @@ import { EditHost } from "../types/edit_host";
 
 export function undo(edit_host: EditHost) {
 
-    if (edit_host.history_pointer >= 0) {
+    if (edit_host.history_pointer > 0) {
         const command = edit_host.command_history[--edit_host.history_pointer];
         edit_host.root = command.state;
         edit_host.start_offset = command.start_offset;
@@ -12,8 +12,8 @@ export function undo(edit_host: EditHost) {
 }
 
 export function redo(edit_host: EditHost) {
-    if (edit_host.history_pointer < edit_host.command_history.length) {
-        const command = edit_host.command_history[edit_host.history_pointer++];
+    if (edit_host.history_pointer < edit_host.command_history.length - 1) {
+        const command = edit_host.command_history[++edit_host.history_pointer];
         edit_host.root = command.state;
         edit_host.start_offset = command.start_offset;
         edit_host.end_offset = command.end_offset;

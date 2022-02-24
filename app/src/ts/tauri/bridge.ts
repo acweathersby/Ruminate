@@ -88,7 +88,11 @@ export const get_tag_ids = assert_DB_decorator(
         return invoke("get_tag_ids", { noteLocalId });
     });
 
-;
+export const update_note_text = assert_DB_decorator(
+    async function update_note_text(noteLocalId: number, new_text: string): Promise<boolean> {
+        return invoke("update_note_text", { noteLocalId, new_text });
+    });
+
 export const insert_text = assert_DB_decorator(
     async function insert_text(noteLocalId: number, insertIndex: number, string: string): Promise<boolean> {
         return invoke("insert_text", { noteLocalId, insertIndex, string });

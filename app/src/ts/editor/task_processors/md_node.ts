@@ -1,4 +1,5 @@
 import { EditorState } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 
 
 export enum NodeType {
@@ -39,15 +40,14 @@ export const enum NodeClass {
     /**
      * Represents a node that can't be
      * directly edited through the content 
-     * editable system.
+     * editable system. 
      */
     OPAQUE = 1 << 2,
 
     /**
-     * When combined with `OPAQUE`, represents a node
-     * that appears as a single character element
-     * in the DOM, regardless if the actual complexity 
-     * of the node's element tree.
+     * Represents a node that appears as a single character 
+     * to the editor, regardless of the actual complexity 
+     * of the node's internal DOMz.
      */
     SINGLE_CHARACTER = 1 << 3,
 
@@ -61,12 +61,17 @@ export const enum NodeClass {
     * Allows the merger of two adjacent nodes of the same type.
     */
     MERGEABLE = 1 << 5,
+    /**
+     * Represents a node that contains text nodes or contains
+     * other TEXT_CONTAINER nodes
+     */
+    TEXT_CONTAINER = 1 << 6
 }
 
 export interface NodeMeta {
     [NodeType.ANCHOR]: string;
     [NodeType.BOLD]: null;
-    [NodeType.CODE_BLOCK]: { syntax: string, text: string; state: EditorState; };
+    [NodeType.CODE_BLOCK]: { syntax: string, text: string; state: EditorState; view: EditorView; };
     [NodeType.CODE_INLINE]: null;
     [NodeType.HEADER]: number;
     [NodeType.IMAGE]: string;
@@ -100,21 +105,21 @@ export interface NodeChildren {
 }
 
 const NodeClasses = {
-    [NodeType.ANCHOR]: NodeClass.MERGEABLE | NodeClass.FORMAT,
-    [NodeType.BOLD]: NodeClass.MERGEABLE | NodeClass.FORMAT,
+    [NodeType.ANCHOR]: NodeClass.MERGEABLE | NodeClass.FORMAT | NodeClass.TEXT_CONTAINER,
+    [NodeType.BOLD]: NodeClass.MERGEABLE | NodeClass.FORMAT | NodeClass.TEXT_CONTAINER,
     [NodeType.CODE_BLOCK]: NodeClass.OPAQUE | NodeClass.LINE | NodeClass.CARET_TARGET,
-    [NodeType.CODE_INLINE]: NodeClass.MERGEABLE | NodeClass.FORMAT,
-    [NodeType.HEADER]: NodeClass.LINE,
+    [NodeType.CODE_INLINE]: NodeClass.MERGEABLE | NodeClass.FORMAT | NodeClass.TEXT_CONTAINER,
+    [NodeType.HEADER]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
     [NodeType.IMAGE]: NodeClass.MERGEABLE | NodeClass.FORMAT,
-    [NodeType.ITALIC]: NodeClass.FORMAT,
-    [NodeType.ORDERED_LIST]: NodeClass.LINE,
-    [NodeType.PARAGRAPH]: NodeClass.LINE,
+    [NodeType.ITALIC]: NodeClass.FORMAT | NodeClass.TEXT_CONTAINER,
+    [NodeType.ORDERED_LIST]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
+    [NodeType.PARAGRAPH]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
     [NodeType.QUERY]: NodeClass.MERGEABLE | NodeClass.OPAQUE | NodeClass.SINGLE_CHARACTER | NodeClass.CARET_TARGET,
-    [NodeType.QUOTE]: NodeClass.LINE,
-    [NodeType.ROOT]: NodeClass.UNDEFINED,
+    [NodeType.QUOTE]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
+    [NodeType.ROOT]: NodeClass.UNDEFINED | NodeClass.TEXT_CONTAINER,
     [NodeType.TEXT]: NodeClass.MERGEABLE | NodeClass.CARET_TARGET,
     [NodeType.UNDEFINED]: NodeClass.UNDEFINED,
-    [NodeType.UNORDERED_LIST]: NodeClass.LINE,
+    [NodeType.UNORDERED_LIST]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
 };
 /**
  * Represents the underlying Markdown structure of an editable
@@ -125,8 +130,13 @@ export class MDNode<T extends NodeType = NodeType> {
     #class: NodeClass;
     #meta: NodeMeta[T];
     #children: MDNode[];
+    #generation: number;
     length: number;
-    ele: HTMLElement;
+    ele: HTMLElement | Text;
+
+    get generation(): number {
+        return this.#generation;
+    }
     get type(): T {
         return this.#type;
     }
@@ -179,11 +189,13 @@ export class MDNode<T extends NodeType = NodeType> {
 
     constructor(
         type: T,
+        generation: number = 0
     ) {
         this.#type = type;
         this.#class = NodeClasses[type];
         this.#meta = null;
         this.#children = null;
+        this.#generation = generation;
         this.length = 0;
         this.ele = null;
     }

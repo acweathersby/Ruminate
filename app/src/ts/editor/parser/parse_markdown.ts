@@ -115,6 +115,7 @@ export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost): Line
                 prev = newNode(CODE_BLOCK,
                     [],
                     {
+                        view: null,
                         state: null,
                         syntax: getText(line.syntax),
                         text: line.data.map(getText).join("\n"),

@@ -99,3 +99,6 @@ ide/
 # Rust build folder
 
 target/
+
+# Distribution directory
+dist/*

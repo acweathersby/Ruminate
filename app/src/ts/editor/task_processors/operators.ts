@@ -1,12 +1,34 @@
 import { MDNode, NodeType, NodeClass as NC, NodeMeta } from "./md_node";
 
+const {
+    ANCHOR,
+    BOLD,
+    CODE_BLOCK,
+    CODE_INLINE,
+    HEADER,
+    IMAGE,
+    ITALIC,
+    ORDERED_LIST,
+    PARAGRAPH,
+    QUERY,
+    QUOTE,
+    ROOT,
+    TEXT,
+    UNORDERED_LIST,
+} = NodeType;
 
 /**
  * Make a copy of a node.
  */
-export function clone<T extends NodeType>(node: MDNode<T>): MDNode<T> {
+export function clone<T extends NodeType>(
+    node: MDNode<T>,
+    next_gen: number = node.generation
+): MDNode<T> {
 
-    const new_node = new MDNode(node.type);
+    //if(node.generation == next_gen)
+    //return node
+
+    const new_node = new MDNode(node.type, next_gen + 1);
 
     new_node.meta = node.meta;
 
@@ -37,10 +59,83 @@ export function newNode<T extends NodeType>(
  * compatible features. Repeat process with the node's
  * children. 
  */
-export function heal<T extends NodeType>(node: MDNode<T>): MDNode<T> {
+export function heal<T extends NodeType>(
+    node: MDNode<T>,
+    gen: number = node.generation,
+    dissolve_types: Set<NodeType> = new Set(),
+): MDNode<T> {
+
+    if (node.children.length > 0) {
+
+        const children = node.children.slice();
+
+        let MODIFIED = false;
+
+        for (let i = 0, l = children.length; i < l; i++) {
+            const curr_node = children[i];
+
+            if (dissolve_types.has(curr_node.type) && curr_node.is(ITALIC, BOLD)) {
+                MODIFIED = true;
+                children.splice(i, 1, ...curr_node.children);
+                l = children.length;
+                i = Math.max(i - 2, -1);
+                continue;
+            }
+
+            if (i < l - 1) {
+                const next_node = children[i + 1];
+                if (next_node.type == curr_node.type) {
+                    if (curr_node.is(ANCHOR, ITALIC, BOLD, IMAGE, CODE_INLINE)) {
+                        MODIFIED = true;
+                        const new_node = clone(curr_node);
+                        children.splice(i, 2, new_node);
+                        new_node.children = new_node.children.concat(next_node.children);
+                        new_node.length = curr_node.length + next_node.length;
+                        l--;
+                        i--;
+                        continue;
+                    } else if (curr_node.is(TEXT)) {
+                        MODIFIED = true;
+                        const new_node = clone(curr_node);
+                        children.splice(i, 2, new_node);
+                        new_node.meta += next_node.meta;
+                        new_node.length = curr_node.length + next_node.length;
+                        l--;
+                        i--;
+                        continue;
+                    }
+                }
+            }
+
+            const new_node = heal(curr_node, gen, new Set([...dissolve_types, curr_node.type]));
+
+            if (new_node !== node) {
+                MODIFIED = true;
+                children[i] = new_node;
+            }
+        }
+
+        if (MODIFIED == true) {
+            const new_node = clone(node);
+            new_node.children = children;
+            return new_node;
+        }
+    }
+
     return node;
 }
 
+
+export function splitNode(
+    node: MDNode,
+    offset: number,
+    prev_gen: number = node.generation
+) {
+    const { left: [l], right: [r] }
+        = split([node], offset, prev_gen);
+
+    return { left: l, right: r };
+}
 /**
  * Divide this node in two and return the right most node. 
  * 
@@ -50,10 +145,58 @@ export function heal<T extends NodeType>(node: MDNode<T>): MDNode<T> {
  * then the original node is returned.
  */
 export function split(
-    node: MDNode,
-    index: number = (node.length / 2) | 0
-): MDNode {
-    return node;
+    nodes: MDNode[],
+    offset: number,
+    prev_gen: number
+): { left: MDNode[], right: MDNode[]; } {
+    const left = [], right = [];
+    for (const node of nodes) {
+        if (offset < node.length && offset > 0) {
+            switch (node.type) {
+                case UNORDERED_LIST:
+                case ANCHOR:
+                case BOLD:
+                case CODE_INLINE:
+                case HEADER:
+                case IMAGE:
+                case ITALIC:
+                case ORDERED_LIST:
+                case PARAGRAPH:
+                case QUOTE:
+                case ROOT:
+                    let a = clone(node, prev_gen);
+                    let b = clone(node, prev_gen);
+                    const { left: cl, right: cr } = split(node.children, offset, prev_gen);
+                    a.children = cl;
+                    b.children = cr;
+                    left.push(a);
+                    right.push(b);
+                    break;
+                case QUERY:
+                    left.push(node);
+                    break;
+                case TEXT: if (node.is(TEXT)) {
+                    let a = clone(node);
+                    let b = clone(node);
+                    a.meta = node.meta.slice(0, offset);
+                    b.meta = node.meta.slice(offset);
+                    left.push(a);
+                    right.push(b);
+                } break;
+                case CODE_BLOCK:
+                    debugger;
+                    break;
+            }
+        } else if (offset < 0) {
+            right.push(node);
+        } else {
+            left.push(node);
+        }
+
+        offset -= node.length;
+    }
+
+    return { left, right };
 }
 
 /**

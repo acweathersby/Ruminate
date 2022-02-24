@@ -1,6 +1,6 @@
 import { getProcessor } from './task_processors/actions/register_action';
 import { redo, undo, updatePointer } from './task_processors/history';
-import { getOffsetsFromSelection, toggleEditable, updateHost, updatePointerData } from './task_processors/view';
+import { getOffsetsFromSelection, toggleEditable, updateCaretData, updateHost, updatePointerData } from './task_processors/view';
 import { EditHost } from "./types/edit_host";
 import { TextCommand } from './types/text_command_types';
 
@@ -16,14 +16,20 @@ export function attachListeners(edit_host: EditHost) {
             //Update offsets. 
             if (SELECTION_UPDATE_TARGET) {
                 SELECTION_UPDATE_TARGET = null;
-
                 getOffsetsFromSelection(edit_host);
                 updatePointerData(edit_host);
             }
         },
         pointerup(e: PointerEvent) {
+            edit_host.host_ele.releasePointerCapture(e.pointerId);
+        },
+        pointermove(e: PointerEvent) {
+            if (edit_host.host_ele.hasPointerCapture(e.pointerId)) {
+                SELECTION_UPDATE_TARGET = e.target;
+            }
         },
         pointerdown(e: PointerEvent) {
+            edit_host.host_ele.setPointerCapture(e.pointerId);
             SELECTION_UPDATE_TARGET = e.target;
 
             //If the selected node is a non-selectable, update it's selection
@@ -141,15 +147,21 @@ function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
 
     console.log({ start_offset, end_offset });
 
+
     //Update selection
 
     // setUISelection(edit_host);
 
     e.preventDefault();
 
+    e.stopImmediatePropagation();
+
+    e.stopPropagation();
+
 
     updatePointerData(edit_host);
 
+    updateCaretData(edit_host);
     return false;
 }
 
@@ -204,12 +216,13 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "deleteByCut": debugger; break;
         case "deleteContent": debugger; break;
         case "deleteContentBackward": {
-
-            const { start_offset, end_offset } = edit_host;
-
+            edit_host.end_offset = edit_host.start_offset;
+            edit_host.start_offset--;
             getProcessor("edit", TextCommand.DELETE_TEXT)(edit_host);
         } break;
         case "deleteContentForward": {
+            edit_host.start_offset--;
+            edit_host.end_offset = edit_host.start_offset + 1;
             getProcessor("edit", TextCommand.DELETE_TEXT)(edit_host);
         }; break;
         case "historyUndo": { undo(edit_host); } break;
@@ -237,7 +250,6 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "formatFontColor": debugger; break;
         case "formatFontName": debugger; break;
     }
-
 
     if (edit_host.debug_data.DEBUGGER_ENABLED)
         updatePointerData(edit_host);

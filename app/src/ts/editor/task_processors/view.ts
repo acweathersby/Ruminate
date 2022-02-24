@@ -1,6 +1,7 @@
 import { MDNode, NodeClass, NodeType } from "./md_node";
 import { EditHost } from '../types/edit_host';
 import * as code from './code';
+import { getNodeAt, getNodeAtWithTail } from './traverse/traverse';
 
 const {
     ANCHOR,
@@ -38,8 +39,8 @@ export function getOffsetsFromSelection(edit_host: EditHost) {
     let anchor_offset = anchorNode.__get_offset() + anchorOffset;
     let focus_offset = focusNode.__get_offset() + focusOffset;
 
-    edit_host.start_offset = Math.max(anchor_offset, focus_offset);
-    edit_host.end_offset = Math.min(anchor_offset, focus_offset);
+    edit_host.start_offset = Math.min(anchor_offset, focus_offset);
+    edit_host.end_offset = Math.max(anchor_offset, focus_offset);
 }
 
 
@@ -75,14 +76,47 @@ function toHTMLNaive(
     LAST_CHILD: boolean = false
 ): Node {
 
-    if (node.containsClass(NodeClass.LINE))
-        vp.offset++;
+    const head = vp.offset;
+    const tail = vp.offset + node.length;
 
-    if (node.is(PARAGRAPH)) {
-        return addChildNodes(node, cE("p"), vp);
+    if (node.containsClass(NodeClass.LINE)) {
+        vp.offset++;
+        let tag = "";
+        if (node.is(PARAGRAPH)) {
+            tag = "p";
+        } else if (node.is(HEADER)) {
+            tag = "h" + node.meta;
+        } else if (node.is(ORDERED_LIST)) {
+            tag = "li";
+        } else if (node.is(QUOTE)) {
+            tag = "quote";
+        } else if (node.is(UNORDERED_LIST)) {
+            tag = "li";
+        } else if (node.is(CODE_BLOCK)) {
+            const div = cE("div");
+            vp.offset = tail;
+            code.createView(node, div);
+            node.ele = div;
+            return div;
+
+        }
+
+        const ele = addChildNodes(node, cE(tag), vp);
+
+        const last_child = node.children.slice().pop();
+
+        if (last_child) {
+            if (last_child.is(QUERY)) {
+                const span = cE("span");
+                span.__set_offset(tail);
+                ele.appendChild(span);
+            }
+        }
+        node.ele = ele;
+        return ele;
+
+
     } else if (node.is(TEXT)) {
-        const head = vp.offset;
-        const tail = vp.offset + node.meta.length;
         const text = new Text(node.meta);
         text.__set_offset(head);
         vp.offset = tail;
@@ -94,56 +128,35 @@ function toHTMLNaive(
         if (vp.edit_host.end_offset >= head && vp.edit_host.end_offset < tail) {
             vp.range.setEnd(text, vp.edit_host.end_offset - head);
         }
-
+        node.ele = text;
         return text;
     } else if (node.is(ANCHOR)) {
-        const anchor = cE("a");
+        const anchor = node.ele = cE("a");
         anchor.href = node.meta;
         return addChildNodes(node, anchor, vp);
     } else if (node.is(BOLD)) {
-        return addChildNodes(node, cE("strong"), vp);
-    } else if (node.is(CODE_BLOCK)) {
-        const div = cE("div");
-        code.createView(node, div);
-        return div;
+        return addChildNodes(node, node.ele = cE("strong"), vp);
     } else if (node.is(CODE_INLINE)) {
-        return addChildNodes(node, cE("code"), vp);
-    } else if (node.is(HEADER)) {
-        return addChildNodes(node, cE("h" + node.meta), vp);
+        return addChildNodes(node, node.ele = cE("code"), vp);
     } else if (node.is(IMAGE)) {
-        const img = cE("img");
+        const img = node.ele = cE("img");
         img.src = node.meta;
         return addChildNodes(node, img, vp);
     } else if (node.is(ITALIC)) {
-        return addChildNodes(node, cE("i"), vp);
-    } else if (node.is(ORDERED_LIST)) {
-        return addChildNodes(node, cE("li"), vp);
+        return addChildNodes(node, node.ele = cE("i"), vp);
     } else if (node.is(QUERY)) {
         vp.offset++;
-        const div = addChildNodes(node, cE("div"), vp);
+        const div = addChildNodes(node, node.ele = cE("div"), vp);
         div.innerHTML = "Hello World";
         div.setAttribute("contentEditable", "false");
         div.classList.add("query-field");
-        if (LAST_CHILD) {
-            const outer = cE("div");
-            const straggler = cE("span");
-            straggler.innerHTML = "";
-            straggler.style.padding = "0 5px";
-            outer.appendChild(div);
-            outer.appendChild(straggler);
-            straggler.__set_offset(vp.offset);
-            return outer;
-        } return div;
-    } else if (node.is(QUOTE)) {
-
+        return div;
     } else if (node.is(ROOT)) {
         //First has a zero length offset
-        const div = addChildNodes(node, cE("div"), vp);
+        const div = addChildNodes(node, node.ele = cE("div"), vp);
         div.setAttribute("contentEditable", "true");
         return div;
-    } else if (node.is(UNORDERED_LIST)) {
-        return addChildNodes(node, cE("li"), vp);
-    } else cE('div');
+    } else node.ele = cE('div');
 }
 
 function addChildNodes<T extends Node>(
@@ -165,7 +178,7 @@ export function toMDString(node: MDNode): string {
     } else if (node.is(TEXT)) {
         return node.meta;
     } else if (node.is(ANCHOR)) {
-        return ["[", node.meta, "]", "(", nodeChildrenToString(node), ")"].join("");
+        return ["[", nodeChildrenToString(node), "]", "(", node.meta, ")"].join("");
     } else if (node.is(BOLD)) {
         return ["__", nodeChildrenToString(node), "__"].join("");
     } else if (node.is(CODE_BLOCK)) {
@@ -175,7 +188,7 @@ export function toMDString(node: MDNode): string {
     } else if (node.is(HEADER)) {
         return [("#").repeat(node.meta), " ", nodeChildrenToString(node)].join("");
     } else if (node.is(IMAGE)) {
-        return ["![", node.meta, "]", "(", nodeChildrenToString(node), ")"].join("");
+        return ["![", nodeChildrenToString(node), "]", "(", node.meta, ")"].join("");
     } else if (node.is(ITALIC)) {
         return ["*", nodeChildrenToString(node), "*"].join("");
     } else if (node.is(ORDERED_LIST)) {
@@ -250,3 +263,100 @@ export function setEditable(edit_host: EditHost, EDITABLE: boolean = true) {
 }
 
 export const toHTML = toHTMLNaive;
+
+export function updateCaretData(edit_host: EditHost) {
+
+    const {
+        start_offset,
+        end_offset
+    } = edit_host;
+
+    const { node: start_node, head: start_head, parents } =
+        getNodeAt(edit_host.root, start_offset, TEXT, PARAGRAPH, CODE_BLOCK, HEADER, QUERY);
+    const { node: end_node, head: end_head } =
+        getNodeAt(edit_host.root, end_offset, TEXT, PARAGRAPH, CODE_BLOCK, HEADER, QUERY);
+
+    if (start_node.is(TEXT)) {
+        setZeroLengthSelection(start_node.ele, start_offset - start_head);
+
+    } else if (start_node.is(QUERY)) {
+        const { node, head } = getNodeAtWithTail(edit_host.root, start_offset, TEXT);
+
+        setZeroLengthSelection(node.ele, node.length);
+
+    } else {
+        //Get the last node of the previous element
+        const index = edit_host.root.children.indexOf(start_node);
+        if (start_head == start_offset) {
+            const prev = edit_host.root.children[index - 1];
+
+            const { node, head } = getNodeAt(prev, prev.length, TEXT);
+            if (node) {
+                setZeroLengthSelection(node.ele, node.length);
+            } else {
+                const ele = prev.ele.lastChild;
+                setZeroLengthSelection(ele, 0);
+            }
+        } else if (start_node.is(CODE_BLOCK)) {
+            code.setSelection(start_node, start_offset - start_head - 1);
+        }
+    }
+}
+
+/**
+ * Move selection cursor to an offset based on a Text node
+ */
+export function setZeroLengthSelection(
+    /**
+     * The text node in which the selection should be set.
+     */
+    text_node: Node,
+    /**
+     * The offset beginning from the 0th position of the 
+     * text_node `data` string at which the cursor should
+     * be placed.
+     */
+    offset: number
+) {
+
+    const selection = window.getSelection();
+    var range = document.createRange();
+    range.setStart(text_node, offset);
+    range.setEnd(text_node, offset);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+/**
+ * Create a selection between two textNodes
+ */
+export function setSelection(
+    /**
+     * The text node in which the selection should start.
+     */
+    text_node_head: Text,
+    /**
+     * The offset beginning from the 0th position of the 
+     * text_node_head `data` string at which the cursor should
+     * be placed.
+     */
+    offset_head: number,
+    /**
+     * The text node in which the selection should end.
+     */
+    text_node_tail: Text,
+    /**
+     * The offset beginning from the 0th position of the 
+     * text_node_tail `data` string at which the cursor should
+     * be placed.
+     */
+    offset_tail: number
+) {
+
+    const selection = window.getSelection();
+    var range = document.createRange();
+    range.setStart(text_node_head, offset_head);
+    range.setEnd(text_node_tail, offset_tail);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}

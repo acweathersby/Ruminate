@@ -1,111 +1,125 @@
 import { EditHost } from "../../types/edit_host";
 import { TextCommand } from "../../types/text_command_types";
+import { pushHistory } from '../history';
+import { NodeType } from '../md_node';
+import { heal, newNode, splitNode } from '../operators';
+import { initLength, traverse } from '../traverse/traverse';
+import { RangeOverlapType } from '../traverse/yielder/in_range';
 import { registerAction } from './register_action.js';
 
 function toggleItalics(edit_host: EditHost) {
-};
-/* 
-function redoToggleItalics(
-    redo_data: HistoryTask[TextCommand.TOGGLE_ITALICS]["redo_data"],
-    edit_host: EditHost
-) {
-    updateMetrics(edit_host);
+    const { start_offset, end_offset } = edit_host;
+    let ranges = [
+    ];
 
-    const { type, ranges } = redo_data;
+    let prev = start_offset;
 
-    const italics: ItalicSection[] = [];
+    let ADD_ITALICS = false;
+    let HAVE_ITALICS = false;
 
+    for (const { node, meta: { head, tail, overlap_type, overlap_start, overlap_length } } of traverse(edit_host.root)
+        .typeFilter(NodeType.ITALIC)
+        .rangeFilter(start_offset, end_offset)
+    ) {
+        if (head - prev > 0)
+            ADD_ITALICS = true;
 
-    const ADD_ITALICS = type == FormatType.ADD;
-
-    for (const { start_offset, end_offset } of ranges) {
-
-        modifySections(edit_host.root, start_offset, end_offset, {
-            on_text_segment(s, start, len, mf) {
-
-                const { length } = s;
-
-                if (ADD_ITALICS) {
-                    //Wrap the section in italics
-
-                    const italic = new ItalicSection([]);
-
-                    if (start > 0)
-                        s = s.split(start);
-
-                    if ((start + len) < length) {
-                        s.split(len);
-                        italic.link(s);
-                        s.link(null, italic);
-                    } else {
-                        italic.link(s);
-                        s.link(null, italic);
-                    }
-
-                    italics.push(italic);
-                }
-            },
-            on_section_segment: (sec, start, end, mf) => {
-                if (ADD_ITALICS) {
-                    if (sec instanceof ItalicSection) {
-                        //Do nothing
-                    } else if (CAN_WRAP_IN_ITALIC(sec)) {
-                        //Split the section and wrap it into the Italics section
-                    } else if (CAN_FORMAT(sec)) {
-                        modifySections(sec, start, end, mf);
-                    }
-                } else {
-                    if (sec instanceof ItalicSection) {
-                        const { head, tail } = sec;
-                        if (head < end && tail > start) {
-                            if (start <= head) {
-                                if (tail <= end) {
-                                    sec.dissolve();
-                                } else {
-                                    const r = sec.split(end - head);
-                                    italics.push(r);
-                                    sec.dissolve();
-                                }
-                            } else {
-                                const split_point_left = start - head;
-                                const r = sec.split(split_point_left);
-                                italics.push(r);
-                                if (tail <= end) {
-                                    r.dissolve();
-                                } else {
-                                    const split_point_right = ((tail - head) - split_point_left) - (tail - end);
-                                    r.split(split_point_right);
-                                    r.dissolve();
-                                }
-                            }
-                        }
-                    } else {
-                        modifySections(sec, start, end, mf);
-                    }
-                }
-            },
-            on_seg_overlap: (sec, start, end, mf) => {
-                if (sec instanceof ItalicSection) {
-                    if (!ADD_ITALICS)
-                        sec.dissolve();
-                } else if (ADD_ITALICS && CAN_WRAP_IN_ITALIC(sec)) {
-                    const italic = new ItalicSection([]);
-                    italic.link(sec);
-                    sec.link(null, italic);
-                    italics.push(italic);
-                } else if (CAN_FORMAT(sec)) {
-                    modifySections(sec, start, end, mf);
-                }
-            },
-        });
+        prev = tail;
+        HAVE_ITALICS = true;
     }
 
-    for (const italic of italics)
-        italic.heal();
+    if (!HAVE_ITALICS)
+        ADD_ITALICS = true;
 
-    updateMetrics(edit_host, true);
 
-    updateUIElements(edit_host);
-}
- */
+    if (ADD_ITALICS) {
+
+        for (const { node, meta: { head, tail, overlap_type, replace, overlap_start, overlap_length, skip } } of traverse(edit_host.root)
+            .typeFilter(
+                NodeType.CODE_INLINE,
+                NodeType.TEXT,
+                NodeType.BOLD,
+                NodeType.IMAGE,
+                NodeType.QUERY,
+                NodeType.ANCHOR,
+                NodeType.ITALIC
+            )
+            .rangeFilter(start_offset, end_offset)
+            .makeSkippable()
+            .extract(edit_host)
+            .makeReplaceable()
+        ) {
+            if (node.is(NodeType.ITALIC)) {
+                skip();
+                continue;
+            } else if (node.is(NodeType.ANCHOR) && overlap_type != RangeOverlapType.COMPLETE) {
+                continue;
+            }
+
+
+            switch (overlap_type) {
+                case RangeOverlapType.COMPLETE:
+                    replace(newNode(NodeType.ITALIC, [node]));
+                    skip();
+                    break;
+                case RangeOverlapType.PARTIAL_CONTAINED: {
+                    var { left, right: mid } = splitNode(node, overlap_start);
+                    var { left: mid, right } = splitNode(mid, overlap_length, node.generation);
+                    replace([left, newNode(NodeType.ITALIC, [mid]), right]);
+                    skip();
+                } break;
+                case RangeOverlapType.PARTIAL_HEAD: {
+                    const { left, right } = splitNode(node, overlap_length);
+                    replace([newNode(NodeType.ITALIC, [left]), right]);
+                    skip();
+                } break;
+                case RangeOverlapType.PARTIAL_TAIL: {
+                    const { left, right } = splitNode(node, overlap_start);
+                    replace([left, newNode(NodeType.ITALIC, [right])]);
+                    skip();
+                } break;
+            }
+        }
+    } else {
+        for (const { node, meta: { head, tail, overlap_type, overlap_start, overlap_length, replace, skip } } of traverse(edit_host.root)
+            .typeFilter(NodeType.ITALIC)
+            .rangeFilter(start_offset, end_offset)
+            .extract(edit_host)
+            .makeReplaceable()
+            .makeSkippable()
+        ) {
+            switch (overlap_type) {
+                case RangeOverlapType.COMPLETE:
+                    replace(node.children);
+                    skip();
+                    break;
+                case RangeOverlapType.PARTIAL_CONTAINED: {
+                    var { left, right: mid } = splitNode(node, overlap_start);
+                    var { left: mid, right } = splitNode(mid, overlap_length, node.generation);
+                    replace([left, ...mid.children, right]);
+                    skip();
+                } break;
+                case RangeOverlapType.PARTIAL_HEAD: {
+                    const { left, right } = splitNode(node, overlap_length);
+                    replace([...left.children, right]);
+                    skip();
+                } break;
+                case RangeOverlapType.PARTIAL_TAIL: {
+                    const { left, right } = splitNode(node, overlap_start);
+                    replace([left, ...right.children]);
+                    skip();
+                } break;
+            }
+        }
+    }
+
+    edit_host.root = heal(edit_host.root);
+
+    initLength(edit_host.root);
+
+    pushHistory(edit_host);
+
+    return edit_host;
+};
+
 registerAction("edit", TextCommand.TOGGLE_ITALICS, toggleItalics);

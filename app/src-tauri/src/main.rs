@@ -30,7 +30,8 @@ mod rumi_app {
     #[tauri::command]
     pub fn get_notes_from_query(query: String) -> Vec<NoteLocalID> {
         if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
-            execute_query(store, query.as_str());
+            let string = query.as_str();
+            execute_query(store, string)
         } else {
             vec![]
         }
@@ -178,6 +179,14 @@ mod rumi_app {
             }
         }
         String::from("")
+    }
+
+    // Updates a note's data store with differences found in the input string and
+    // the note's data.
+    // Input string should be the full note text as it appears to the user.
+    #[tauri::command]
+    pub fn update_note_text(note_local_id: u32, new_text: String) -> bool {
+        false
     }
 
     pub fn main() {

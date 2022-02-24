@@ -8,9 +8,9 @@ pub enum ParseError {
     UNABLE_TO_DEREF_QUERY_RESULT,
 }
 
-pub fn parse(string_data: &'static str) -> Result<Box<QueryBody>, ParseError> {
+pub fn parse(string_data: &str) -> Result<Box<QueryBody>, ParseError> {
     let mut iterator: ReferenceIterator<UTF8StringReader> = ReferenceIterator::new(
-        UTF8StringReader::new(string_data.as_bytes()),
+        UTF8StringReader::new(Vec::from(string_data.as_bytes())),
         EntryPoint_RNQL,
         &BYTECODE,
     );

@@ -7,11 +7,12 @@
   "scripts": {
     "build:md": "npx hc compile parser --O0 --t ts --asytrip --o ./src/ts/editor/parser/ ../grammar/md.hcg",
     "inspect:md": "npx hc tools disassemble --browse ../grammar/md.hcg",
-    "dev:app": "RUST_BACKTRACE=1 cargo tauri dev",
+    "dev:be": "RUST_BACKTRACE=1 cargo tauri dev",
     "dev:fe": "candle.wick workspace --port 51221 ./src/",
-    "build": "npm run build:release",
-    "build:release": "cargo tauri build",
-    "build:debug": "cargo tauri dev",
+    "dev": "concurrently --kill-others \"npm run dev:fe\" \"npm run dev:be\"",
+    "build": "npm run build:fe && npm run build:app",
+    "build:fe": "candle.wick compile --output ./build ./src",
+    "build:app": "cargo tauri build",
     "test:fe": "candle.wick test ./src/tests/",
     "copy_cm_css": "cp node_modules/codemirror/lib/codemirror.css ./src/css/cm.css"
   },
@@ -28,6 +29,7 @@
     "@tauri-apps/api": "^1.0.0-rc.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.0.0-rc.5"
+    "@tauri-apps/cli": "^1.0.0-rc.5",
+    "concurrently": "^7.0.0"
   }
 }

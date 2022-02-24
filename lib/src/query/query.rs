@@ -14,7 +14,7 @@ use std::thread;
 /// ```
 /// println!("Hello World");
 /// ```
-pub fn execute_query(root_store: &Store, query_input: &'static str) -> Vec<NoteLocalID> {
+pub fn execute_query(root_store: &Store, query_input: &str) -> Vec<NoteLocalID> {
     if let Ok(query) = parse(query_input) {
         // Reduce inputs to containers found within container portion. If this is
         // an infinite result then the entire store MUST be made available for

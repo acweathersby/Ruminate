@@ -45,6 +45,7 @@ export interface EditHost {
         keydown(arg: KeyboardEvent): void;
         keyup(arg: KeyboardEvent): void;
         beforeinput(arg: InputEvent): void;
+        pointermove(arg: PointerEvent): void;
         pointerup(arg: PointerEvent): void;
         pointerdown(arg: PointerEvent): void;
     };

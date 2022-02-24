@@ -10,13 +10,14 @@ import { MDNode, NodeType } from './task_processors/md_node.js';
  * through the `getProcessor` function.
  */
 import "./task_processors/actions/insert_text.js";
-//import "./task_processors/toggle_bold.js";
-//import "./task_processors/toggle_italics.js";
+import "./task_processors/actions/delete_text.js";
+import "./task_processors/actions/toggle_bold.js";
+import "./task_processors/actions/toggle_italics.js";
 import { setChildren } from './task_processors/operators.js';
 import { setEditable, toHTML, updateHost, updateMarkdownDebugger } from './task_processors/view.js';
 import { EditHost } from './types/edit_host.js';
 import { pushHistory } from './task_processors/history';
-import { initLength } from './task_processors/traverse.js';
+import { initLength } from './task_processors/traverse/traverse.js';
 
 
 export * from "./task_processors/history.js";
@@ -62,7 +63,6 @@ export async function constructEditHost(
     const lines = convertMDASTToMDNodeLines(result, edit_host);
 
     edit_host.root = setChildren(edit_host.root, ...lines);
-
 
     initLength(edit_host.root);
 
