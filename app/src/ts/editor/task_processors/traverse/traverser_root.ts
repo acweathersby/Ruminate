@@ -19,7 +19,13 @@ export class Traverser<B> implements ASTIterator<B> {
     protected yielder: Yielder;
     protected readonly meta: B & MetaRoot;
     protected readonly max_depth: number;
-    protected readonly val_length_stack: number[];
+    /**
+     * Stores index and length of a node's child array.
+     * 
+     * Index is stored in the liw 16 bits and array length
+     * in the high 16 bits.
+     */
+    protected readonly length_index_stack: number[];
     protected readonly node_stack: MDNode[];
     protected readonly offset_stack: number[];
     protected offset: number;
@@ -33,7 +39,7 @@ export class Traverser<B> implements ASTIterator<B> {
         this.BEGINNING = false;
         this.yielder = null;
         this.max_depth = max_depth;
-        this.val_length_stack = [];
+        this.length_index_stack = [];
         this.offset_stack = [];
         this.node_stack = [];
         this.offset = 0;
@@ -52,7 +58,7 @@ export class Traverser<B> implements ASTIterator<B> {
         this.sp = 0;
         this.BEGINNING = true;
         this.offset_stack.length = 0;
-        this.val_length_stack.length = 0;
+        this.length_index_stack.length = 0;
         this.node_stack.length = 0;
         this.node = root_node;
     }
@@ -65,7 +71,7 @@ export class Traverser<B> implements ASTIterator<B> {
         done?: boolean;
         value: TraverserOutput<B>;
     } {
-        const { BEGINNING, node, max_depth, node_stack, offset_stack, val_length_stack, meta } = this;
+        const { BEGINNING, node, max_depth, node_stack, offset_stack, length_index_stack: val_length_stack, meta } = this;
 
         // Prevent infinite loop from a cyclical graph;
         if (this.sp > 100000)
@@ -100,7 +106,7 @@ export class Traverser<B> implements ASTIterator<B> {
 
         while (this.sp >= 0) {
 
-            const len = this.val_length_stack[this.sp], limit = (len & 0xFFFF0000) >> 16, index = (len & 0xFFFF);
+            const len = this.length_index_stack[this.sp], limit = (len & 0xFFFF0000) >> 16, index = (len & 0xFFFF);
 
             if (this.sp < max_depth && index < limit) {
 
@@ -153,7 +159,7 @@ export class Traverser<B> implements ASTIterator<B> {
     then<U>(next_yielder: U): Traverser<CombinedYielded<U, B>> {
 
         //@ts-ignore
-        next_yielder.modifyMeta(this.meta, this.val_length_stack, this.node_stack, this.offset_stack);
+        next_yielder.modifyMeta(this.meta, this.length_index_stack, this.node_stack, this.offset_stack);
 
         if (typeof next_yielder == "function")
             next_yielder = next_yielder();

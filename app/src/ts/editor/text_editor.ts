@@ -13,6 +13,7 @@ import "./task_processors/actions/insert_text.js";
 import "./task_processors/actions/delete_text.js";
 import "./task_processors/actions/toggle_bold.js";
 import "./task_processors/actions/toggle_italics.js";
+import "./task_processors/actions/insert_paragraph.js";
 import { setChildren } from './task_processors/operators.js';
 import { setEditable, toHTML, updateHost, updateMarkdownDebugger } from './task_processors/view.js';
 import { EditHost } from './types/edit_host.js';

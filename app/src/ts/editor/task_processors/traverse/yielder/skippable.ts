@@ -1,4 +1,5 @@
 import { MDNode } from '../../md_node.js';
+import { MetaRoot } from '../meta_root.js';
 import { Yielder } from "./yielder.js";
 
 /**
@@ -17,10 +18,13 @@ export class SkippableYielder extends Yielder {
 
     protected node_stack: MDNode[];
 
+    protected index: number;
+
     protected modifyMeta(meta, val_length_stack, node_stack, offset_stack) {
         this.node_stack = node_stack;
         this.val_length_stack = val_length_stack;
         this.offset_stack = offset_stack;
+        this.index = 0;
         meta.skip = this.skip.bind(this);
     }
 
@@ -34,16 +38,24 @@ export class SkippableYielder extends Yielder {
 
         const { stack_pointer: sp, val_length_stack, offset_stack, node_stack } = this;
 
+        const current_index = (val_length_stack[sp - 1] & 0x0000FFFF) - 1;
+
         if (skip_to_child_index == undefined) skip_to_child_index = ((val_length_stack[sp] & 0xFFFF0000) >> 16) + 1;
 
         val_length_stack[sp] = (val_length_stack[sp] & 0xFFFF0000) | skip_to_child_index;
 
-        if (sp > 0)
-            offset_stack[sp] = offset_stack[sp - 1] + node_stack[sp].length;
+        if (current_index !== this.index) {
+            //Something has already progressed the iteration beyond
+            //this node. Do not try to adjust anything.
+        } else {
+            if (sp > 0)
+                offset_stack[sp] = offset_stack[sp - 1] + node_stack[sp].length;
+        }
     }
 
-    yield(node: MDNode, stack_pointer: number, node_stack: MDNode[], val_length_stack: number[], meta) {
+    yield(node: MDNode, stack_pointer: number, node_stack: MDNode[], val_length_stack: number[], meta: MetaRoot) {
         this.stack_pointer = stack_pointer;
+        this.index = meta.index;
         return this.yieldNext(node, stack_pointer, node_stack, val_length_stack, meta);
     }
 }

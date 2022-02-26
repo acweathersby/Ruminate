@@ -37,7 +37,13 @@ export class ReplaceableYielder extends Yielder {
     protected node: MDNode;
     protected stack_pointer: number;
     protected node_stack: MDNode[];
-    protected val_length_stack: number[];
+    /**
+    * Stores index and length of a node's child array.
+    * 
+    * Index is stored in the low 16 bits and array length
+    * in the high 16 bits.
+    */
+    protected index_length_stack: number[];
     /**
      * The replace function;
      */
@@ -53,7 +59,7 @@ export class ReplaceableYielder extends Yielder {
         meta.replace = this.replace.bind(this);
         this.node_stack = node_stack;
         this.offset_stack = offset_stack;
-        this.val_length_stack = val_length_stack;
+        this.index_length_stack = val_length_stack;
         this.next_gen = meta.next_gen;
         this.curr_offset = 0;
     }
@@ -77,7 +83,7 @@ export class ReplaceableYielder extends Yielder {
 
         const
             node_stack: MDNode[] = this.node_stack,
-            val_length_stack: number[] = this.val_length_stack;
+            val_length_stack: number[] = this.index_length_stack;
 
         let sp = this.stack_pointer;
 
@@ -92,7 +98,7 @@ export class ReplaceableYielder extends Yielder {
                 }
             }
 
-            this.replaceNodes(node_stack, sp, val_length_stack, replacement, PROCESS_NEW_NODE);
+            this.replaceNodes(node_stack, sp, replacement, PROCESS_NEW_NODE);
 
             if (ROOT) {
 
@@ -122,7 +128,6 @@ export class ReplaceableYielder extends Yielder {
     protected replaceNodes(
         node_stack: MDNode[],
         sp: number,
-        val_length_stack: number[],
         replacement: MDNode | MDNode[],
         PROCESS_NEW_NODE: boolean = false
     ) {
@@ -134,7 +139,7 @@ export class ReplaceableYielder extends Yielder {
             const
                 REPLACEMENT_IS_ARRAY = Array.isArray(replacement),
                 REPLACEMENT_IS_NULL = null === replacement,
-                len = val_length_stack[sp - 1],
+                len = this.index_length_stack[sp - 1],
                 index = (len & 0xFFFF) - 1,
                 new_child_children_length = REPLACEMENT_IS_NULL
                     ? 0
@@ -157,27 +162,32 @@ export class ReplaceableYielder extends Yielder {
                 //If the parent is replaced then the stack pointer should be
                 //reset to the parent's children nodes
 
-                if (new_child_children_length != (val_length_stack[sp] >> 16))
-                    val_length_stack[sp] = (new_child_children_length << 16) | (val_length_stack[sp] & 0xFFFF);
+                if (new_child_children_length != (this.index_length_stack[sp] >> 16))
+                    this.index_length_stack[sp] =
+                        (new_child_children_length << 16)
+                        | (this.index_length_stack[sp] & 0xFFFF);
 
                 if (REPLACEMENT_IS_NULL) {
 
-                    val_length_stack[sp - 1] -= (1 << 16);
+                    this.index_length_stack[sp - 1] -= (1 << 16);
 
                     children.splice(index, 1);
 
                     node_stack[sp] = children[index - 1];
                 } else if (REPLACEMENT_IS_ARRAY) {
                     //Increment the length of the stack and set the index to the end of the array
-                    //@ts-ignore 
-                    val_length_stack[sp - 1] += ((replacement.length - 1) << 16 | (replacement.length - 1));
-                    //@ts-ignore
+
+                    this.index_length_stack[sp - 1] +=
+                        ((replacement.length) << 16
+                            | (replacement.length - 1));
+
                     children.splice(index, 1, ...replacement);
+
                     node_stack[sp] = replacement[0];
                 } else {
-                    //@ts-ignore 
+
                     children[index] = replacement;
-                    //@ts-ignore 
+
                     node_stack[sp] = replacement;
                 }
 
@@ -185,14 +195,14 @@ export class ReplaceableYielder extends Yielder {
                 parent.children = children;
 
                 if (REPLACEMENT_IS_NULL) {
-                    val_length_stack[sp - 1] -= 1;
+                    this.index_length_stack[sp - 1] -= 1;
                     if (PROCESS_NEW_NODE)
-                        val_length_stack[sp - 1] -= 1;
+                        this.index_length_stack[sp - 1] -= 1;
                 } else if (PROCESS_NEW_NODE) {
                     if (REPLACEMENT_IS_ARRAY) {
-                        val_length_stack[sp - 1] -= replacement.length;
+                        this.index_length_stack[sp - 1] -= replacement.length;
                     } else {
-                        val_length_stack[sp - 1] -= 1;
+                        this.index_length_stack[sp - 1] -= 1;
                     }
                 }
             }
@@ -216,7 +226,7 @@ export class ReplaceYielder<B> extends ReplaceableYielder {
     protected replace_function?: ReplaceFunction<B>;
     protected modifyMeta(meta, val_length_stack, node_stack) {
         this.node_stack = node_stack;
-        this.val_length_stack = val_length_stack;
+        this.index_length_stack = val_length_stack;
     }
     yield(node: MDNode, stack_pointer: number, node_stack: MDNode[], val_length_stack: number[], meta): MDNode | null {
 

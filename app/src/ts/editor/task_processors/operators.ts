@@ -191,7 +191,7 @@ export function split(
                     debugger;
                     break;
             }
-        } else if (offset < 0) {
+        } else if (offset <= 0) {
             right.push(node);
         } else {
             left.push(node);
