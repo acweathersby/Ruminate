@@ -7,12 +7,13 @@ import * as code from '../code';
 import { initLength, traverse } from '../traverse/traverse';
 import { registerAction } from './register_action';
 import { RangeOverlapType } from '../traverse/yielder/in_range';
+import { Line } from '@codemirror/text';
 
 
 function deleteText(edit_host: EditHost) {
     const { start_offset, end_offset } = edit_host;
 
-    for (const { node, meta } of traverse(edit_host.root)
+    for (const { node, meta, reset, getAncestry } of traverse(edit_host.root)
         .typeFilter(
             NodeType.CODE_INLINE,
             NodeType.TEXT,
@@ -28,21 +29,29 @@ function deleteText(edit_host: EditHost) {
         .extract(edit_host)
         .makeReplaceable()
     ) {
-        const { head, tail, prev, overlap_type, replace, overlap_start, overlap_length, skip } = meta;
+        const { index, head, tail, prev, overlap_type, replace, overlap_start, overlap_length, skip } = meta;
         if (overlap_length == 0) continue;
 
         if (node.containsClass(NodeClass.LINE)) {
-            if (overlap_start == 0) {
+            if (overlap_start == 0)
                 if (RangeOverlapType.COMPLETE) {
                     meta.range_end -= node.length;
                     replace(null);
                     skip();
                 } else if (prev && node.is(prev.type)) {
-                    debugger;
+                    //Merge the two and then redo parsing
+                    replace(null, true);
+                    const parent = getAncestry()[0];
+                    const new_node = ops.clone(prev);
+                    new_node.children = prev.children.concat(node.children);
+                    meta.range_end--;
+                    const par_children = parent.children;
+                    par_children[index - 1] = new_node;
+                    parent.children = par_children;
                     //prev.children.push(...node.children);
                     //replace(null, true);
                 }
-            }
+
         } else {
             switch (overlap_type) {
                 case RangeOverlapType.COMPLETE: {

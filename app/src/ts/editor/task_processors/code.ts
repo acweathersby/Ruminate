@@ -1,5 +1,7 @@
 import { EditorState } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { EditorView, drawSelection, dropCursor } from '@codemirror/view';
+import { lineNumbers } from '@codemirror/gutter';
+import { defaultHighlightStyle } from '@codemirror/highlight';
 import { basicSetup } from '@codemirror/basic-setup';
 import { MDNode, NodeType, NodeMeta } from "./md_node";
 import { clone } from './operators';
@@ -20,14 +22,29 @@ export function getCodeMeta(
             {
                 doc: meta.text,
                 extensions: [
-                    basicSetup
+                    lineNumbers({}),
+                    //defaultHighlightStyle,
+                    //drawSelection()
                 ]
             }
         );
+
         node.meta = meta;
     }
 
     return meta;
+}
+
+export function getElementAtOffset(code: Code, offset: number): {
+    ele: Node,
+    offset: number;
+} {
+
+    const meta = getCodeMeta(code);
+
+    const { node, offset: ele_offset } = meta.view.domAtPos(offset);
+
+    return { ele: node, offset: ele_offset };
 }
 
 export function createView(
@@ -40,13 +57,28 @@ export function createView(
     if (!meta.view) {
         meta.view = new EditorView({
             parent: host_ele,
-            state: meta.state
+            state: meta.state,
         });
+
     } else {
         meta.view.setState(meta.state);
         host_ele.appendChild(meta.view.dom);
-
     }
+
+    meta.view.dom.removeAttribute("contenteditable");
+
+    //The announce DOM is used to announce changes in a codemirror
+    //editor. However, this element disrupts document flow when using
+    //native selection, so we disable it to allow correct offset measurements
+    //@ts-ignore
+    meta.view.announceDOM.style.display = "none";
+
+    for (const gutter of meta.view.dom.querySelectorAll(".cm-gutters")) {
+        gutter.setAttribute("contenteditable", "false");
+        //@ts-ignore
+        gutter.style.userSelect = 'none';
+    }
+
 
     node.meta = meta;
 
@@ -72,12 +104,10 @@ export function setSelection(node: Code, start: number, end: number = start) {
     const meta = getCodeMeta(node);
 
     if (start == end) {
-
         meta.view.dispatch(meta.view.state.update({ selection: { anchor: start } }));
-
     } else {
+        meta.view.dispatch(meta.view.state.update({ selection: { anchor: end, head: start } }));
 
-        meta.view.dispatch({ selection: { anchor: start, head: end } });
     }
 }
 
@@ -111,3 +141,4 @@ removeText(md_offset_start: number, md_offset_end: number) {
     this.editor_state = transaction.state;
     this.length -= pos_end - pos_start;
 } */
+

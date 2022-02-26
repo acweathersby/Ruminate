@@ -77,19 +77,14 @@ export class inRangeYielder extends Yielder {
                     // This is either a section or text segment
                     meta.overlap_type = RangeOverlapType.PARTIAL_TAIL;
                 }
-            } else if (range_start_rel == 0) {
+            } else {
                 // Start of the range is at the head of the section.
                 if (range_end_rel <= 0) {
                     //Range matches or exceeds the section boundaries
                     meta.overlap_type = RangeOverlapType.COMPLETE;
-                } else if (range_end_rel > 0) {
-                    meta.overlap_type = RangeOverlapType.PARTIAL_CONTAINED;
+                } else {
+                    meta.overlap_type = RangeOverlapType.PARTIAL_HEAD;
                 }
-            } else if (range_end_rel > 0) {
-                //Range starts before section and ends within section
-                meta.overlap_type = RangeOverlapType.PARTIAL_HEAD;
-            } else {
-                meta.overlap_type = RangeOverlapType.COMPLETE;
             }
 
             return this.yieldNext(node, stack_pointer, node_stack, val_length_stack, meta);

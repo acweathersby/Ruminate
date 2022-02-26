@@ -1,4 +1,4 @@
-import { MDNode, NodeType, NodeClass as NC, NodeMeta } from "./md_node";
+import { MDNode, NodeType, NodeClass as NC, NodeMeta, NodeClass } from "./md_node";
 
 const {
     ANCHOR,
@@ -17,6 +17,10 @@ const {
     UNORDERED_LIST,
 } = NodeType;
 
+
+export function IsLine(node: MDNode): boolean {
+    return node.containsClass(NodeClass.LINE);
+}
 /**
  * Make a copy of a node.
  */

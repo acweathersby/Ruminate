@@ -13,7 +13,7 @@ import { incrementOffset } from './increment_offset';
 
 
 export class Traverser<B> implements ASTIterator<B> {
-    protected readonly node: MDNode;
+    protected node: MDNode;
     protected sp: number;
     protected BEGINNING: boolean;
     protected yielder: Yielder;
@@ -23,6 +23,10 @@ export class Traverser<B> implements ASTIterator<B> {
     protected readonly node_stack: MDNode[];
     protected readonly offset_stack: number[];
     protected offset: number;
+    protected ancestry: () => MDNode[];
+
+    protected reset: (arg?: MDNode) => void;
+
     constructor(root: MDNode, meta: B & MetaRoot, max_depth: number) {
         this.node = root;
         this.sp = 0;
@@ -34,12 +38,27 @@ export class Traverser<B> implements ASTIterator<B> {
         this.node_stack = [];
         this.offset = 0;
         this.meta = meta;
+        this.ancestry = this.getAncestry.bind(this);
+        this.reset = this.resetTraversal.bind(this);
     }
-    [Symbol.iterator]() {
+
+    getAncestry(): MDNode[] {
+        return this.node_stack.slice(0, this.sp).reverse();
+    }
+
+    resetTraversal(root_node: MDNode = this.node) {
         this.meta.index = 0;
         this.meta.depth = 0;
         this.sp = 0;
         this.BEGINNING = true;
+        this.offset_stack.length = 0;
+        this.val_length_stack.length = 0;
+        this.node_stack.length = 0;
+        this.node = root_node;
+    }
+
+    [Symbol.iterator]() {
+        this.resetTraversal();
         return this;
     }
     next(): {
@@ -74,7 +93,7 @@ export class Traverser<B> implements ASTIterator<B> {
 
                 const y = this.yielder.yield(node, this.sp, node_stack, val_length_stack, meta);
 
-                if (y) return { value: { node: y, meta }, done: false };
+                if (y) return { value: { node: y, meta, getAncestry: this.ancestry, reset: this.reset }, done: false };
             } else
                 return { value: null, done: true };
         }
@@ -117,7 +136,7 @@ export class Traverser<B> implements ASTIterator<B> {
                     const y = this.yielder.yield(child, this.sp, node_stack, val_length_stack, meta);
 
                     if (y)
-                        return { value: { node: y, meta }, done: false };
+                        return { value: { node: y, meta, getAncestry: this.ancestry, reset: this.reset }, done: false };
                 }
             } else {
                 this.sp--;

@@ -186,6 +186,8 @@ export class ReplaceableYielder extends Yielder {
 
                 if (REPLACEMENT_IS_NULL) {
                     val_length_stack[sp - 1] -= 1;
+                    if (PROCESS_NEW_NODE)
+                        val_length_stack[sp - 1] -= 1;
                 } else if (PROCESS_NEW_NODE) {
                     if (REPLACEMENT_IS_ARRAY) {
                         val_length_stack[sp - 1] -= replacement.length;

@@ -9,6 +9,8 @@ export interface TraverserOutput<Meta> {
     //@ts-ignore
     node: MDNode; //| Node[Key];
     meta: Meta;
+    getAncestry: () => MDNode[];
+    reset: (arg?: MDNode) => void;
 };
 
 export type CombinedYielded<NextYielder, PrevYielder> = NextYielder & PrevYielder;

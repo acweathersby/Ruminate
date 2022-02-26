@@ -1,7 +1,7 @@
 import { MDNode, NodeClass, NodeType } from '../md_node';
 import { MetaRoot } from './meta_root';
 import { Traverser } from './traverser_root';
-
+import * as code from "../code";
 /**
  * This traverses a tree and yields nodes depth first. Uses Yielders 
  * to perform non-destructive transforms on the AST.
@@ -63,7 +63,7 @@ export function initLength(node: MDNode): number {
 
     if (node.containsClass(NodeClass.LINE)) {
         if (node.is(CODE_BLOCK)) {
-            node.length += node.meta.text.length + 1;
+            node.length = code.getLength(node) + 1;
         } else {
 
             let length = 1;
