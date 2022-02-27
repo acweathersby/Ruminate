@@ -215,6 +215,24 @@ Welcome to Ruminate.
                     }
                 }
 
+                #[cfg(debug_assertions)]
+                {
+                    // Build test notes
+                    let local_id = create_note();
+
+                    insert_text(
+                        local_id,
+                        0,
+                        String::from(
+                            "
+# This is a test note
+",
+                        ),
+                    );
+
+                    println!("DEBUG MODE notes added!");
+                }
+
                 Ok(())
             })
             .invoke_handler(tauri::generate_handler![

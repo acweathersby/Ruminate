@@ -7,6 +7,8 @@ import { locale } from '../locale/locale';
 
 function assert_DB_decorator<T>(fn: T, alternate_value?: any): T {
 
+    console.log(invoke);
+
     if (typeof globalThis["__TAURI_INVOKE_KEY__"] == "undefined") {
 
         if (alternate_value != undefined)

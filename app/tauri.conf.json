@@ -4,7 +4,7 @@
     "version": "0.1.0"
   },
   "build": {
-    "distDir": "../build/",
+    "distDir": "/build/",
     "devPath": "https://localhost:51221",
     "beforeDevCommand": "",
     "beforeBuildCommand": "",

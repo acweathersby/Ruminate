@@ -30,7 +30,7 @@ type NotePackage = (
     Vec<NoteLinkMeta>,
 );
 
-//Initializes a new store for notes
+/// Initializes a new store for notes
 pub fn store_create() -> Store {
     debug!(target:"store actions", "Creating new Store");
     Store::new()
