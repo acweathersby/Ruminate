@@ -16,7 +16,7 @@ root {
     padding:80px;
     border-radius:10px;
     outline:none;
-    font-size:1.3em;
+    font-size:12px;
     white-space: pre-wrap; 
     color:#222222
 }

@@ -6,14 +6,12 @@ import note_body from "./note_body"
 
 let path = "/rumi-tutorials/";
 let name = "test";
-let temp = "test";
 let host = null;
 
 async function onload(){
-    host = await editor.constructEditHost(1/* id */, "@.note-body", test_data);
+    host = await editor.constructEditHost(2/* id */, "@.note-body", test_data);
     editor.addMarkdownPreviewTarget(host, "@.note-md-preview");
     editor.setReadOnly(false);
-    rm.get_text(id).then(n=>temp=n);
     rm.get_note_name(id).then(n=>name=n);
     rm.get_note_container_path(id).then(p=>path=p);
 }

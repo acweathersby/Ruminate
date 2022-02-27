@@ -19,6 +19,8 @@ export interface EditHost {
         ele?: HTMLDivElement;
     };
 
+    note_id: number;
+
     start_offset: number;
     end_offset: number;
 
@@ -35,6 +37,12 @@ export interface EditHost {
     command_history: HistoryTask[];
 
     history_pointer: number;
+
+    /**
+     * Id's of notes already loaded in ancestors. 
+     * Prevents recursive loading of notes.
+     */
+    active: Set<number>;
 
     event_handlers?: {
         selectionchange(): void,

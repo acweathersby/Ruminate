@@ -4,6 +4,7 @@
 )]
 
 mod rumi_app {
+    use difference::*;
     use lib_ruminate::primitives::uuid::UUID;
     use lib_ruminate::query::query::*;
     use lib_ruminate::store::store::*;
@@ -149,6 +150,32 @@ mod rumi_app {
             }
         }
         vec![]
+    }
+
+    #[tauri::command]
+    pub fn merge_text(note_local_id: u32, new_string: String) -> bool {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            if let Some(string) = note_get_text(store, note_local_id) {
+                let changeset = Changeset::new(&string, &new_string, "");
+                let diffs = &changeset.diffs;
+                let mut offset = 0;
+
+                for diff in diffs {
+                    match diff {
+                        Difference::Same(d) => offset += d.len(),
+                        Difference::Add(d) => {
+                            note_insert_text(store, note_local_id, offset, d);
+                            offset += d.len();
+                        }
+                        Difference::Rem(d) => {
+                            note_delete_text(store, note_local_id, offset, d.len() as u32);
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        false
     }
 
     #[tauri::command]

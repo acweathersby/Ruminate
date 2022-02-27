@@ -24,6 +24,49 @@ import { initLength } from './task_processors/traverse/traverse.js';
 export * from "./task_processors/history.js";
 export * from "./task_processors/actions/register_action.js";
 
+export async function constructReadOnlyHost(
+    note_id: number,
+    active: Set<number> = new Set
+): Promise<EditHost> {
+
+    let string = await get_text(note_id);
+
+    const edit_host: EditHost = {
+        debug_data: {
+            cursor_start: 0,
+            cursor_end: 0,
+            ele: null,
+            DEBUGGER_ENABLED: false,
+        },
+        active: active,
+        note_id: note_id,
+        DIRTY_METRICS: true,
+        READ_ONLY: true,
+        command_history: [],
+        root: null,
+        host_ele: null,
+        history_pointer: -1,
+        options: {},
+        end_offset: 0,
+        start_offset: 0
+    };
+
+    const result = parseMarkdownText(string);
+
+    edit_host.root = new MDNode(NodeType.ROOT);
+
+    //Convert Markdown to Editable Content
+    const lines = convertMDASTToMDNodeLines(result, edit_host);
+
+    edit_host.root = setChildren(edit_host.root, ...lines);
+
+    initLength(edit_host.root);
+
+    pushHistory(edit_host);
+
+    return edit_host;
+}
+
 export async function constructEditHost(
     note_id: number,
     input_string = "Welcome To Ruminate"
@@ -44,6 +87,7 @@ export async function constructEditHost(
             ele: null,
             DEBUGGER_ENABLED: true,
         },
+        note_id: note_id,
         DIRTY_METRICS: true,
         READ_ONLY: false,
         command_history: [],
@@ -52,7 +96,8 @@ export async function constructEditHost(
         history_pointer: -1,
         options: {},
         end_offset: 0,
-        start_offset: 0
+        start_offset: 0,
+        active: new Set
     };
 
 

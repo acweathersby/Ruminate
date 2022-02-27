@@ -7,9 +7,7 @@ import { locale } from '../locale/locale';
 
 function assert_DB_decorator<T>(fn: T, alternate_value?: any): T {
 
-    console.log(invoke);
-
-    if (typeof globalThis["__TAURI_INVOKE_KEY__"] == "undefined") {
+    if (typeof globalThis["__TAURI__"] == "undefined") {
 
         if (alternate_value != undefined)
             //@ts-ignore
@@ -95,6 +93,12 @@ export const update_note_text = assert_DB_decorator(
         return invoke("update_note_text", { noteLocalId, new_text });
     });
 
+export const merge_text = assert_DB_decorator(
+    async function merge_text(noteLocalId: number, string: string): Promise<boolean> {
+        return invoke("merge_text", { noteLocalId, string });
+    }
+);
+
 export const insert_text = assert_DB_decorator(
     async function insert_text(noteLocalId: number, insertIndex: number, string: string): Promise<boolean> {
         return invoke("insert_text", { noteLocalId, insertIndex, string });
@@ -105,7 +109,7 @@ export const delete_text = assert_DB_decorator(
     });
 export const get_text = assert_DB_decorator(
     async function get_text(noteLocalId: number): Promise<string> {
-
+        console.log("!!!");
         return invoke("get_text", { noteLocalId });
     },
 

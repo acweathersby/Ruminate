@@ -192,8 +192,15 @@ function toHTMLNaive(
     } else if (node.is(QUERY)) {
         vp.offset++;
         const div = addChildNodes(node, node.ele = cE("div"), vp);
-        div.innerHTML = "Hello World";
         div.setAttribute("contentEditable", "false");
+        const id = 2;
+
+        if (!vp.edit_host.active.has(id))
+            wick.rt.create_named("readonly", div, { id: id, active: new Set([id, ...vp.edit_host.active]) });
+        else
+            div.innerHTML = 'Too many recursions!';
+
+
         div.classList.add("query-field");
         return div;
     } else if (node.is(ROOT)) {

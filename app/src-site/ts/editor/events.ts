@@ -1,3 +1,4 @@
+import { merge_text } from '../tauri/bridge';
 import { getProcessor } from './task_processors/actions/register_action';
 import {
     redo,
@@ -7,6 +8,7 @@ import {
 import {
     getOffsetsFromSelection,
     toggleEditable,
+    toMDString,
     updateCaretData,
     updateHost,
     updatePointerData
@@ -264,6 +266,8 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         updatePointerData(edit_host);
 
     updateHost(edit_host);
+
+    merge_text(edit_host.note_id, toMDString(edit_host.root));
 }
 
 function insertText(edit_host: EditHost, text_data: string) {
