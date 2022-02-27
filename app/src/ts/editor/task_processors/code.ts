@@ -2,7 +2,6 @@ import { EditorState, Compartment } from '@codemirror/state';
 import { EditorView, highlightSpecialChars } from '@codemirror/view';
 import { lineNumbers } from '@codemirror/gutter';
 import { defaultHighlightStyle } from '@codemirror/highlight';
-import { basicSetup } from '@codemirror/basic-setup';
 import { javascript } from "@codemirror/lang-javascript";
 
 import { MDNode, NodeType, NodeMeta } from "./md_node";
@@ -158,13 +157,3 @@ export function removeText(code: Code, offset: number, length: number): Code {
 
     return new_node;
 }
-/*
-removeText(md_offset_start: number, md_offset_end: number) {
-    const pos_start = md_offset_start - this.head - 1;
-    const pos_end = md_offset_end - this.head - 1;
-    const transaction = this.view.state.update({ changes: { from: pos_start, to: pos_end, insert: "" } });
-    this.view.dispatch(transaction);
-    this.editor_state = transaction.state;
-    this.length -= pos_end - pos_start;
-} */
-

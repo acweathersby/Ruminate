@@ -32,20 +32,37 @@ type ViewPack = {
  */
 export function getOffsetsFromSelection(edit_host: EditHost) {
 
-    const selection = window.getSelection(), {
-        focusNode, focusOffset, anchorOffset, anchorNode,
-    } = selection;
+    const selection =
+        window.getSelection(), {
+            focusNode, focusOffset, anchorOffset, anchorNode,
+        } = selection,
+        { node: n1, offset: o1 } = getRootElement(focusNode, focusOffset),
+        { node: n2, offset: o2 } = getRootElement(anchorNode, anchorOffset);
 
-    let anchor_offset = getCumulativeOffset(anchorNode, edit_host)
-        + anchorOffset
-        + getHTMLElementLength(anchorNode);
+    let anchor_offset = getCumulativeOffset(n1, edit_host) + o1;
 
-    let focus_offset = getCumulativeOffset(focusNode, edit_host)
-        + focusOffset
-        + getHTMLElementLength(focusNode);
+    let focus_offset = getCumulativeOffset(n2, edit_host) + o2;
 
     edit_host.start_offset = Math.min(anchor_offset, focus_offset) + 1;
     edit_host.end_offset = Math.max(anchor_offset, focus_offset) + 1;
+}
+
+function getRootElement(node: Node, offset: number) {
+    if (node instanceof HTMLElement) {
+        const l = node.childNodes.length;
+        if (l > 0) {
+            if (offset < l) {
+
+                return getRootElement(node.childNodes[offset], 0);
+            } else {
+                return { node, offset: node.textContent.length };
+            }
+        } else
+            return { node, offset };
+    } else if (node instanceof Text) {
+        return { node, offset };
+    }
+    throw new Error("Unable to resolve node location");
 }
 
 function getHTMLElementLength(node: Node) {
@@ -57,6 +74,7 @@ function getHTMLElementLength(node: Node) {
 }
 
 export function getCumulativeOffset(node: Node, edit_host: EditHost): number {
+
     let addendum = 0;
 
     if (node == edit_host.host_ele)
