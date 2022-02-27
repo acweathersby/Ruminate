@@ -128,6 +128,7 @@ function toHTMLNaive(
             tag = "li";
         } else if (node.is(CODE_BLOCK)) {
             const div = cE("div");
+            div.classList.add("code-block");
             vp.offset = tail;
             code.createView(node, div);
             node.ele = div;

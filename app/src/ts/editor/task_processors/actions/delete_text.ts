@@ -14,16 +14,7 @@ function deleteText(edit_host: EditHost) {
     const { start_offset, end_offset } = edit_host;
 
     for (const { node, meta, reset, getAncestry } of traverse(edit_host.root)
-        .typeFilter(
-            NodeType.CODE_INLINE,
-            NodeType.TEXT,
-            NodeType.ITALIC,
-            NodeType.IMAGE,
-            NodeType.QUERY,
-            NodeType.ANCHOR,
-            NodeType.BOLD,
-            NodeType.PARAGRAPH
-        )
+        .skipRoot()
         .rangeFilter(start_offset, end_offset)
         .makeSkippable()
         .extract(edit_host)
@@ -33,7 +24,9 @@ function deleteText(edit_host: EditHost) {
         if (overlap_length == 0) continue;
 
         if (node.containsClass(NodeClass.LINE)) {
-            if (overlap_start == 0)
+            if (node.is(NodeType.CODE_BLOCK)) {
+                replace(code.removeText(node, overlap_start - 1, overlap_length));
+            } else if (overlap_start == 0) {
                 if (RangeOverlapType.COMPLETE) {
                     meta.range_end -= node.length;
                     replace(null);
@@ -51,6 +44,7 @@ function deleteText(edit_host: EditHost) {
                     //prev.children.push(...node.children);
                     //replace(null, true);
                 }
+            }
 
         } else {
             switch (overlap_type) {

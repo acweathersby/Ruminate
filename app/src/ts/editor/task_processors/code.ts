@@ -1,8 +1,10 @@
-import { EditorState } from '@codemirror/state';
-import { EditorView, drawSelection, dropCursor } from '@codemirror/view';
+import { EditorState, Compartment } from '@codemirror/state';
+import { EditorView, highlightSpecialChars } from '@codemirror/view';
 import { lineNumbers } from '@codemirror/gutter';
 import { defaultHighlightStyle } from '@codemirror/highlight';
 import { basicSetup } from '@codemirror/basic-setup';
+import { javascript } from "@codemirror/lang-javascript";
+
 import { MDNode, NodeType, NodeMeta } from "./md_node";
 import { clone } from './operators';
 
@@ -22,7 +24,12 @@ export function getCodeMeta(
             {
                 doc: meta.text,
                 extensions: [
+                    //basicSetup,
+                    defaultHighlightStyle,
+                    highlightSpecialChars({}),
                     lineNumbers({}),
+                    (new Compartment).of(javascript({ typescript: true })),
+
                     //defaultHighlightStyle,
                     //drawSelection()
                 ]
@@ -121,6 +128,25 @@ export function insertText(code: Code, offset: number, text: string): Code {
     const meta = getCodeMeta(new_node);
 
     const transaction = meta.view.state.update({ changes: { from: offset, insert: text } });
+
+    meta.view.dispatch(transaction);
+
+    meta.state = meta.view.state;
+
+    new_node.length = meta.state.doc.length;
+
+    new_node.meta = meta;
+
+    return new_node;
+}
+
+export function removeText(code: Code, offset: number, length: number): Code {
+
+    const new_node = clone(code);
+
+    const meta = getCodeMeta(new_node);
+
+    const transaction = meta.view.state.update({ changes: { from: offset, to: offset + length, insert: "" } });
 
     meta.view.dispatch(transaction);
 

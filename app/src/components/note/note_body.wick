@@ -64,8 +64,13 @@ a:hover {
     background:white;
 }
 
+
 .note-header {
     padding-left:20px;
+}
+
+.code-block {
+    font-size:0.8em;
 }
 
  code{

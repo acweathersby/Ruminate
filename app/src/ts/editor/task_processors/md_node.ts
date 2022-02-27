@@ -81,7 +81,7 @@ export interface NodeMeta {
     [NodeType.QUERY]: string;
     [NodeType.QUOTE]: string;
     [NodeType.ROOT]: null;
-    [NodeType.TEXT]: string;
+    [NodeType.TEXT]: Text;
     [NodeType.UNDEFINED]: null;
     [NodeType.UNORDERED_LIST]: number;
 }
