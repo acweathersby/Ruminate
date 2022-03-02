@@ -4,12 +4,13 @@ import * as rm from "../../ts/tauri/bridge.ts";
 import {test_data} from "./test_note.txt";
 import note_body from "./note_body"
 
-let path = "/rumi-tutorials/";
-let name = "test";
+let path = "";
+let name = "";
 let host = null;
 
 async function onload(){
-    host = await editor.constructEditHost(2/* id */, "@.note-body", test_data);
+    id = 3;
+    host = await editor.constructEditHost(id, "@.note-body", test_data);
     editor.addMarkdownPreviewTarget(host, "@.note-md-preview");
     editor.setReadOnly(false);
     rm.get_note_name(id).then(n=>name=n);

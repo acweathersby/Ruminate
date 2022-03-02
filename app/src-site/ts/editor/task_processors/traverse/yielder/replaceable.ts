@@ -53,15 +53,21 @@ export class ReplaceableYielder extends Yielder {
 
     protected offset_stack: number[];
 
+    protected md_offset_stack: number[];
+
     protected curr_offset: number;
 
-    protected modifyMeta(meta, val_length_stack, node_stack, offset_stack) {
+    protected curr_md_offset: number;
+
+    protected modifyMeta(meta, val_length_stack, node_stack, offset_stack, md_offset_stack) {
         meta.replace = this.replace.bind(this);
         this.node_stack = node_stack;
         this.offset_stack = offset_stack;
         this.index_length_stack = val_length_stack;
         this.next_gen = meta.next_gen;
         this.curr_offset = 0;
+        this.curr_md_offset = 0;
+        this.md_offset_stack = md_offset_stack;
     }
 
     yield(node: MDNode, stack_pointer: number, node_stack: MDNode[], val_length_stack: number[], meta): MDNode | null {
@@ -72,14 +78,19 @@ export class ReplaceableYielder extends Yielder {
 
         this.curr_offset = meta.head;
 
+        this.curr_md_offset = meta.md_head;
+
         return this.yieldNext(node, stack_pointer, node_stack, val_length_stack, meta);
     }
 
     replace(
-        replacement: MDNode | MDNode[],
+        repl: MDNode | MDNode[],
+        next_gen: number = this.next_gen,
         PROCESS_NEW_NODE: boolean = false,
-        ROOT = true
+        ROOT = true,
     ) {
+
+        this.next_gen = next_gen;
 
         const
             node_stack: MDNode[] = this.node_stack,
@@ -90,38 +101,60 @@ export class ReplaceableYielder extends Yielder {
         //need to trace up the current stack and replace each node with a duplicate
         if (sp > 0) {
             if (ROOT) {
-                if (replacement) {
-                    if (Array.isArray(replacement))
-                        replacement.map(initLength);
+                if (repl) {
+                    if (Array.isArray(repl))
+                        repl.map(initLength);
                     else
-                        initLength(replacement);
+                        initLength(repl);
                 }
             }
 
-            this.replaceNodes(node_stack, sp, replacement, PROCESS_NEW_NODE);
+            this.replaceNodes(node_stack, sp, repl, PROCESS_NEW_NODE);
 
             if (ROOT) {
 
-                if (replacement) {
-                    if (Array.isArray(replacement)) {
+                if (repl) {
+                    if (Array.isArray(repl)) {
                         if (PROCESS_NEW_NODE) {
-                            this.offset_stack[sp] = incrementOffset(replacement[0], this.curr_offset);
+                            const r = repl[0];
+                            this.offset_stack[sp] = this.curr_offset + r.pre_length;
+                            this.md_offset_stack[sp] = this.curr_md_offset + r.pre_md_length;
                         } else {
-                            this.offset_stack[sp] = this.curr_offset + replacement.reduce((r, n) => r + n.length, 0);
+                            const len = repl.reduce((r, n) => r + n.length, 0);;
+                            const md_len = len + repl.reduce((r, n) => r + n.pre_md_length + n.post_md_length, 0);
+                            this.offset_stack[sp] = this.curr_offset + len;
+                            this.md_offset_stack[sp] = this.curr_md_offset + md_len;
                         }
                     } else {
                         if (PROCESS_NEW_NODE) {
                             this.offset_stack[sp] = this.curr_offset;
+                            this.md_offset_stack[sp] = this.curr_md_offset;
                         } else {
-                            this.offset_stack[sp] = incrementOffset(replacement, this.curr_offset);
+                            this.offset_stack[sp] = incrementOffset(repl, this.curr_offset);
+                            this.md_offset_stack[sp] = incrementOffset(repl, this.curr_offset) + repl.pre_md_length;
                         }
                     }
                 } else {
                     this.offset_stack[sp] = this.curr_offset;
+                    this.md_offset_stack[sp] = this.curr_md_offset;
                 }
             }
         } else {
-            node_stack[0] = Array.isArray(replacement) ? replacement[0] : replacement;
+
+            const old_node = Array.isArray(repl) ? repl[0] : repl;
+
+            const new_node = this.replace_tree_function(
+                old_node,
+                null,
+                0,
+                [],
+                () => { },
+                this.next_gen
+            );
+
+            new_node.children = old_node.children;
+
+            node_stack[0] = new_node;
         }
     }
 
@@ -209,7 +242,7 @@ export class ReplaceableYielder extends Yielder {
 
             this.stack_pointer--;
 
-            this.replace(parent, REPLACE_PARENT && parent, false);
+            this.replace(parent, this.next_gen, REPLACE_PARENT && parent, false);
 
         } catch (e) {
             console.log(0, 1, this.stack_pointer, node_stack);
@@ -255,9 +288,7 @@ function default_replace_tree_function(
     alertNewParent: () => void,
     generation
 ): MDNode {
-    if (node.generation < generation)
-        return clone(node, generation - 1);
-    return node;
+    return clone(node, generation);
 }
 
 

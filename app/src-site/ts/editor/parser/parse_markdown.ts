@@ -103,7 +103,7 @@ export function getText(obj: any): string {
 
 const undefined_node = newNode(UNDEFINED);
 
-export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost): LineNode[] {
+export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost, gen = edit_host.root.generation + 1): LineNode[] {
 
     const lines: MDNode[] = [];
 
@@ -114,6 +114,7 @@ export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost): Line
             case ASTType.CodeBlock: {
                 prev = newNode(CODE_BLOCK,
                     [],
+                    gen,
                     {
                         view: null,
                         state: null,
@@ -135,12 +136,12 @@ export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost): Line
                 // Enforce that at least one space character proceed the 
                 // # chars
                 if (!first || line.length > 6 || first.type != ASTType.Text || first.value[0] !== " ") {
-                    prev = newNode(PARAGRAPH, convertContent([new MDText(getText(line)), ...line.content]));
+                    prev = newNode(PARAGRAPH, convertContent([new MDText(getText(line)), ...line.content], gen), gen);
                     lines.push(prev);
                 } else {
                     //Remove leading space
                     first.value = first.value.slice(1);
-                    prev = newNode(HEADER, convertContent(line.content), line.length);
+                    prev = newNode(HEADER, convertContent(line.content, gen), gen, line.length);
                     lines.push(prev);
                 }
             } break;
@@ -150,9 +151,9 @@ export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost): Line
                     continue;
 
                 if (prev.type == PARAGRAPH) {
-                    prev.children.push(newNode(TEXT, [], " "), ...convertContent(line.content));
+                    prev.children.push(newNode(TEXT, [], gen, " "), ...convertContent(line.content, gen));
                 } else {
-                    prev = newNode(PARAGRAPH, convertContent(line.content));
+                    prev = newNode(PARAGRAPH, convertContent(line.content, gen), gen);
                     lines.push(prev);
                 }
 
@@ -163,12 +164,17 @@ export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost): Line
     return <LineNode[]>lines;
 }
 
-export function convertContent(raw_content: c_Content[]) {
-    return convertOuterContent(raw_content);
+export function convertContent(raw_content: c_Content[], gen: number) {
+    return convertOuterContent(raw_content, gen);
 }
 
 
-export function convertOuterContent(raw_content: (c_Content | MDNode)[], offset = 0, length = raw_content.length) {
+export function convertOuterContent(
+    raw_content: (c_Content | MDNode)[],
+    gen: number,
+    offset: number = 0,
+    length: number = raw_content.length
+) {
 
     const line_contents: MDNode[] = [];
 
@@ -189,7 +195,7 @@ export function convertOuterContent(raw_content: (c_Content | MDNode)[], offset 
 
                 if (d != i) {
                     const str = raw_content.slice(i + 1, d).map(getText).join("");
-                    line_contents.push(newNode(TEXT, [], str));
+                    line_contents.push(newNode(TEXT, [], gen, str));
                     i = d;
                 };
 
@@ -197,7 +203,7 @@ export function convertOuterContent(raw_content: (c_Content | MDNode)[], offset 
             case ASTType.MarkerA:
             case ASTType.MarkerB:
                 {
-                    const d = tryFormat(obj.type, raw_content, line_contents, i, length);
+                    const d = tryFormat(obj.type, raw_content, line_contents, gen, i, length);
                     if (d != i) { i = d; continue; };
                 }
                 break;
@@ -227,14 +233,16 @@ export function convertOuterContent(raw_content: (c_Content | MDNode)[], offset 
                         if (obj.type == ASTType.AnchorImageStart) {
                             newNode(
                                 IMAGE,
-                                convertOuterContent(raw_content, i + 1, mid),
+                                convertOuterContent(raw_content, gen, i + 1, mid),
+                                gen,
                                 data.map(getText).join("")
                             );
                         } else {
                             line_contents.push(
                                 newNode(
                                     ANCHOR,
-                                    convertOuterContent(raw_content, i + 1, mid),
+                                    convertOuterContent(raw_content, gen, i + 1, mid),
+                                    gen,
                                     data.map(getText).join("")
                                 )
                             );
@@ -243,7 +251,7 @@ export function convertOuterContent(raw_content: (c_Content | MDNode)[], offset 
                         i = end;
 
                     } else {
-                        line_contents.push(newNode(TEXT, [], getText(obj)));
+                        line_contents.push(newNode(TEXT, [], gen, getText(obj)));
                     }
                 }
                 break;
@@ -252,23 +260,23 @@ export function convertOuterContent(raw_content: (c_Content | MDNode)[], offset 
                     let end = raw_content[j];
                     if (end.type == ASTType.QueryEnd) {
                         const data = raw_content.slice(i + 1, j);
-                        line_contents.push(newNode(QUERY, [], data.map(getText).join("")));
+                        line_contents.push(newNode(QUERY, [], gen, data.map(getText).join("")));
                         i = j;
                         continue outer;
                     }
                 }
                 //Temporary
-                line_contents.push(newNode(TEXT, [], getText(obj)));
+                line_contents.push(newNode(TEXT, [], gen, getText(obj)));
                 break;
             case ASTType.AnchorMiddle:
             case ASTType.AnchorEnd:
             case ASTType.QueryEnd:
             case ASTType.Text:
-                line_contents.push(newNode(TEXT, [], getText(obj)));
+                line_contents.push(newNode(TEXT, [], gen, getText(obj)));
                 break;
             case ASTType.InlineCode:
                 //Temporary
-                line_contents.push(newNode(TEXT, [], getText(obj)));
+                line_contents.push(newNode(TEXT, [], gen, getText(obj)));
                 break;
         }
 
@@ -280,6 +288,7 @@ function tryFormat(
     type: ASTType,
     raw_content: (c_Content | MDNode)[],
     line_content: MDNode[],
+    gen: number,
     offset: number,
     length: number
 ) {
@@ -348,14 +357,15 @@ function tryFormat(
 
         const sections = convertOuterContent(
             raw_content,
+            gen,
             offset + search_size,
             end - search_size
         );
 
         if (search_size > 1) {
-            start_section = newNode(BOLD, sections);
+            start_section = newNode(BOLD, sections, gen);
         } else {
-            start_section = newNode(ITALIC, sections);
+            start_section = newNode(ITALIC, sections, gen);
         }
 
         line_content.push(start_section);

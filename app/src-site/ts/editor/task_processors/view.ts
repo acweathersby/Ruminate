@@ -65,14 +65,6 @@ function getRootElement(node: Node, offset: number) {
     throw new Error("Unable to resolve node location");
 }
 
-function getHTMLElementLength(node: Node) {
-    return node instanceof Text
-        ? 0
-        : node.textContent.length > 0
-            ? node.textContent.length - 1
-            : 0;
-}
-
 export function getCumulativeOffset(node: Node, edit_host: EditHost): number {
 
     let addendum = 0;
@@ -285,7 +277,7 @@ export function updateMarkdownDebugger(host: EditHost) {
 Start offset: ${host.debug_data.cursor_start}
 End offset  : ${host.debug_data.cursor_end}
 =====================Markdown===================
-${toMDString(host.root)}
+\n${toMDString(host.root)}
 ================================================
 `;
         } else {

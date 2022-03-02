@@ -58,7 +58,7 @@ export async function constructReadOnlyHost(
     //Convert Markdown to Editable Content
     const lines = convertMDASTToMDNodeLines(result, edit_host);
 
-    edit_host.root = setChildren(edit_host.root, ...lines);
+    edit_host.root = setChildren(edit_host.root, 0, ...lines);
 
     initLength(edit_host.root);
 
@@ -106,9 +106,9 @@ export async function constructEditHost(
     edit_host.root = new MDNode(NodeType.ROOT);
 
     //Convert Markdown to Editable Content
-    const lines = convertMDASTToMDNodeLines(result, edit_host);
+    const lines = convertMDASTToMDNodeLines(result, edit_host, 0);
 
-    edit_host.root = setChildren(edit_host.root, ...lines);
+    edit_host.root = setChildren(edit_host.root, 0, ...lines);
 
     initLength(edit_host.root);
 

@@ -34,4 +34,16 @@ export interface MetaRoot {
      * node
      */
     tail: number;
+    /**
+     * The offset in codepoints to the start of this node when including markdown
+     * characters.
+     */
+    md_head: number;
+    /**
+     * The offset in codepoints to the end of this node when including markdown
+     * characters.
+     */
+    md_tail: number;
+
+
 }

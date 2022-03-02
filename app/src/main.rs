@@ -10,6 +10,7 @@ mod rumi_app {
     use lib_ruminate::store::store::*;
     use lib_ruminate::*;
     use log::{debug, info, LevelFilter, Metadata, Record};
+    use stopwatch::*;
     use tauri::Manager;
 
     static mut GLOBAL_STORE: Option<Store> = None;
@@ -151,26 +152,49 @@ mod rumi_app {
         }
         vec![]
     }
-
+    use similar::{ChangeTag, TextDiff};
     #[tauri::command]
-    pub fn merge_text(note_local_id: u32, new_string: String) -> bool {
+    pub fn merge_text(note_local_id: u32, string: String) -> bool {
         if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
-            if let Some(string) = note_get_text(store, note_local_id) {
-                let changeset = Changeset::new(&string, &new_string, "");
-                let diffs = &changeset.diffs;
-                let mut offset = 0;
+            if let Some(old_string) = note_get_text(store, note_local_id) {
+                let mut sw_diff = Stopwatch::new();
+                let mut sw_note = Stopwatch::new();
+                sw_diff.start();
+                let diffs = TextDiff::from_lines(&old_string, &string);
 
-                for diff in diffs {
-                    match diff {
-                        Difference::Same(d) => offset += d.len(),
-                        Difference::Add(d) => {
-                            note_insert_text(store, note_local_id, offset, d);
-                            offset += d.len();
-                        }
-                        Difference::Rem(d) => {
-                            note_delete_text(store, note_local_id, offset, d.len() as u32);
+                let mut offset = 0;
+                sw_diff.stop();
+                sw_note.start();
+                for diff in diffs.iter_all_changes() {
+                    if let Some(val) = diff.as_str() {
+                        match diff.tag() {
+                            ChangeTag::Equal => offset += val.len(),
+                            ChangeTag::Insert => {
+                                note_insert_text(store, note_local_id, offset, val);
+                                offset += val.len();
+                            }
+                            ChangeTag::Delete => {
+                                note_delete_text(store, note_local_id, offset, val.len() as u32);
+                            }
                         }
                     }
+                }
+                sw_note.stop();
+
+                #[cfg(debug_assertions)]
+                {
+                    println!("+================================================-");
+                    println!(
+                        "Diff: {}ms Note: {}ms",
+                        sw_diff.elapsed_ms(),
+                        sw_note.elapsed_ms()
+                    );
+                    println!("clock: {:?}", note_get_clock(store, note_local_id));
+                    println!("+================================================-");
+                    println!("{}", &string);
+                    println!("--------------------------------------------------");
+                    println!("{}", &get_text(note_local_id));
+                    println!("-================================================-");
                 }
                 return true;
             }
@@ -229,7 +253,7 @@ mod rumi_app {
                         rumi_note,
                         0,
                         "
-Welcome to Ruminate. 
+Welcome to Ruminate. {{chocolate}}
                     "
                         .to_string(),
                     ) {
@@ -243,22 +267,7 @@ Welcome to Ruminate.
                 }
 
                 #[cfg(debug_assertions)]
-                {
-                    // Build test notes
-                    let local_id = create_note();
-
-                    insert_text(
-                        local_id,
-                        0,
-                        String::from(
-                            "
-# This is a test note
-",
-                        ),
-                    );
-
-                    println!("DEBUG MODE notes added!");
-                }
+                add_debug_components();
 
                 Ok(())
             })
@@ -273,6 +282,7 @@ Welcome to Ruminate.
                 remove_tag,
                 get_tag_string,
                 get_tag_ids,
+                merge_text,
                 insert_text,
                 delete_text,
                 get_text,
@@ -283,6 +293,102 @@ Welcome to Ruminate.
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
+    }
+
+    fn add_debug_components() {
+        // Build test notes
+
+        //Adds basic debug note.
+        let debug_note = create_note();
+        set_note_name(debug_note, "Debug Note".to_string());
+        set_note_container_path(debug_note, "/debug/".to_string());
+        insert_text(
+            debug_note,
+            0,
+            String::from(
+                "
+# Debug note
+",
+            ),
+        );
+
+        //Adds long form note.
+        let long_form_note = create_note();
+        set_note_name(long_form_note, "Longform Note".to_string());
+        set_note_container_path(long_form_note, "/debug/".to_string());
+        insert_text(
+              long_form_note,
+              0,
+              String::from(
+                  "
+# Why Hello there!
+
+If you are viewing this note then you are working in the 
+debug mode of Mem. 
+
+# This is a test note 
+
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+
+
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
+(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
+Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
+you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+",
+              ),
+          );
+
+        println!("DEBUG MODE notes added!");
     }
 }
 

@@ -28,6 +28,8 @@ export class Traverser<B> implements ASTIterator<B> {
     protected readonly length_index_stack: number[];
     protected readonly node_stack: MDNode[];
     protected readonly offset_stack: number[];
+
+    protected readonly md_offset_stack: number[];
     protected offset: number;
     protected ancestry: () => MDNode[];
 
@@ -41,6 +43,7 @@ export class Traverser<B> implements ASTIterator<B> {
         this.max_depth = max_depth;
         this.length_index_stack = [];
         this.offset_stack = [];
+        this.md_offset_stack = [];
         this.node_stack = [];
         this.offset = 0;
         this.meta = meta;
@@ -71,7 +74,16 @@ export class Traverser<B> implements ASTIterator<B> {
         done?: boolean;
         value: TraverserOutput<B>;
     } {
-        const { BEGINNING, node, max_depth, node_stack, offset_stack, length_index_stack: val_length_stack, meta } = this;
+        const {
+            BEGINNING,
+            node,
+            max_depth,
+            node_stack,
+            offset_stack,
+            md_offset_stack,
+            length_index_stack: val_length_stack,
+            meta
+        } = this;
 
         // Prevent infinite loop from a cyclical graph;
         if (this.sp > 100000)
@@ -90,12 +102,17 @@ export class Traverser<B> implements ASTIterator<B> {
                 val_length_stack[0] = this.node.children.length << 16;
                 val_length_stack[1] = 0;
                 offset_stack[0] = 0;
-                offset_stack[1] = incrementOffset(node, 0);
+                offset_stack[1] = node.pre_length;
+                md_offset_stack[0] = 0;
+                md_offset_stack[1] = node.pre_md_length;
+
                 this.sp = 0;
 
                 meta.parent = null;
                 meta.head = 0;
+                meta.md_head = 0;
                 meta.tail = node.length;
+                meta.md_tail = node.md_length;
 
                 const y = this.yielder.yield(node, this.sp, node_stack, val_length_stack, meta);
 
@@ -106,14 +123,21 @@ export class Traverser<B> implements ASTIterator<B> {
 
         while (this.sp >= 0) {
 
-            const len = this.length_index_stack[this.sp], limit = (len & 0xFFFF0000) >> 16, index = (len & 0xFFFF);
+            const
+                len = this.length_index_stack[this.sp],
+                limit = (len & 0xFFFF0000) >> 16,
+                index = (len & 0xFFFF);
 
             if (this.sp < max_depth && index < limit) {
 
-                offset_stack[this.sp] = offset_stack[this.sp + 1] || offset_stack[this.sp];
+                offset_stack[this.sp] = offset_stack[this.sp + 1]
+                    || offset_stack[this.sp];
+
+                md_offset_stack[this.sp] = md_offset_stack[this.sp + 1]
+                    || md_offset_stack[this.sp];
 
                 meta.head = offset_stack[this.sp];
-
+                meta.md_head = md_offset_stack[this.sp];
                 meta.parent = node_stack[this.sp];
 
                 const child = node_stack[this.sp].children[index];
@@ -124,19 +148,20 @@ export class Traverser<B> implements ASTIterator<B> {
 
                 node_stack[this.sp] = child;
 
-                offset_stack[this.sp] = incrementOffset(child, meta.head);
+                // Increment the offset by the amount of characters proceeding
+                // this node's children
+                offset_stack[this.sp] = meta.head + child.pre_length;
+                md_offset_stack[this.sp] = meta.md_head + child.pre_md_length;
 
-                const child_length = child.children.length;
-
-                val_length_stack[this.sp] = child_length << 16;
+                val_length_stack[this.sp] = child.children.length << 16;
 
                 if (child) {
                     meta.prev = node_stack[this.sp - 1].children[index - 1];
                     meta.next = node_stack[this.sp - 1].children[index + 1];
                     meta.index = index;
                     meta.depth = this.sp;
-                    meta.head = offset_stack[this.sp - 1];
                     meta.tail = meta.head + child.length;
+                    meta.md_tail = meta.md_head + child.md_length;
 
                     //@ts-ignore
                     const y = this.yielder.yield(child, this.sp, node_stack, val_length_stack, meta);
@@ -145,9 +170,15 @@ export class Traverser<B> implements ASTIterator<B> {
                         return { value: { node: y, meta, getAncestry: this.ancestry, reset: this.reset }, done: false };
                 }
             } else {
+                const old_sp = this.sp;
+                const node = node_stack[old_sp];
                 this.sp--;
-                offset_stack[this.sp] = offset_stack[this.sp + 1];
-                offset_stack[this.sp + 1] = 0;
+                offset_stack[this.sp] = offset_stack[old_sp] + node.post_length + node.internal_length;
+                offset_stack[old_sp] = 0;
+                md_offset_stack[this.sp] = md_offset_stack[old_sp] + node.post_md_length + node.internal_md_length;
+                md_offset_stack[old_sp] = 0;
+
+
             }
         }
 
@@ -159,7 +190,7 @@ export class Traverser<B> implements ASTIterator<B> {
     then<U>(next_yielder: U): Traverser<CombinedYielded<U, B>> {
 
         //@ts-ignore
-        next_yielder.modifyMeta(this.meta, this.length_index_stack, this.node_stack, this.offset_stack);
+        next_yielder.modifyMeta(this.meta, this.length_index_stack, this.node_stack, this.offset_stack, this.md_offset_stack);
 
         if (typeof next_yielder == "function")
             next_yielder = next_yielder();

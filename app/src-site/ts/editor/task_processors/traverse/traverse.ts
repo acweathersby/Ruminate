@@ -2,6 +2,7 @@ import { MDNode, NodeClass, NodeType } from '../md_node';
 import { MetaRoot } from './meta_root';
 import { Traverser } from './traverser_root';
 import * as code from "../code";
+import { IsLine } from '../operators';
 /**
  * This traverses a tree and yields nodes depth first. Uses Yielders 
  * to perform non-destructive transforms on the AST.
@@ -27,6 +28,8 @@ export function traverse(
             prev: null,
             head: 0,
             tail: 0,
+            md_head: 0,
+            md_tail: 0,
             next_gen
         },
         max_depth
@@ -59,33 +62,24 @@ type TraversePack = {
     tail: number;
 };
 
-export function initLength(node: MDNode): number {
+export function initLength(node: MDNode): { md: number, off: number; } {
 
-    if (node.containsClass(NodeClass.LINE)) {
-        if (node.is(CODE_BLOCK)) {
-            node.length = code.getLength(node) + 1;
-        } else {
+    node.length += node.pre_length + node.internal_length;
+    node.md_length += node.pre_md_length + node.internal_md_length;
 
-            let length = 1;
-
-            for (const child of node.children)
-                length += initLength(child);
-
-            node.length = length;
-        }
-    } else if (node.is(TEXT)) {
-        node.length = node.meta.length;
-    } else if (node.is(QUERY)) {
-        node.length = 1;
-    } else {
-        let length = 0;
-        for (const child of node.children)
-            length += initLength(child);
-        node.length = length;
+    for (const child of node.children) {
+        const { md, off } = initLength(child);
+        node.length += off;
+        node.md_length += md;
     }
 
+    node.md_length += node.post_md_length;
+    node.length += node.post_length;
 
-    return node.length;
+    return {
+        md: node.md_length,
+        off: node.length
+    };
 }
 
 
@@ -133,4 +127,44 @@ function getNodeAtInternal(node: MDNode,
         }
     }
     return data_pack;
+}
+
+
+export function getMDOffsetFromEditOffset(
+    node: MDNode,
+    offset: number,
+    md_offset: number = 0
+): { md: number, off: number; } {
+
+    if (node.is(NodeType.TEXT)) {
+        if (offset < node.length)
+            return { md: md_offset + offset, off: 0 };
+    }
+
+    offset -= node.pre_length;
+
+    if (offset <= 0)
+        return { md: md_offset + -offset, off: offset };
+
+    md_offset += node.pre_md_length;
+
+    md_offset += node.internal_length;
+    offset -= node.internal_length;
+
+    for (const child of node.children) {
+
+        const { md, off } = getMDOffsetFromEditOffset(child, offset, md_offset);
+
+        if (off <= 0)
+            return { md, off };
+
+        offset = off;
+        md_offset = md;
+    }
+
+
+    md_offset += node.post_md_length;
+    offset -= node.post_length;
+
+    return { md: md_offset, off: offset };
 }

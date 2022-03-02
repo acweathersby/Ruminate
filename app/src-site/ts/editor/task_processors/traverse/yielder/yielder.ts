@@ -29,7 +29,7 @@ export class Yielder {
         return node;
     }
 
-    protected modifyMeta(meta: any, val_length_stack: number[], node_stack: MDNode[], offset_stack: number[]) { }
+    protected modifyMeta(meta: any, val_length_stack: number[], node_stack: MDNode[], offset_stack: number[], md_offset_stack: number[]) { }
 
     protected then(yielder: Yielder): Yielder {
 

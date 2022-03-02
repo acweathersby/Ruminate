@@ -20,7 +20,7 @@ pub mod store;
 use std::{collections::HashSet, iter::FromIterator, result::Result, str::FromStr};
 
 use log::debug;
-use primitives::uuid::UUID;
+use primitives::{crdt::op_id::OPID, uuid::UUID};
 use store::store::*;
 
 type NotePackage = (
@@ -125,9 +125,13 @@ pub fn note_get_crdt<'a>(
     }
 }
 
-pub fn note_get_clock(store: &mut Store, note_local_id: NoteLocalID) -> u32 {
+pub fn note_get_clock(store: &mut Store, note_local_id: NoteLocalID) -> OPID {
     //Load the note CRDT
-    0
+    if let Some(note_data) = note_get_crdt(store, note_local_id) {
+        return note_data.get_local_clock();
+    }
+
+    OPID::new(0, 0)
 }
 
 pub fn note_get_text(store: &mut Store, note_local_id: NoteLocalID) -> Option<String> {
@@ -150,7 +154,7 @@ pub fn note_get_name(store: &mut Store, note_local_id: NoteLocalID) -> String {
     if let Some(name) = store.note_id_to_name.get(&note_local_id) {
         name.to_owned()
     } else {
-        "".to_string()
+        "!!undefined!!".to_string()
     }
 }
 

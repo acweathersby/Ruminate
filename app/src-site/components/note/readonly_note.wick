@@ -11,7 +11,8 @@ let name = "test";
 let host = null;
 
 async function onload(){
-    host = await editor.constructReadOnlyHost(2/* id */, active);
+    id = 2;
+    host = await editor.constructReadOnlyHost(id, active);
     editor.setReadOnly(host,true);
     rm.get_note_name(id).then(n=>name=n);
     rm.get_note_container_path(id).then(p=>path=p);

@@ -13,6 +13,8 @@ import { Line } from '@codemirror/text';
 function deleteText(edit_host: EditHost) {
     const { start_offset, end_offset } = edit_host;
 
+
+    const changes = [];
     for (const { node, meta, reset, getAncestry } of traverse(edit_host.root)
         .skipRoot()
         .rangeFilter(start_offset, end_offset)
@@ -20,19 +22,33 @@ function deleteText(edit_host: EditHost) {
         .extract(edit_host)
         .makeReplaceable()
     ) {
-        const { index, head, tail, prev, overlap_type, replace, overlap_start, overlap_length, skip } = meta;
+
+        const {
+            index,
+            md_head,
+            md_tail,
+            prev,
+            overlap_type,
+            replace,
+            overlap_start,
+            overlap_length,
+            skip } = meta;
         if (overlap_length == 0) continue;
 
         if (node.containsClass(NodeClass.LINE)) {
             if (node.is(NodeType.CODE_BLOCK)) {
+                changes.push({ type: "delete", start: md_head + overlap_start, end: md_head + overlap_start + overlap_length });
                 replace(code.removeText(node, overlap_start - 1, overlap_length));
             } else if (overlap_start == 0) {
                 if (RangeOverlapType.COMPLETE) {
                     meta.range_end -= node.length;
+                    changes.push({ type: "delete", start: md_head, end: md_tail });
                     replace(null);
                     skip();
                 } else if (prev && node.is(prev.type)) {
                     //Merge the two and then redo parsing
+                    changes.push({ type: "delete", start: md_head - 1, end: md_head + node.pre_md_length });
+
                     replace(null, true);
                     const parent = getAncestry()[0];
                     const new_node = ops.clone(prev);
@@ -79,7 +95,10 @@ function deleteText(edit_host: EditHost) {
 
     edit_host.start_offset = start_offset;
     edit_host.end_offset = edit_host.start_offset;
-    edit_host.root = ops.heal(edit_host.root);
+    const { deletes, node } = ops.heal(edit_host.root);
+    edit_host.root = node;
+    console.log({ changes, deletes });
+    debugger;
     initLength(edit_host.root);
     pushHistory(edit_host);
 };

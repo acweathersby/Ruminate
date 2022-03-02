@@ -109,15 +109,14 @@ export const delete_text = assert_DB_decorator(
     });
 export const get_text = assert_DB_decorator(
     async function get_text(noteLocalId: number): Promise<string> {
-        console.log("!!!");
         return invoke("get_text", { noteLocalId });
     },
 
     `# Hello World
 
-This is a [test](#rainbow) of the emergency broadcast system. {chocolates} This is a [te](#rainbow)
+This is a [test](#rainbow) of the emergency broadcast system. This is a [te](#rainbow)
 
-[st](#rainbow) of the emergency broadcast system. {chocolates}
+[st](#rainbow) of the emergency broadcast system.
 
 \`\`\`javascript
 

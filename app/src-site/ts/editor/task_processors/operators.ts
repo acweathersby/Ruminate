@@ -1,4 +1,5 @@
 import { MDNode, NodeType, NodeClass as NC, NodeMeta, NodeClass } from "./md_node";
+import { initLength } from './traverse/traverse';
 
 const {
     ANCHOR,
@@ -26,13 +27,13 @@ export function IsLine(node: MDNode): boolean {
  */
 export function clone<T extends NodeType>(
     node: MDNode<T>,
-    next_gen: number = node.generation
+    gen: number = node.generation + 1
 ): MDNode<T> {
 
-    //if(node.generation == next_gen)
-    //return node
+    if (node.generation == gen)
+        return node;
 
-    const new_node = new MDNode(node.type, next_gen + 1);
+    const new_node = new MDNode(node.type, gen);
 
     new_node.meta = node.meta;
 
@@ -40,22 +41,47 @@ export function clone<T extends NodeType>(
 
     new_node.length = node.length;
 
+    new_node.md_length = node.md_length;
+
+    return new_node;
+}
+
+export function copy<T extends NodeType>(
+    node: MDNode<T>,
+): MDNode<T> {
+
+    const new_node = new MDNode(node.type, node.generation);
+
+    new_node.meta = node.meta;
+
+    new_node.children = node.children;
+
+    new_node.length = node.length;
+
+    new_node.md_length = node.md_length;
+
     return new_node;
 }
 
 export function newNode<T extends NodeType>(
     type: T,
     children: MDNode[] = [],
-    meta: NodeMeta[T] = null
+    gen: number = 0,
+    meta: NodeMeta[T] = null,
 ): MDNode<T> {
 
-    const node = new MDNode(type);
+    const node = new MDNode(type, gen);
 
     node.meta = meta;
 
     node.children = children;
 
     return node;
+}
+
+export interface DeleteAction {
+    off: number,
+    len: number;
 }
 
 /**
@@ -65,9 +91,13 @@ export function newNode<T extends NodeType>(
  */
 export function heal<T extends NodeType>(
     node: MDNode<T>,
-    gen: number = node.generation,
+    gen: number,
     dissolve_types: Set<NodeType> = new Set(),
-): MDNode<T> {
+    deletes: DeleteAction[] = [],
+    md_offset: number = 0
+): { node: MDNode<T>; deletes: DeleteAction[]; off: number; } {
+
+    md_offset += node.pre_md_length;
 
     if (node.children.length > 0) {
 
@@ -80,6 +110,13 @@ export function heal<T extends NodeType>(
 
             if (dissolve_types.has(curr_node.type) && curr_node.is(ITALIC, BOLD)) {
                 MODIFIED = true;
+                deletes.push({
+                    off: md_offset,
+                    len: node.pre_length
+                }, {
+                    off: md_offset + node.length - node.post_length,
+                    len: node.post_length
+                });
                 children.splice(i, 1, ...curr_node.children);
                 l = children.length;
                 i = Math.max(i - 2, -1);
@@ -87,11 +124,18 @@ export function heal<T extends NodeType>(
             }
 
             if (i < l - 1) {
+
                 const next_node = children[i + 1];
+
                 if (next_node.type == curr_node.type) {
                     if (curr_node.is(ANCHOR, ITALIC, BOLD, IMAGE, CODE_INLINE)) {
                         MODIFIED = true;
-                        const new_node = clone(curr_node);
+                        debugger;
+                        deletes.push({
+                            off: md_offset + curr_node.md_length - curr_node.post_md_length,
+                            len: curr_node.post_md_length + next_node.pre_md_length + next_node.internal_md_length
+                        });
+                        const new_node = clone(curr_node, gen);
                         children.splice(i, 2, new_node);
                         new_node.children = new_node.children.concat(next_node.children);
                         new_node.length = curr_node.length + next_node.length;
@@ -100,7 +144,7 @@ export function heal<T extends NodeType>(
                         continue;
                     } else if (curr_node.is(TEXT)) {
                         MODIFIED = true;
-                        const new_node = clone(curr_node);
+                        const new_node = clone(curr_node, gen);
                         children.splice(i, 2, new_node);
                         new_node.meta += next_node.meta;
                         new_node.length = curr_node.length + next_node.length;
@@ -111,32 +155,45 @@ export function heal<T extends NodeType>(
                 }
             }
 
-            const new_node = heal(curr_node, gen, new Set([...dissolve_types, curr_node.type]));
+            const { node: new_node, off } =
+                heal(curr_node, gen, new Set([...dissolve_types, curr_node.type]), deletes, md_offset);
 
-            if (new_node !== node) {
+            md_offset = off;
+
+            if (new_node !== curr_node) {
                 MODIFIED = true;
                 children[i] = new_node;
             }
         }
 
         if (MODIFIED == true) {
-            const new_node = clone(node);
+            const new_node = clone(node, gen);
             new_node.children = children;
-            return new_node;
+            initLength(new_node);
+            md_offset += new_node.internal_length + new_node.post_md_length;
+            return { node: new_node, deletes, off: md_offset };
         }
     }
 
-    return node;
+    md_offset += node.internal_length + node.post_md_length;
+    return { node, deletes, off: md_offset };
 }
 
-
+/**
+ * 
+ * @param node 
+ * @param offset 
+ * @param gen - The current generation. Any edited node that is not of this 
+ *      generation is replaced by one that is.
+ * @returns 
+ */
 export function splitNode(
     node: MDNode,
     offset: number,
-    prev_gen: number = node.generation
+    gen: number
 ) {
     const { left: [l], right: [r] }
-        = split([node], offset, prev_gen);
+        = split([node], offset, gen);
 
     return { left: l, right: r };
 }
@@ -147,11 +204,18 @@ export function splitNode(
  * 
  * If the split point is 0 or equal to the length of the node
  * then the original node is returned.
+ * 
+ * @param nodes 
+ * @param offset 
+ * @param gen - The current generation. Any edited node that is not of this 
+ *      generation is replaced by one that is.
+ * 
+ * @returns 
  */
 export function split(
     nodes: MDNode[],
     offset: number,
-    prev_gen: number
+    gen: number
 ): { left: MDNode[], right: MDNode[]; } {
     const left = [], right = [];
     for (const node of nodes) {
@@ -167,23 +231,25 @@ export function split(
                 case ORDERED_LIST:
                 case PARAGRAPH:
                 case QUOTE:
-                case ROOT:
-                    let a = clone(node, prev_gen);
-                    let b = clone(node, prev_gen);
-                    const { left: cl, right: cr } = split(node.children, offset, prev_gen);
+                case ROOT: {
+                    const children = node.children;
+                    let a = clone(node, gen);
+                    let b = copy(a);
+                    const { left: cl, right: cr } = split(children, offset, gen);
                     a.children = cl;
                     b.children = cr;
                     left.push(a);
                     right.push(b);
-                    break;
+                } break;
                 case QUERY:
                     left.push(node);
                     break;
                 case TEXT: if (node.is(TEXT)) {
-                    let a = clone(node);
-                    let b = clone(node);
-                    a.meta = node.meta.slice(0, offset);
-                    b.meta = node.meta.slice(offset);
+                    const meta = node.meta;
+                    let a = clone(node, gen);
+                    let b = copy(a);
+                    a.meta = meta.slice(0, offset);
+                    b.meta = meta.slice(offset);
                     left.push(a);
                     right.push(b);
                 } break;
@@ -209,13 +275,14 @@ export function split(
  */
 export function dissolve<T extends NodeType>(
     parent: MDNode<T>,
-    child: MDNode
+    child: MDNode,
+    gen: number
 ): MDNode<T> {
     const index = parent.children.indexOf(child);
 
     if (index >= 0)
 
-        return replaceMut(clone(parent), index, ...child.children);
+        return replaceMut(clone(parent, gen), index, ...child.children);
 
     return parent;
 }
@@ -228,7 +295,8 @@ export function dissolve<T extends NodeType>(
 export function mergeRight<T extends NodeType>(
     parent: MDNode<T>,
     left_child: MDNode,
-    right_child: MDNode
+    right_child: MDNode,
+    gen: number
 ): MDNode<T> {
 
     if (
@@ -247,8 +315,8 @@ export function mergeRight<T extends NodeType>(
             &&
             index_right - index_left == 1
         ) {
-            const new_parent = clone(parent);
-            let new_left = clone(left_child);
+            const new_parent = clone(parent, gen);
+            let new_left = clone(left_child, gen);
 
             if (new_left.is(NodeType.TEXT)) {
                 new_left.meta += right_child.meta;
@@ -306,6 +374,7 @@ function replaceMut<T extends NodeType>(
 export function insert<T extends NodeType>(
     parent: MDNode<T>,
     prev: MDNode | null,
+    gen: number,
     ...children: MDNode[]
 ): MDNode<T> {
     let index = 0;
@@ -317,7 +386,7 @@ export function insert<T extends NodeType>(
         }
     }
 
-    return insertMut(clone(parent), index, ...children);
+    return insertMut(clone(parent, gen), index, ...children);
 }
 
 function insertMut<T extends NodeType>(
@@ -334,13 +403,14 @@ function insertMut<T extends NodeType>(
  */
 export function remove<T extends NodeType>(
     parent: MDNode<T>,
-    child: MDNode
+    child: MDNode,
+    gen: number
 ): MDNode<T> {
 
     const index = parent.children.indexOf(child);
 
     if (index >= 0)
-        return removeMut(clone(parent), index);
+        return removeMut(clone(parent, gen), index);
 
     return parent;
 
@@ -360,9 +430,10 @@ function removeMut<T extends NodeType>(
  */
 export function setChildren<T extends NodeType>(
     parent: MDNode<T>,
+    gen: number,
     ...children: MDNode[]
 ): MDNode<T> {
-    return setChildrenMut(clone(parent), ...children);
+    return setChildrenMut(clone(parent, gen), ...children);
 }
 
 function setChildrenMut<T extends NodeType>(

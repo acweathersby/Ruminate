@@ -33,7 +33,17 @@ export function applyHistoryFork(edit_host: EditHost) {
     }
 }
 
-export function pushHistory(edit_host: EditHost) {
+export interface Change {
+    type: "add" | "delete",
+
+    offset: number;
+
+    text?: string;
+
+    length?: number;
+}
+
+export function pushHistory(edit_host: EditHost, change_set: Change[]) {
     //applyHistoryFork(edit_host);
 
     edit_host.command_history.push({
