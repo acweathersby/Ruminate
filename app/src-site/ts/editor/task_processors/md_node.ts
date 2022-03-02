@@ -104,11 +104,11 @@ export interface NodeChildren {
     [NodeType.UNORDERED_LIST]: MDNode[];
 }
 
-const NodeMDLengths = {
+const NodeMDData = {
     [NodeType.ANCHOR]: {
         pre: (n: MDNode<NodeType.ANCHOR>) => 1, // "["
         internal: (n: MDNode<NodeType.ANCHOR>) => 0,
-        post: (n: MDNode<NodeType.ANCHOR>) => 3 + n.meta.length  // "](*)" 
+        post: (n: MDNode<NodeType.ANCHOR>) => 3 + n.meta.length  // "](*)",
     },
     [NodeType.BOLD]: {
         pre: (n: MDNode<NodeType.BOLD>) => 2,
@@ -186,7 +186,7 @@ const NodeMDLengths = {
 };
 
 
-const NodeLengths = {
+const NodeData = {
     [NodeType.ANCHOR]: {
         pre: (n: MDNode<NodeType.ANCHOR>) => 0,
         internal: (n: MDNode<NodeType.ANCHOR>) => 0,
@@ -298,14 +298,14 @@ export class MDNode<T extends NodeType = NodeType> {
      * and child characters using markdown formatting.
      */
     get pre_md_length(): number {
-        return NodeMDLengths[this.#type].pre(<any>this);
+        return NodeMDData[this.#type].pre(<any>this);
     }
     /**
      * The number of characters following internal characters
      * and child characters using markdown formatting.
      */
     get post_md_length(): number {
-        return NodeMDLengths[this.#type].post(<any>this);
+        return NodeMDData[this.#type].post(<any>this);
     }
 
     /**
@@ -314,7 +314,7 @@ export class MDNode<T extends NodeType = NodeType> {
      * include the count of characters belonging to child nodes.
      */
     get internal_md_length(): number {
-        return NodeMDLengths[this.#type].internal(<any>this);
+        return NodeMDData[this.#type].internal(<any>this);
     }
 
     /**
@@ -322,14 +322,14 @@ export class MDNode<T extends NodeType = NodeType> {
      * and child characters. 
      */
     get pre_length(): number {
-        return NodeLengths[this.#type].pre(<any>this);
+        return NodeData[this.#type].pre(<any>this);
     }
     /**
      * The number of characters following internal characters
      * and child characters. 
      */
     get post_length(): number {
-        return NodeLengths[this.#type].post(<any>this);
+        return NodeData[this.#type].post(<any>this);
     }
     /**
      * The length of the characters between the leading characters
@@ -337,7 +337,7 @@ export class MDNode<T extends NodeType = NodeType> {
      * child nodes.
      */
     get internal_length(): number {
-        return NodeLengths[this.#type].internal(<any>this);
+        return NodeData[this.#type].internal(<any>this);
     }
     get generation(): number {
         return this.#generation;

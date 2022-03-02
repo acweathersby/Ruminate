@@ -1,23 +1,22 @@
 import { EditHost } from "../../types/edit_host";
 import { TextCommand } from "../../types/text_command_types";
-import { Change, pushHistory } from '../history';
+import * as history from '../history/history';
 import { NodeType } from '../md_node';
-import { heal, newNode, splitNode } from '../operators';
+import * as ops from '../operators';
 import { getMDOffsetFromEditOffset as gmd, initLength, traverse } from '../traverse/traverse';
 import { RangeOverlapType } from '../traverse/yielder/in_range';
 import { registerAction } from './register_action.js';
 
-
 function toggleItalics(edit_host: EditHost) {
-
-    const {
-        start_offset,
-        end_offset
-    } = edit_host,
+    const
+        nonce = history.startRecording(edit_host),
+        {
+            start_offset,
+            end_offset
+        } = edit_host,
         ng = edit_host.root.generation + 1;
 
     let
-        changes: Change[] = [],
         prev = start_offset,
         ADD_ITALICS = false,
         HAVE_ITALICS = false;
@@ -66,19 +65,6 @@ function toggleItalics(edit_host: EditHost) {
                 continue;
 
             if (n.is(NodeType.ITALIC)) {
-                switch (overlap_type) {
-                    case RangeOverlapType.COMPLETE:
-                        changes.push({ type: "remove", head: mh, tail: mt });
-                        break;
-                    case RangeOverlapType.PARTIAL_CONTAINED: {
-                    } break;
-                    case RangeOverlapType.PARTIAL_HEAD: {
-                        changes.push({ type: "remove", head: mh });
-                    } break;
-                    case RangeOverlapType.PARTIAL_TAIL: {
-                        changes.push({ type: "remove", tail: mt });
-                    } break;
-                }
                 skip();
                 continue;
             } else if (n.is(NodeType.ANCHOR) && overlap_type != RangeOverlapType.COMPLETE) {
@@ -87,27 +73,31 @@ function toggleItalics(edit_host: EditHost) {
 
             switch (overlap_type) {
                 case RangeOverlapType.COMPLETE:
-                    changes.push({ type: "add", head: mh, tail: mt });
-                    replace(newNode(NodeType.ITALIC, [n], ng));
+                    history.addInsert(mt, "*");
+                    history.addInsert(mh, "*");
+                    replace(ops.newNode(NodeType.ITALIC, [n], ng));
                     skip();
                     break;
                 case RangeOverlapType.PARTIAL_CONTAINED: {
-                    changes.push({ type: "add", head: gmd(n, os).md + mh, tail: gmd(n, os + ol).md + mh });
-                    var { left, right: mid } = splitNode(n, os, ng);
-                    var { left: mid, right } = splitNode(mid, ol, ng);
-                    replace([left, newNode(NodeType.ITALIC, [mid], ng), right], ng);
+                    var { left, right: mid } = ops.splitNode(n, os, ng);
+                    var { left: mid, right } = ops.splitNode(mid, ol, ng);
+                    history.addInsert(mh + left.md_length + mid.md_length, "*");
+                    history.addInsert(mh + left.md_length, "*");
+                    replace([left, ops.newNode(NodeType.ITALIC, [mid], ng), right], ng);
                     skip();
                 } break;
                 case RangeOverlapType.PARTIAL_HEAD: {
-                    changes.push({ type: "add", head: mh, tail: gmd(n, ol).md + mh });
-                    const { left, right } = splitNode(n, ol, ng);
-                    replace([newNode(NodeType.ITALIC, [left], ng), right], ng);
+                    const { left, right } = ops.splitNode(n, ol, ng);
+                    history.addInsert(mh + left.md_length, "*");
+                    history.addInsert(mh, "*");
+                    replace([ops.newNode(NodeType.ITALIC, [left], ng), right], ng);
                     skip();
                 } break;
                 case RangeOverlapType.PARTIAL_TAIL: {
-                    changes.push({ type: "add", head: gmd(n, os).md + mh, tail: mt });
-                    const { left, right } = splitNode(n, os, ng);
-                    replace([left, newNode(NodeType.ITALIC, [right], ng)], ng);
+                    const { left, right } = ops.splitNode(n, os, ng);
+                    history.addInsert(mh + left.md_length + right.md_length, "*");
+                    history.addInsert(mh + left.md_length, "*");
+                    replace([left, ops.newNode(NodeType.ITALIC, [right], ng)], ng);
                     skip();
                 } break;
             }
@@ -118,8 +108,8 @@ function toggleItalics(edit_host: EditHost) {
                 md_head: mh,
                 md_tail: mt,
                 overlap_type,
-                overlap_start,
-                overlap_length,
+                overlap_start: os,
+                overlap_length: ol,
                 replace,
                 skip
             }
@@ -131,26 +121,32 @@ function toggleItalics(edit_host: EditHost) {
             .makeSkippable()
         ) {
 
-            changes.push({ type: "rem", head: mh, tail: mt });
-
             switch (overlap_type) {
-                case RangeOverlapType.COMPLETE:
+                case RangeOverlapType.COMPLETE: {
+                    history.addDelete(mt - 1, 1);
+                    history.addDelete(mh, 1);
                     replace(node.children);
                     skip();
-                    break;
+                } break;
                 case RangeOverlapType.PARTIAL_CONTAINED: {
-                    var { left, right: mid } = splitNode(node, overlap_start, ng);
-                    var { left: mid, right } = splitNode(mid, overlap_length, ng);
+                    var { left, right: mid } = ops.splitNode(node, os, ng);
+                    var { left: mid, right } = ops.splitNode(mid, ol, ng);
+                    history.addInsert(mt - (right.md_length - 1), "*");
+                    history.addInsert(mh + left.md_length, "*");
                     replace([left, ...mid.children, right], ng);
                     skip();
                 } break;
                 case RangeOverlapType.PARTIAL_HEAD: {
-                    const { left, right } = splitNode(node, overlap_length, ng);
+                    const { left, right } = ops.splitNode(node, ol, ng);
+                    history.addInsert(mt - (right.md_length - 1), "*");
+                    history.addDelete(mh, 1);
                     replace([...left.children, right], ng);
                     skip();
                 } break;
                 case RangeOverlapType.PARTIAL_TAIL: {
-                    const { left, right } = splitNode(node, overlap_start, ng);
+                    const { left, right } = ops.splitNode(node, os, ng);
+                    history.addDelete(mt - 1, 1);
+                    history.addInsert(mh + (left.md_length - 1), "*");
                     replace([left, ...right.children], ng);
                     skip();
                 } break;
@@ -158,23 +154,11 @@ function toggleItalics(edit_host: EditHost) {
         }
     }
 
-    edit_host.root = heal(edit_host.root, ng);
-
-    for (const { node, meta: { head, tail } } of traverse(edit_host.root)
-        .typeFilter(NodeType.ITALIC)
-    ) {
-        if (node.generation >= ng) {
-
-        }
-    }
+    edit_host.root = ops.heal(edit_host.root, ng).node;
 
     initLength(edit_host.root);
 
-    debugger;
-
-    pushHistory(edit_host, changes);
-
-    return edit_host;
+    history.endRecording(edit_host, nonce);
 };
 
 registerAction("edit", TextCommand.TOGGLE_ITALICS, toggleItalics);

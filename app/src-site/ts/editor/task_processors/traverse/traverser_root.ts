@@ -9,7 +9,6 @@ import { skip_root } from './yielder/skip_root';
 import { make_skippable, SkippableYielder } from './yielder/skippable';
 import { inRangeYielder, range_filter } from './yielder/in_range';
 import { extract } from './yielder/extract_root_node';
-import { incrementOffset } from './increment_offset';
 
 
 export class Traverser<B> implements ASTIterator<B> {

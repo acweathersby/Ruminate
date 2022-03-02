@@ -1,5 +1,7 @@
+import * as history from './history/history';
 import { MDNode, NodeType, NodeClass as NC, NodeMeta, NodeClass } from "./md_node";
 import { initLength } from './traverse/traverse';
+import { toMDPostText, toMDPreText } from './view';
 
 const {
     ANCHOR,
@@ -79,10 +81,6 @@ export function newNode<T extends NodeType>(
     return node;
 }
 
-export interface DeleteAction {
-    off: number,
-    len: number;
-}
 
 /**
  * Join this node with any adjacent nodes that share
@@ -93,9 +91,8 @@ export function heal<T extends NodeType>(
     node: MDNode<T>,
     gen: number,
     dissolve_types: Set<NodeType> = new Set(),
-    deletes: DeleteAction[] = [],
     md_offset: number = 0
-): { node: MDNode<T>; deletes: DeleteAction[]; off: number; } {
+): { node: MDNode<T>; off: number; } {
 
     md_offset += node.pre_md_length;
 
@@ -110,13 +107,10 @@ export function heal<T extends NodeType>(
 
             if (dissolve_types.has(curr_node.type) && curr_node.is(ITALIC, BOLD)) {
                 MODIFIED = true;
-                deletes.push({
-                    off: md_offset,
-                    len: node.pre_length
-                }, {
-                    off: md_offset + node.length - node.post_length,
-                    len: node.post_length
-                });
+
+                history.addDelete(md_offset, node.pre_length);
+                history.addDelete(md_offset + node.length - node.post_length, node.post_length);
+
                 children.splice(i, 1, ...curr_node.children);
                 l = children.length;
                 i = Math.max(i - 2, -1);
@@ -130,24 +124,31 @@ export function heal<T extends NodeType>(
                 if (next_node.type == curr_node.type) {
                     if (curr_node.is(ANCHOR, ITALIC, BOLD, IMAGE, CODE_INLINE)) {
                         MODIFIED = true;
-                        debugger;
-                        deletes.push({
-                            off: md_offset + curr_node.md_length - curr_node.post_md_length,
-                            len: curr_node.post_md_length + next_node.pre_md_length + next_node.internal_md_length
-                        });
+
+                        history.addDelete(
+                            md_offset + curr_node.md_length - curr_node.post_md_length,
+                            curr_node.post_md_length + next_node.pre_md_length + next_node.internal_md_length
+                        );
+
                         const new_node = clone(curr_node, gen);
+
                         children.splice(i, 2, new_node);
                         new_node.children = new_node.children.concat(next_node.children);
                         new_node.length = curr_node.length + next_node.length;
+
                         l--;
                         i--;
                         continue;
                     } else if (curr_node.is(TEXT)) {
+
                         MODIFIED = true;
+
                         const new_node = clone(curr_node, gen);
+
                         children.splice(i, 2, new_node);
                         new_node.meta += next_node.meta;
                         new_node.length = curr_node.length + next_node.length;
+
                         l--;
                         i--;
                         continue;
@@ -156,7 +157,7 @@ export function heal<T extends NodeType>(
             }
 
             const { node: new_node, off } =
-                heal(curr_node, gen, new Set([...dissolve_types, curr_node.type]), deletes, md_offset);
+                heal(curr_node, gen, new Set([...dissolve_types, curr_node.type]), md_offset);
 
             md_offset = off;
 
@@ -171,12 +172,13 @@ export function heal<T extends NodeType>(
             new_node.children = children;
             initLength(new_node);
             md_offset += new_node.internal_length + new_node.post_md_length;
-            return { node: new_node, deletes, off: md_offset };
+            return { node: new_node, off: md_offset };
         }
     }
 
     md_offset += node.internal_length + node.post_md_length;
-    return { node, deletes, off: md_offset };
+
+    return { node, off: md_offset };
 }
 
 /**
@@ -194,6 +196,9 @@ export function splitNode(
 ) {
     const { left: [l], right: [r] }
         = split([node], offset, gen);
+
+    initLength(l);
+    initLength(r);
 
     return { left: l, right: r };
 }
@@ -215,7 +220,8 @@ export function splitNode(
 export function split(
     nodes: MDNode[],
     offset: number,
-    gen: number
+    gen: number,
+    md_offset: number = 0,
 ): { left: MDNode[], right: MDNode[]; } {
     const left = [], right = [];
     for (const node of nodes) {
@@ -233,12 +239,25 @@ export function split(
                 case QUOTE:
                 case ROOT: {
                     const children = node.children;
+
                     let a = clone(node, gen);
+
                     let b = copy(a);
-                    const { left: cl, right: cr } = split(children, offset, gen);
+
+                    history.addInsert(
+                        md_offset + node.md_length - node.post_length,
+                        toMDPostText(node) + toMDPreText(node)
+                    );
+
+                    const { left: cl, right: cr }
+                        = split(children, offset, gen, md_offset + node.pre_length);
+
                     a.children = cl;
+
                     b.children = cr;
+
                     left.push(a);
+
                     right.push(b);
                 } break;
                 case QUERY:
@@ -263,6 +282,7 @@ export function split(
             left.push(node);
         }
 
+        md_offset += node.md_length;
         offset -= node.length;
     }
 
@@ -446,3 +466,21 @@ function setChildrenMut<T extends NodeType>(
     return parent;
 }
 
+
+export function insertTextNode(
+    node: MDNode<NodeType.TEXT>,
+    split_point: number,
+    new_text: string,
+    gen: number,
+) {
+    let new_node = clone(node, gen);
+
+
+    new_node.meta =
+        new_node.meta.slice(0, split_point)
+        +
+        new_text
+        +
+        new_node.meta.slice(split_point);
+    return new_node;
+}

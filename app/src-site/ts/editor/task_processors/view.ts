@@ -215,37 +215,85 @@ function addChildNodes<T extends Node>(
 
     return ele;
 }
+// Return a string that represents the markdown text
+// that occurs before the text of the node's children.
+export function toMDPreText(n: MDNode): string {
+    if (n.is(PARAGRAPH)) {
+        return "\n";
+    } else if (n.is(TEXT)) {
+        return "";
+    } else if (n.is(ANCHOR)) {
+        return "[";
+    } else if (n.is(BOLD)) {
+        return "__";
+    } else if (n.is(CODE_BLOCK)) {
+        return ["\n", "```", code.getSyntax(n), "\n",
+            n.meta.view
+                ? n.meta.view.state.doc.toString()
+                : n.meta.text
+        ].join("");
+    } else if (n.is(CODE_INLINE)) {
+        return "'";
+    } else if (n.is(HEADER)) {
+        return ["\n", ("#").repeat(n.meta), " "].join("");
+    } else if (n.is(IMAGE)) {
+        return ["!["].join("");
+    } else if (n.is(ITALIC)) {
+        return "*";
+    } else if (n.is(ORDERED_LIST)) {
+        return ["\n", ("  ").repeat(n.meta), "1. "].join("");
+    } else if (n.is(QUERY)) {
+        return ["{", n.meta].join("");
+    } else if (n.is(QUOTE)) {
+        return ["\n", "> "].join("");
+    } else if (n.is(ROOT)) {
+        return "";
+    } else if (n.is(UNORDERED_LIST)) {
+        return ["\n", ("  ").repeat(n.meta), "- "].join("");
+    } else return "";
+}
 
-export function toMDString(node: MDNode): string {
+// Return a string that represents the markdown text
+// that occurs after the text of the node's children.
+export function toMDPostText(node: MDNode): string {
     if (node.is(PARAGRAPH)) {
-        return nodeChildrenToString(node);
+        return "\n";
     } else if (node.is(TEXT)) {
         return node.meta;
     } else if (node.is(ANCHOR)) {
-        return ["[", nodeChildrenToString(node), "]", "(", node.meta, ")"].join("");
+        return ["]", "(", node.meta, ")"].join("");
     } else if (node.is(BOLD)) {
-        return ["__", nodeChildrenToString(node), "__"].join("");
+        return "__";
     } else if (node.is(CODE_BLOCK)) {
-        return ["```", code.getSyntax(node), "\n", code.getText(node), "\n```"].join("");
+        return "\n```\n";
     } else if (node.is(CODE_INLINE)) {
-        return ["`", nodeChildrenToString(node), "`"].join("");
+        return "`";
     } else if (node.is(HEADER)) {
-        return [("#").repeat(node.meta), " ", nodeChildrenToString(node)].join("");
+        return "\n";
     } else if (node.is(IMAGE)) {
-        return ["![", nodeChildrenToString(node), "]", "(", node.meta, ")"].join("");
+        return ["]", "(", node.meta, ")"].join("");
     } else if (node.is(ITALIC)) {
-        return ["*", nodeChildrenToString(node), "*"].join("");
+        return "*";
     } else if (node.is(ORDERED_LIST)) {
-        return [("  ").repeat(node.meta), "1. ", nodeChildrenToString(node)].join("");
+        return "\n";
     } else if (node.is(QUERY)) {
-        return ["{", node.meta, "}"].join("");
+        return "}";
     } else if (node.is(QUOTE)) {
-        return ["> ", nodeChildrenToString(node)].join("");
+        return "\n";
     } else if (node.is(ROOT)) {
-        return nodeChildrenToString(node, "\n\n");
+        return "";
     } else if (node.is(UNORDERED_LIST)) {
-        return [("  ").repeat(node.meta), "- ", nodeChildrenToString(node)].join("");
+        return "\n";
     } else return "";
+}
+
+export function toMDString(node: MDNode): string {
+    return [
+        toMDPreText(node),
+        nodeChildrenToString(node),
+        toMDPostText(node)
+    ]
+        .join("");
 }
 
 function nodeChildrenToString(
@@ -254,6 +302,7 @@ function nodeChildrenToString(
 ): string {
     return node.children.map(toMDString).join(separator);
 }
+
 export function updatePointerData(edit_host: EditHost) {
     if (edit_host.debug_data.DEBUGGER_ENABLED) {
         const { start_offset, end_offset } = edit_host;
@@ -277,7 +326,7 @@ export function updateMarkdownDebugger(host: EditHost) {
 Start offset: ${host.debug_data.cursor_start}
 End offset  : ${host.debug_data.cursor_end}
 =====================Markdown===================
-\n${toMDString(host.root)}
+${toMDString(host.root).trim()}
 ================================================
 `;
         } else {

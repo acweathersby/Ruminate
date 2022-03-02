@@ -203,6 +203,33 @@ mod rumi_app {
     }
 
     #[tauri::command]
+    pub fn get_clock(note_local_id: u32) -> u32 {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            note_get_clock(store, note_local_id).get_clock()
+        } else {
+            0
+        }
+    }
+
+    #[tauri::command]
+    pub fn debug_print_note(note_local_id: u32, comment: String) -> bool {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            if let Some(string) = note_get_text(store, note_local_id) {
+                #[cfg(debug_assertions)]
+                {
+                    println!("+Debug Note Print================================-");
+                    println!("{}", comment);
+                    println!("-- clock: {:?} --", note_get_clock(store, note_local_id));
+                    println!("{}", &string);
+                    println!("-================================================-");
+                }
+                return true;
+            }
+        }
+        false
+    }
+
+    #[tauri::command]
     pub fn insert_text(note_local_id: u32, insert_index: u32, string: String) -> bool {
         if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
             if let Ok(_) = note_insert_text(store, note_local_id, insert_index as usize, &string) {
@@ -289,7 +316,8 @@ Welcome to Ruminate. {{chocolate}}
                 set_note_name,
                 get_note_name,
                 set_note_container_path,
-                get_note_container_path
+                get_note_container_path,
+                debug_print_note
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
@@ -317,76 +345,31 @@ Welcome to Ruminate. {{chocolate}}
         set_note_name(long_form_note, "Longform Note".to_string());
         set_note_container_path(long_form_note, "/debug/".to_string());
         insert_text(
-              long_form_note,
-              0,
-              String::from(
-                  "
-# Why Hello there!
+            long_form_note,
+            0,
+            String::from(
+                "
+# H1 Header
 
-If you are viewing this note then you are working in the 
-debug mode of Mem. 
+This is a simple paragraph. It only has two sentences.
 
-# This is a test note 
+## H2 Header
 
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+Some Lorem Ipsum for your pleasure: Lorem ipsum dolor sit amet, consectetur 
+adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna 
+aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris 
+nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit 
+in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur 
+sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit 
+anim id est laborum.
 
+### H3 Header
 
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
+The following is a link: [hello](D)
 
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
-Our bluetooth earbuds adopt the most advanced Bluetooth 5.0 technology which provided more stable connection 
-(connection distance up to 50ft), faster paring(just need 2 seconds ) and universal compatibility. 
-Suitable for all models of mobile phones. Only need to take out two earbuds or any single earbud after 
-you open Bluetooth function, they will open and connect automatically you phone, pc and android smartphones!
 ",
-              ),
-          );
+            ),
+        );
 
         println!("DEBUG MODE notes added!");
     }

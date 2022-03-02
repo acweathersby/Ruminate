@@ -8,19 +8,16 @@ import { locale } from '../locale/locale';
 function assert_DB_decorator<T>(fn: T, alternate_value?: any): T {
 
     if (typeof globalThis["__TAURI__"] == "undefined") {
-
-        if (alternate_value != undefined)
-            //@ts-ignore
-            return async () => alternate_value;
-
         //@ts-ignore
-        return async function () {
+        return async function (...data) {
             console.warn(
-                `[${fn.name}] ` + locale["bridge warning"],
+                `[${fn.name}] `
+                + locale["bridge warning"]
+                + `\n arg_data: \n ${JSON.stringify(data)}`,
                 "color:orange",
-                "color:black"
+                "color:black",
             );
-            return null;
+            return alternate_value;
         };
     }
 
@@ -31,6 +28,16 @@ export const init = assert_DB_decorator(
     async function init(): Promise<void> {
         return invoke("init", { data: "" });
     });
+
+export const debug_print_note = assert_DB_decorator(
+    async function debug_print_note(noteLocalId: number, comment: string = ""): Promise<number[]> {
+        return invoke("debug_print_note", { noteLocalId, comment });
+    });
+
+export const get_note_clock = assert_DB_decorator(
+    async function get_note_clock(noteLocalId: number): Promise<number[]> {
+        return invoke("get_note_clock", { noteLocalId });
+    }, [1]);
 export const get_notes_from_query = assert_DB_decorator(
     async function get_notes_from_query(query: string): Promise<number[]> {
         return invoke("get_notes_from_query", { query });

@@ -64,8 +64,8 @@ type TraversePack = {
 
 export function initLength(node: MDNode): { md: number, off: number; } {
 
-    node.length += node.pre_length + node.internal_length;
-    node.md_length += node.pre_md_length + node.internal_md_length;
+    node.length = node.pre_length + node.internal_length;
+    node.md_length = node.pre_md_length + node.internal_md_length;
 
     for (const child of node.children) {
         const { md, off } = initLength(child);

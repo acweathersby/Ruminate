@@ -15,13 +15,13 @@ import "./task_processors/actions/toggle_bold.js";
 import "./task_processors/actions/toggle_italics.js";
 import "./task_processors/actions/insert_paragraph.js";
 import { setChildren } from './task_processors/operators.js';
-import { setEditable, toHTML, updateHost, updateMarkdownDebugger } from './task_processors/view.js';
+import { setEditable, updateHost, updateMarkdownDebugger } from './task_processors/view.js';
 import { EditHost } from './types/edit_host.js';
-import { pushHistory } from './task_processors/history';
+import { endRecording } from './task_processors/history/history';
 import { initLength } from './task_processors/traverse/traverse.js';
 
 
-export * from "./task_processors/history.js";
+export * from "./task_processors/history/history.js";
 export * from "./task_processors/actions/register_action.js";
 
 export async function constructReadOnlyHost(
@@ -62,7 +62,7 @@ export async function constructReadOnlyHost(
 
     initLength(edit_host.root);
 
-    pushHistory(edit_host);
+    endRecording(edit_host);
 
     return edit_host;
 }
@@ -112,7 +112,7 @@ export async function constructEditHost(
 
     initLength(edit_host.root);
 
-    pushHistory(edit_host);
+    endRecording(edit_host);
 
     return edit_host;
 }

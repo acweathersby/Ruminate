@@ -1,6 +1,6 @@
 import { EditHost } from "../../types/edit_host";
 import { TextCommand } from "../../types/text_command_types";
-import { pushHistory } from '../history';
+import { endRecording } from '../history/history';
 import { NodeType } from '../md_node';
 import { heal, newNode, splitNode } from '../operators';
 import { initLength, traverse } from '../traverse/traverse';
@@ -115,7 +115,7 @@ function toggleBold(edit_host: EditHost) {
 
     initLength(edit_host.root);
 
-    pushHistory(edit_host);
+    endRecording(edit_host);
 
     return edit_host;
 };
