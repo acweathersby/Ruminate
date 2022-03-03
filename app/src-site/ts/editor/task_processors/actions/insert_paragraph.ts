@@ -13,7 +13,7 @@ function insertParagraph(edit_host: EditHost) {
             .extract(edit_host)
             .makeReplaceable()
     ) {
-        debugger;
+
         if (node.is(NodeType.CODE_BLOCK)) {
 
         } else if (node.is(NodeType.HEADER)) {

@@ -176,7 +176,7 @@ where
 
                 self.insert_op(parent_op, (new_op_id, operation), 0);
 
-                // self.latest = new_op_id;
+                self.latest = new_op_id;
             } else {
                 break;
             }

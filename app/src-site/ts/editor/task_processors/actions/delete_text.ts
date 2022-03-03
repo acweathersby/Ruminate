@@ -81,25 +81,25 @@ export function deleteText(edit_host: EditHost) {
                 }
             }
 
-        } else {
+        } else if (RangeOverlapType.COMPLETE == overlap_type) {
+
+            history.addDelete(md_head, node.md_length);
+
+            meta.range_end -= node.length;
+
+            replace(null);
+
+            //skip();
+        } else if (node.is(NodeType.TEXT)) {
+            ops.insertTextNode;
+
             switch (overlap_type) {
-
-                case RangeOverlapType.COMPLETE: {
-
-                    history.addDelete(md_head, md_tail - md_head);
-
-                    meta.range_end -= node.length;
-
-                    replace(null);
-
-                    skip();
-                } break;
 
                 case RangeOverlapType.PARTIAL_CONTAINED: {
 
                     var
-                        { left, right: mid } = ops.splitNode(node, overlap_start, ng),
-                        { left: mid, right } = ops.splitNode(mid, overlap_length, ng);
+                        { left, right: mid } = ops.splitNode(node, overlap_start, ng, md_head),
+                        { left: mid, right } = ops.splitNode(mid, overlap_length, ng, md_head);
 
                     [left, mid, right].forEach(initLength);
 
@@ -114,7 +114,7 @@ export function deleteText(edit_host: EditHost) {
 
                 case RangeOverlapType.PARTIAL_HEAD: {
 
-                    const { left, right } = ops.splitNode(node, overlap_length, ng);
+                    const { left, right } = ops.splitNode(node, overlap_length, ng, md_head);
 
                     [left, right].forEach(initLength);
 
@@ -129,7 +129,7 @@ export function deleteText(edit_host: EditHost) {
 
                 case RangeOverlapType.PARTIAL_TAIL: {
 
-                    const { left, right } = ops.splitNode(node, overlap_start, ng);
+                    const { left, right } = ops.splitNode(node, overlap_start, ng, md_head);
 
                     [left, right].forEach(initLength);
 
@@ -144,6 +144,7 @@ export function deleteText(edit_host: EditHost) {
             }
         }
     }
+
 
     edit_host.start_offset = start_offset;
     edit_host.end_offset = edit_host.start_offset;

@@ -1,6 +1,6 @@
 import * as history from './history/history';
 import { MDNode, NodeType, NodeClass as NC, NodeMeta, NodeClass } from "./md_node";
-import { initLength } from './traverse/traverse';
+import { getMDOffsetFromEditOffset, initLength } from './traverse/traverse';
 import { toMDPostText, toMDPreText } from './view';
 
 const {
@@ -123,6 +123,7 @@ export function heal<T extends NodeType>(
 
                 if (next_node.type == curr_node.type) {
                     if (curr_node.is(ANCHOR, ITALIC, BOLD, IMAGE, CODE_INLINE)) {
+
                         MODIFIED = true;
 
                         history.addDelete(
@@ -135,6 +136,8 @@ export function heal<T extends NodeType>(
                         children.splice(i, 2, new_node);
                         new_node.children = new_node.children.concat(next_node.children);
                         new_node.length = curr_node.length + next_node.length;
+
+                        initLength(new_node);
 
                         l--;
                         i--;
@@ -149,6 +152,7 @@ export function heal<T extends NodeType>(
                         new_node.meta += next_node.meta;
                         new_node.length = curr_node.length + next_node.length;
 
+                        initLength(new_node);
                         l--;
                         i--;
                         continue;
@@ -187,15 +191,18 @@ export function heal<T extends NodeType>(
  * @param offset 
  * @param gen - The current generation. Any edited node that is not of this 
  *      generation is replaced by one that is.
+ * @param md_offset - The offset, in markdown character units, of the head of the
+ * node.
  * @returns 
  */
 export function splitNode(
     node: MDNode,
     offset: number,
-    gen: number
+    gen: number,
+    md_offset: number,
 ) {
     const { left: [l], right: [r] }
-        = split([node], offset, gen);
+        = split([node], offset, gen, md_offset);
 
     initLength(l);
     initLength(r);
@@ -245,7 +252,7 @@ export function split(
                     let b = copy(a);
 
                     history.addInsert(
-                        md_offset + node.md_length - node.post_length,
+                        md_offset + getMDOffsetFromEditOffset(node, offset).md,
                         toMDPostText(node) + toMDPreText(node)
                     );
 
@@ -475,6 +482,23 @@ export function insertTextNode(
 ) {
     let new_node = clone(node, gen);
 
+
+    new_node.meta =
+        new_node.meta.slice(0, split_point)
+        +
+        new_text
+        +
+        new_node.meta.slice(split_point);
+    return new_node;
+}
+
+export function deleteTextNode(
+    node: MDNode<NodeType.TEXT>,
+    split_point: number,
+    new_text: string,
+    gen: number,
+) {
+    let new_node = clone(node, gen);
 
     new_node.meta =
         new_node.meta.slice(0, split_point)

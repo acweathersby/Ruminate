@@ -172,9 +172,15 @@ export class Traverser<B> implements ASTIterator<B> {
                 const old_sp = this.sp;
                 const node = node_stack[old_sp];
                 this.sp--;
-                offset_stack[this.sp] = offset_stack[old_sp] + node.post_length + node.internal_length;
+
+                offset_stack[this.sp] = offset_stack[old_sp]
+                    + (node ? (node.post_length + node.internal_length) : 0);
+
                 offset_stack[old_sp] = 0;
-                md_offset_stack[this.sp] = md_offset_stack[old_sp] + node.post_md_length + node.internal_md_length;
+
+                md_offset_stack[this.sp] = md_offset_stack[old_sp]
+                    + (node ? (node.post_md_length + node.internal_md_length) : 0);
+
                 md_offset_stack[old_sp] = 0;
 
 

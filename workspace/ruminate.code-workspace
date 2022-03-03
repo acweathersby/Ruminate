@@ -3,14 +3,6 @@
 		{
 			"path": "../",
 			"name": "Root"
-		},
-		{
-			"path": "../lib",
-			"name": "Library"
-		},
-		{
-			"path": "../app",
-			"name": "App"
 		}
 	],
 	"settings": {}
