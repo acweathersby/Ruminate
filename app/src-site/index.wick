@@ -2,6 +2,7 @@ import "@radiate";
 import {init, load_note} from "./ts/app.ts";
 import editable_note from "./components/note/editable_note.wick";
 import readonly_note from "./components/note/readonly_note.wick";
+import meta_editor from "./components/note/meta_editor.wick";
 
 let active_note = [];
 

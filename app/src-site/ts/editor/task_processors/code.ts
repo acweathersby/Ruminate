@@ -42,6 +42,7 @@ export function getCodeMeta(
 }
 
 export function getElementAtOffset(code: Code, offset: number): {
+    node: MDNode,
     ele: Node,
     offset: number;
 } {
@@ -50,7 +51,7 @@ export function getElementAtOffset(code: Code, offset: number): {
 
     const { node, offset: ele_offset } = meta.view.domAtPos(offset);
 
-    return { ele: node, offset: ele_offset };
+    return { ele: node, offset: ele_offset, node: code };
 }
 
 export function createView(

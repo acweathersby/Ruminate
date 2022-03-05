@@ -4,13 +4,7 @@ import {
     undo,
     updatePointer
 } from './task_processors/history/history';
-import {
-    getOffsetsFromSelection,
-    toggleEditable,
-    updateCaretData,
-    updateHost,
-    updatePointerData
-} from './task_processors/view';
+import * as vw from './task_processors/view';
 import { EditHost } from "./types/edit_host";
 import { TextCommand } from './types/text_command_types';
 
@@ -25,10 +19,9 @@ export function attachListeners(edit_host: EditHost) {
         selectionchange() {
             //Update offsets. 
             //if (SELECTION_UPDATE_TARGET) {
-
-            SELECTION_UPDATE_TARGET = null;
-            getOffsetsFromSelection(edit_host);
-            updatePointerData(edit_host);
+            vw.getOffsetsFromSelection(edit_host);
+            vw.updatePointerData(edit_host);
+            vw.handleMetaViews(edit_host);
             //  }
         },
         pointerup(e: PointerEvent) {
@@ -36,13 +29,10 @@ export function attachListeners(edit_host: EditHost) {
         },
         pointermove(e: PointerEvent) {
             if (edit_host.host_ele.hasPointerCapture(e.pointerId)) {
-                SELECTION_UPDATE_TARGET = e.target;
             }
         },
         pointerdown(e: PointerEvent) {
             edit_host.host_ele.setPointerCapture(e.pointerId);
-            SELECTION_UPDATE_TARGET = e.target;
-
             //If the selected node is a non-selectable, update it's selection
         },
         cut(e: ClipboardEvent) {
@@ -55,7 +45,7 @@ export function attachListeners(edit_host: EditHost) {
             //debugger;
         },
         keypress(e: KeyboardEvent) {
-            updatePointerData(edit_host);
+            vw.updatePointerData(edit_host);
             /*  if (e.code == "Space") {
                  insertText(" ", edit_host);
              } */
@@ -74,7 +64,7 @@ export function attachListeners(edit_host: EditHost) {
             let NO_DEFAULT = false;
 
             if (e.key == 'Alt') {
-                toggleEditable(edit_host);
+                vw.toggleEditable(edit_host);
                 return false;
             }
 
@@ -164,9 +154,9 @@ function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
 
     e.stopPropagation();
 
-    updatePointerData(edit_host);
+    vw.updatePointerData(edit_host);
 
-    updateCaretData(edit_host);
+    vw.updateCaretData(edit_host);
 
     return false;
 }
@@ -261,9 +251,9 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
     }
 
     if (edit_host.debug_data.DEBUGGER_ENABLED)
-        updatePointerData(edit_host);
+        vw.updatePointerData(edit_host);
 
-    updateHost(edit_host);
+    vw.updateHost(edit_host);
 }
 
 function insertText(edit_host: EditHost, text_data: string) {

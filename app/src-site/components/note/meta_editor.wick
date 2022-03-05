@@ -1,0 +1,10 @@
+export {this as meta_editor}
+
+export default <div> Hello World </div>;
+
+<style>
+    root {
+        background-color:white;
+        padding:10px;
+    }
+</style>

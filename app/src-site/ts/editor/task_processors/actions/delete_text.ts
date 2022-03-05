@@ -14,9 +14,10 @@ export function deleteText(edit_host: EditHost) {
     const
         nonce = history.startRecording(edit_host),
 
-        { start_offset, end_offset } = edit_host,
+        { start_offset, end_offset, root } = edit_host,
 
         ng = edit_host.root.generation + 1;
+
 
     for (const { node, meta, reset, getAncestry } of traverse(edit_host.root)
         .skipRoot()
@@ -48,13 +49,13 @@ export function deleteText(edit_host: EditHost) {
                 replace(code.removeText(node, overlap_start - 1, overlap_length));
 
             } else if (overlap_start == 0) {
-                if (RangeOverlapType.COMPLETE) {
+                if (RangeOverlapType.COMPLETE == overlap_type) {
 
                     meta.range_end -= node.length;
 
                     history.addDelete(md_head, md_tail - md_head);
 
-                    replace(null);
+                    replace(null, ng);
 
                     skip();
                 } else if (prev && node.is(prev.type)) {
@@ -64,7 +65,7 @@ export function deleteText(edit_host: EditHost) {
                         node.post_md_length + node.pre_md_length
                     );
 
-                    replace(null, ng, true);
+                    replace(null, ng);
 
                     const
                         parent = getAncestry()[0],
@@ -87,12 +88,10 @@ export function deleteText(edit_host: EditHost) {
 
             meta.range_end -= node.length;
 
-            replace(null);
+            replace(null, ng);
 
             //skip();
         } else if (node.is(NodeType.TEXT)) {
-            ops.insertTextNode;
-
             switch (overlap_type) {
 
                 case RangeOverlapType.PARTIAL_CONTAINED: {
@@ -107,7 +106,7 @@ export function deleteText(edit_host: EditHost) {
 
                     meta.range_end -= overlap_length;
 
-                    replace([left, right]);
+                    replace([left, right], ng);
 
                     skip();
                 } break;
@@ -122,7 +121,7 @@ export function deleteText(edit_host: EditHost) {
 
                     meta.range_end -= overlap_length;
 
-                    replace([right]);
+                    replace([right], ng);
 
                     skip();
                 } break;
@@ -137,7 +136,7 @@ export function deleteText(edit_host: EditHost) {
 
                     meta.range_end -= overlap_length;
 
-                    replace([left]);
+                    replace([left], ng);
 
                     skip();
                 } break;
@@ -145,15 +144,16 @@ export function deleteText(edit_host: EditHost) {
         }
     }
 
-
-    edit_host.start_offset = start_offset;
-    edit_host.end_offset = edit_host.start_offset;
+    console.log({ start_offset });
 
     edit_host.root = ops.heal(edit_host.root, ng).node;
 
     initLength(edit_host.root);
 
     history.endRecording(edit_host, nonce);
+
+    edit_host.start_offset = start_offset;
+    edit_host.end_offset = edit_host.start_offset;
 };
 
 

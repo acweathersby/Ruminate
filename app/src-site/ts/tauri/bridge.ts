@@ -35,7 +35,7 @@ export const debug_print_note = assert_DB_decorator(
     });
 
 export const get_note_clock = assert_DB_decorator(
-    async function get_note_clock(noteLocalId: number): Promise<number[]> {
+    async function get_note_clock(noteLocalId: number): Promise<number> {
         return invoke("get_note_clock", { noteLocalId });
     }, [1]);
 export const get_notes_from_query = assert_DB_decorator(

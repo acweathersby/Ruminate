@@ -372,14 +372,39 @@ export function updateCaretData(edit_host: EditHost) {
             setZeroLengthSelection(start.ele, start.offset);
         }
     } else {
-
         const range = getSelectionParts(start_offset, end_offset, edit_host);
-        setSelection(
-            range.start.ele,
-            range.start.offset,
-            range.end.ele,
-            range.end.offset
-        );
+
+        if (range.start && range.end) {
+            setSelection(
+                range.start.ele,
+                range.start.offset,
+                range.end.ele,
+                range.end.offset
+            );
+        } else {
+            console.warn(
+                `TODO: resolve out of bound offsets ` +
+                `s:${start_offset} e:${end_offset}; ` +
+                `Note len: ${edit_host.root.md_length}`
+            );
+        }
+    }
+}
+export function handleMetaViews(edit_host: EditHost) {
+    const {
+        start_offset,
+        end_offset
+    } = edit_host;
+
+    let len = 0;
+
+    for (const node of edit_host.root.children) {
+        if (start_offset == len + 1) {
+            //Enable the meta edit system at this point. 
+            wick.rt.create_named("meta_editor", edit_host.host_ele, { edit_host });
+            break;
+        }
+        len += node.length;
     }
 }
 
@@ -389,13 +414,12 @@ function getSelectionParts(
     edit_host: EditHost
 ): (
         {
-            CB: false,
-            start: { ele?: HTMLElement; offset: number; },
-            end: { ele?: HTMLElement; offset: number; },
+            start: { ele?: HTMLElement; offset: number; node: MDNode; },
+            end: { ele?: HTMLElement; offset: number; node: MDNode; },
         }
 
     ) {
-    const range = { CB: false, start: null, end: null };
+    const range = { start: null, end: null };
 
     for (const { node, meta: { overlap_start, overlap_type, overlap_length } } of
         traverse(edit_host.root)
@@ -406,12 +430,12 @@ function getSelectionParts(
             if (overlap_type == RangeOverlapType.COMPLETE)
                 continue;
             else if (overlap_type == RangeOverlapType.PARTIAL_HEAD) {
-                range.end = { ele: node.ele, offset: overlap_start + overlap_length };
+                range.end = { ele: node.ele, offset: overlap_start + overlap_length, node };
             } else if (overlap_type == RangeOverlapType.PARTIAL_TAIL) {
-                range.start = { ele: node.ele, offset: overlap_start };
+                range.start = { ele: node.ele, offset: overlap_start, node };
             } else {
-                range.start = { ele: node.ele, offset: overlap_start };
-                range.end = { ele: node.ele, offset: overlap_start + overlap_length };
+                range.start = { ele: node.ele, offset: overlap_start, node };
+                range.end = { ele: node.ele, offset: overlap_start + overlap_length, node };
             }
         } else if (node.is(NodeType.CODE_BLOCK) && overlap_start > 0) {
             if (overlap_type == RangeOverlapType.COMPLETE)
@@ -434,12 +458,14 @@ function getSelectionParts(
                 .rangeFilter(offset - 1, offset - 1)
         ) {
             if (node.is(NodeType.TEXT)) {
-                return { ele: node.ele, offset: node.length };
+                return { ele: node.ele, offset: node.length, node };
             } else if (node.is(NodeType.QUERY)) {
                 const line = getAncestry().filter(d => d.containsClass(NodeClass.LINE))[0];
-                return { ele: line.ele.lastChild, offset: 0 };
+                return { ele: line.ele.lastChild, offset: 0, node };
             } else if (node.is(NodeType.CODE_BLOCK)) {
                 return code.getElementAtOffset(node, node.length - 1);
+            } else if (node.is(NodeType.PARAGRAPH)) {
+                return { ele: node.ele, offset: 0, node };
             }
         }
         return null;

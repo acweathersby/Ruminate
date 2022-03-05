@@ -2,6 +2,7 @@ import { EditHost } from "../../types/edit_host";
 import { DeleteAction, AddAction } from './changes';
 import { MDNode, NodeType } from '../md_node';
 import * as bridge from "../../../tauri/bridge";
+import { HistoryTask } from '../../types/text_command_types';
 
 
 export function undo(edit_host: EditHost) {
@@ -93,7 +94,7 @@ export function processRecordings(edit_host: EditHost) {
     }
 }
 
-export function endRecording(edit_host: EditHost, checked_out_nonce: number) {
+export async function endRecording(edit_host: EditHost, checked_out_nonce: number) {
 
     if (nonce < 0 || edit_host.root == root) {
         recording_data = null;
@@ -103,14 +104,19 @@ export function endRecording(edit_host: EditHost, checked_out_nonce: number) {
     if (checked_out_nonce != nonce)
         return;
 
-    edit_host.command_history.push({
+    const obj = <HistoryTask>{
         state: edit_host.root,
         end_offset: edit_host.end_offset,
         start_offset: edit_host.start_offset,
-        recordings: processRecordings(edit_host)
-    });
+        recordings: processRecordings(edit_host),
+        clock: -1
+    };
+
+    edit_host.command_history.push(obj);
 
     edit_host.history_pointer++;
+
+    obj.clock = await bridge.get_note_clock(edit_host.note_id);
 }
 
 export function updatePointer(edit_host: EditHost) {

@@ -62,8 +62,6 @@ export async function constructReadOnlyHost(
 
     initLength(edit_host.root);
 
-    endRecording(edit_host);
-
     return edit_host;
 }
 
@@ -112,7 +110,15 @@ export async function constructEditHost(
 
     initLength(edit_host.root);
 
-    endRecording(edit_host);
+    edit_host.command_history.push({
+        state: edit_host.root,
+        end_offset: edit_host.end_offset,
+        start_offset: edit_host.start_offset,
+        recordings: [],
+        clock: 0
+    });
+
+    edit_host.history_pointer = 0;
 
     return edit_host;
 }

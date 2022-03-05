@@ -16,4 +16,5 @@ export interface HistoryTask {
     start_offset: number,
     end_offset: number;
     recordings: (DeleteAction | AddAction)[];
+    clock: number;
 }
