@@ -1,5 +1,6 @@
 import { MDNode, NodeType } from '../task_processors/md_node';
 import { HistoryTask } from './text_command_types';
+import { WickRTComponent } from "@candlelib/wick";
 
 
 /**
@@ -43,6 +44,8 @@ export interface EditHost {
      * Prevents recursive loading of notes.
      */
     active: Set<number>;
+
+    meta_UIs: WickRTComponent[];
 
     event_handlers?: {
         selectionchange(): void,

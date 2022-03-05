@@ -16,7 +16,8 @@ export function attachListeners(edit_host: EditHost) {
     let SELECTION_UPDATE_TARGET = null;
 
     edit_host.event_handlers = {
-        selectionchange() {
+        selectionchange(e) {
+            console.log(e);
             //Update offsets. 
             //if (SELECTION_UPDATE_TARGET) {
             vw.getOffsetsFromSelection(edit_host);
@@ -33,6 +34,10 @@ export function attachListeners(edit_host: EditHost) {
         },
         pointerdown(e: PointerEvent) {
             edit_host.host_ele.setPointerCapture(e.pointerId);
+
+            setTimeout(_ => {
+                edit_host.event_handlers.selectionchange(e);
+            }, 1);
             //If the selected node is a non-selectable, update it's selection
         },
         cut(e: ClipboardEvent) {
@@ -93,7 +98,7 @@ export function attachListeners(edit_host: EditHost) {
 
     for (const [name, listener] of Object.entries(edit_host.event_handlers)) {
         if (name == "selectionchange") {
-            document.addEventListener(name, <any>listener);
+            //document.addEventListener(name, <any>listener);
         } else {
             edit_host.host_ele.addEventListener(name, <any>listener);
         }

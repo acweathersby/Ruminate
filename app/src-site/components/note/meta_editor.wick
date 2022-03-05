@@ -1,10 +1,57 @@
+import {line as target, edit_host} from "@model";
+import { NodeType as NT} from "../../ts/editor/task_processors/md_node.ts";
+import * as vw from "../../ts/editor/task_processors/view.ts";
+import * as editor from "../../ts/editor/text_editor.ts";
+
 export {this as meta_editor}
 
-export default <div> Hello World </div>;
+const px = "px";
+
+let type = "test"
+
+function onload(){
+    const 
+        root = "@root",
+        rect = target.ele.getBoundingClientRect();
+
+    type = NT[target.type];
+
+    root.style.top = rect.top - 35 + px;
+    root.style.left = rect.left + px;
+}
+
+function click(e){
+    //Prevent editor from interacting with this event.
+    e.preventDefault()
+    e.stopPropagation()
+
+    if(target.type == NT.HEADER){
+        
+        editor.getProcessor(
+            "edit",
+            editor.TextCommand.SET_HEADER_SIZE, 
+        )(target, Math.max(1, ((target.meta + 1) % 6)), edit_host);
+
+        if (edit_host.debug_data.DEBUGGER_ENABLED)
+            vw.updatePointerData(edit_host);
+
+        vw.updateHost(edit_host);
+    }
+}
+
+export default <div onpointerdown={click}> {type} </div>;
 
 <style>
     root {
-        background-color:white;
-        padding:10px;
+        top:0;
+        left:0;
+        position:fixed;
+        background-color: rgb(20 20 30);
+        border-radius:2px;
+        line-height:1em;
+        padding:5px 20px;
+        color:white;
+        font-weight: 600;
+        box-shadow: 2px 2px 5px rgba(0 0 0 0.1)
     }
 </style>

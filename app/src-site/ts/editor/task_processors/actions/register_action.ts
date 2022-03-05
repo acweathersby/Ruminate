@@ -19,3 +19,4 @@ export function getProcessor(type: string, key: TextCommand): TaskProcessor {
     return task_registry.get(type)?.get(key) ?? null;
 }
 
+export { TextCommand };

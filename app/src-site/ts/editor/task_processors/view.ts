@@ -39,12 +39,35 @@ export function getOffsetsFromSelection(edit_host: EditHost) {
         { node: n1, offset: o1 } = getRootElement(focusNode, focusOffset),
         { node: n2, offset: o2 } = getRootElement(anchorNode, anchorOffset);
 
-    let anchor_offset = getCumulativeOffset(n1, edit_host) + o1;
+    //Ensure nodes are within the editable area
 
-    let focus_offset = getCumulativeOffset(n2, edit_host) + o2;
+    let anchor_offset = nodeIsInEditTree(n1, edit_host)
+        ? getCumulativeOffset(n1, edit_host) + o1
+        : 0;
+
+    let focus_offset = nodeIsInEditTree(n2, edit_host)
+        ? getCumulativeOffset(n2, edit_host) + o2
+        : 0;
 
     edit_host.start_offset = Math.min(anchor_offset, focus_offset) + 1;
     edit_host.end_offset = Math.max(anchor_offset, focus_offset) + 1;
+}
+
+export function nodeIsInEditTree(node: Node, edit_host: EditHost) {
+    const root = edit_host.root.ele;
+
+    if (root) {
+        let par = node;
+
+        while (par && par != root) {
+            par = par.parentElement;
+        }
+
+        if (par == root)
+            return true;
+    }
+
+    return false;
 }
 
 function getRootElement(node: Node, offset: number) {
@@ -198,7 +221,12 @@ function toHTMLNaive(
     } else if (node.is(ROOT)) {
         //First has a zero length offset
         const div = addChildNodes(node, node.ele = cE("div"), vp);
-        div.setAttribute("contentEditable", "true");
+
+        if (vp.edit_host.READ_ONLY)
+            div.setAttribute("contentEditable", "false");
+        else
+            div.setAttribute("contentEditable", "true");
+
         return div;
     } else node.ele = cE('div');
 }
@@ -348,11 +376,11 @@ export function toggleEditable(edit_host: EditHost) {
  * Set the editable state of the host element
  */
 export function setEditable(edit_host: EditHost, EDITABLE: boolean = true) {
-    if (edit_host.host_ele)
+    if (edit_host?.root?.ele && edit_host.root.ele instanceof HTMLElement)
         if (EDITABLE)
-            edit_host.host_ele.setAttribute("contenteditable", "true");
+            edit_host.root.ele.setAttribute("contenteditable", "true");
         else
-            edit_host.host_ele.setAttribute("contenteditable", "false");
+            edit_host.root.ele.setAttribute("contenteditable", "false");
 }
 
 export const toHTML = toHTMLNaive;
@@ -398,10 +426,18 @@ export function handleMetaViews(edit_host: EditHost) {
 
     let len = 0;
 
+    for (const comp of edit_host.meta_UIs)
+        comp.transitionOut(0, 0, false, null, true);
+
     for (const node of edit_host.root.children) {
         if (start_offset == len + 1) {
-            //Enable the meta edit system at this point. 
-            wick.rt.create_named("meta_editor", edit_host.host_ele, { edit_host });
+            if (node.ele) {
+
+                //Enable the meta edit system at this point. 
+                const comp = wick.rt.create_named("meta_editor", edit_host.host_ele, { edit_host, line: node });
+
+                edit_host.meta_UIs.push(comp);
+            }
             break;
         }
         len += node.length;

@@ -1,7 +1,6 @@
 import {id} from "@model";
 import * as editor from "../../ts/editor/text_editor.ts";
-import * as rm from "../../ts/tauri/bridge.ts";
-import {test_data} from "./test_note.txt";
+import * as bridge from "../../ts/tauri/bridge.ts";
 import note_body from "./note_body"
 
 let path = "";
@@ -10,11 +9,11 @@ let host = null;
 
 async function onload(){
     id = 3;
-    host = await editor.constructEditHost(id, "@.note-body", test_data);
+    host = await editor.constructEditHost(id);
     editor.addMarkdownPreviewTarget(host, "@.note-md-preview");
     editor.setReadOnly(false);
-    rm.get_note_name(id).then(n=>name=n);
-    rm.get_note_container_path(id).then(p=>path=p);
+    bridge.get_note_name(id).then(n=>name=n);
+    bridge.get_note_container_path(id).then(p=>path=p);
 }
 
 export default <div class=note> 
