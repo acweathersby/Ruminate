@@ -10,7 +10,7 @@ export enum TextCommand {
     DELETE_TEXT,
     TOGGLE_ITALICS,
     TOGGLE_BOLD,
-    SET_HEADER_SIZE
+    SET_HEADER_SIZE,
 }
 export interface HistoryTask {
     state: MDNode<NodeType.ROOT>,

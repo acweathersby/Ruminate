@@ -107,7 +107,13 @@ function createEditHostObj(
         options: {},
         end_offset: 0,
         start_offset: 0,
-        meta_UIs: []
+        meta_UIs: [],
+        NEW_LINE_MODE: false,
+        new_line_data: {
+            md_offset_start: -1,
+            offset_start: -1,
+            text_data: ""
+        }
     };
 }
 export function addMarkdownPreviewTarget(

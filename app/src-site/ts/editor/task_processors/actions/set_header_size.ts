@@ -6,7 +6,14 @@ import * as ops from '../operators';
 import { initLength } from '../traverse/traverse';
 import { registerAction } from './register_action.js';
 
-function setHeaderSize(node: MDNode<NodeType.HEADER>, size: 1 | 2 | 3 | 4 | 5 | 6, edit_host: EditHost) {
+function setHeaderSize(
+    node: MDNode<NodeType.HEADER>,
+    size: 1 | 2 | 3 | 4 | 5 | 6,
+    edit_host: EditHost
+) {
+
+    if (typeof size != "number" || isNaN(size) || size < 1 || size > 6)
+        return;
 
     const
         nonce = history.startRecording(edit_host),

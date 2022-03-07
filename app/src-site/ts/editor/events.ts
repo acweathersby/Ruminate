@@ -13,17 +13,11 @@ export function attachListeners(edit_host: EditHost) {
     if (!edit_host.host_ele)
         return;
 
-    let SELECTION_UPDATE_TARGET = null;
-
     edit_host.event_handlers = {
-        selectionchange(e) {
-            console.log(e);
-            //Update offsets. 
-            //if (SELECTION_UPDATE_TARGET) {
+        selectionchange() {
             vw.getOffsetsFromSelection(edit_host);
             vw.updatePointerData(edit_host);
             vw.handleMetaViews(edit_host);
-            //  }
         },
         pointerup(e: PointerEvent) {
             edit_host.host_ele.releasePointerCapture(e.pointerId);
@@ -36,7 +30,7 @@ export function attachListeners(edit_host: EditHost) {
             edit_host.host_ele.setPointerCapture(e.pointerId);
 
             setTimeout(_ => {
-                edit_host.event_handlers.selectionchange(e);
+                edit_host.event_handlers.selectionchange();
             }, 1);
             //If the selected node is a non-selectable, update it's selection
         },
@@ -65,6 +59,7 @@ export function attachListeners(edit_host: EditHost) {
                 ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
             )
                 return adaptArrowPress(e, edit_host);
+
 
             let NO_DEFAULT = false;
 
@@ -116,6 +111,9 @@ export function removeListeners(edit_host: EditHost) {
 }
 
 function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
+    setTimeout(_ => {
+        edit_host.event_handlers.selectionchange();
+    }, 1);
     return;
     let { start_offset, end_offset } = edit_host;
 

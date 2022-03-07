@@ -17,6 +17,8 @@ export enum NodeType {
     ROOT,
     TEXT,
     UNDEFINED,
+
+    STEM_LINE,
     UNORDERED_LIST,
 }
 
@@ -82,6 +84,7 @@ export interface NodeMeta {
     [NodeType.QUOTE]: string;
     [NodeType.ROOT]: null;
     [NodeType.TEXT]: string;
+    [NodeType.STEM_LINE]: string;
     [NodeType.UNDEFINED]: null;
     [NodeType.UNORDERED_LIST]: number;
 }
@@ -100,6 +103,7 @@ export interface NodeChildren {
     [NodeType.QUOTE]: MDNode[];
     [NodeType.ROOT]: MDNode[];
     [NodeType.TEXT]: MDNode[];
+    [NodeType.STEM_LINE]: MDNode[];
     [NodeType.UNDEFINED]: MDNode[];
     [NodeType.UNORDERED_LIST]: MDNode[];
 }
@@ -152,6 +156,11 @@ const NodeMDData = {
         pre: (n: MDNode<NodeType.PARAGRAPH>) => 1,
         internal: (n: MDNode<NodeType.PARAGRAPH>) => 0,
         post: (n: MDNode<NodeType.PARAGRAPH>) => 1
+    },
+    [NodeType.STEM_LINE]: {
+        pre: (n: MDNode<NodeType.STEM_LINE>) => 1,
+        internal: (n: MDNode<NodeType.STEM_LINE>) => 0,
+        post: (n: MDNode<NodeType.STEM_LINE>) => 1
     },
     [NodeType.QUERY]: {
         pre: (n: MDNode<NodeType.QUERY>) => 1,
@@ -232,6 +241,11 @@ const NodeData = {
         internal: (n: MDNode<NodeType.PARAGRAPH>) => 0,
         post: (n: MDNode<NodeType.PARAGRAPH>) => 0,
     },
+    [NodeType.STEM_LINE]: {
+        pre: (n: MDNode<NodeType.STEM_LINE>) => 1,
+        internal: (n: MDNode<NodeType.STEM_LINE>) => 0,
+        post: (n: MDNode<NodeType.STEM_LINE>) => 0,
+    },
     [NodeType.QUERY]: {
         pre: (n: MDNode<NodeType.QUERY>) => 0,
         internal: (n: MDNode<NodeType.QUERY>) => 1,
@@ -273,6 +287,7 @@ const NodeClasses = {
     [NodeType.ITALIC]: NodeClass.FORMAT | NodeClass.TEXT_CONTAINER,
     [NodeType.ORDERED_LIST]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
     [NodeType.PARAGRAPH]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
+    [NodeType.STEM_LINE]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
     [NodeType.QUERY]: NodeClass.MERGEABLE | NodeClass.OPAQUE | NodeClass.SINGLE_CHARACTER | NodeClass.CARET_TARGET,
     [NodeType.QUOTE]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
     [NodeType.ROOT]: NodeClass.UNDEFINED | NodeClass.TEXT_CONTAINER,

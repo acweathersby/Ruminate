@@ -19,6 +19,7 @@ const {
     ROOT,
     TEXT,
     UNORDERED_LIST,
+    STEM_LINE
 } = NodeType;
 
 type ViewPack = {
@@ -92,7 +93,7 @@ export function getCumulativeOffset(node: Node, edit_host: EditHost): number {
 
     let addendum = 0;
 
-    if (node == edit_host.host_ele)
+    if (node == edit_host.root.ele)
         return addendum;
 
     if (node.previousSibling) {
@@ -126,7 +127,10 @@ export function getCumulativeOffset(node: Node, edit_host: EditHost): number {
 
 
 export function updateHost(edit_host: EditHost) {
-    edit_host.host_ele.innerHTML = "";
+
+    for (const note of edit_host.host_ele.getElementsByClassName("editable-note"))
+        edit_host.host_ele.removeChild(note);
+
     edit_host.host_ele.appendChild(toHTMLNaive(edit_host.root, {
         edit_host,
         offset: 0
@@ -149,7 +153,29 @@ function toHTMLNaive(
     if (node.containsClass(NodeClass.LINE)) {
         vp.offset++;
         let tag = "";
-        if (node.is(PARAGRAPH)) {
+
+        if (node.is(STEM_LINE)) {
+
+            const text = toMDString(node).trimStart();
+
+            if (text.slice(0, 4) == "``` ") {
+                tag = "pre";
+            } else if (text.slice(0, 2) == "# ") {
+                tag = "h1";
+            } else if (text.slice(0, 3) == "## ") {
+                tag = "h2";
+            } else if (text.slice(0, 4) == "### ") {
+                tag = "h3";
+            } else if (text.slice(0, 5) == "#### ") {
+                tag = "h4";
+            } else if (text.slice(0, 6) == "##### ") {
+                tag = "h5";
+            } else if (text.slice(0, 7) == "###### ") {
+                tag = "h6";
+            } else {
+                tag = "p";
+            }
+        } else if (node.is(PARAGRAPH)) {
             tag = "p";
         } else if (node.is(HEADER)) {
             tag = "h" + node.meta;
@@ -170,7 +196,6 @@ function toHTMLNaive(
         }
 
         const ele = addChildNodes(node, cE(tag), vp);
-
         const last_child = node.children.slice().pop();
 
         if (last_child) {
@@ -224,8 +249,10 @@ function toHTMLNaive(
 
         if (vp.edit_host.READ_ONLY)
             div.setAttribute("contentEditable", "false");
-        else
+        else {
             div.setAttribute("contentEditable", "true");
+            div.classList.add("editable-note");
+        }
 
         return div;
     } else node.ele = cE('div');
@@ -247,6 +274,8 @@ function addChildNodes<T extends Node>(
 // that occurs before the text of the node's children.
 export function toMDPreText(n: MDNode): string {
     if (n.is(PARAGRAPH)) {
+        return "\n";
+    } else if (n.is(STEM_LINE)) {
         return "\n";
     } else if (n.is(TEXT)) {
         return "";
@@ -281,14 +310,17 @@ export function toMDPreText(n: MDNode): string {
     } else return "";
 }
 
+
 // Return a string that represents the markdown text
 // that occurs after the text of the node's children.
 export function toMDPostText(node: MDNode): string {
     if (node.is(PARAGRAPH)) {
         return "\n";
+    } else if (node.is(STEM_LINE)) {
+        return "\n";
     } else if (node.is(TEXT)) {
         return node.meta;
-    } else if (node.is(ANCHOR)) {
+    } if (node.is(ANCHOR)) {
         return ["]", "(", node.meta, ")"].join("");
     } else if (node.is(BOLD)) {
         return "__";
@@ -425,23 +457,39 @@ export function handleMetaViews(edit_host: EditHost) {
     } = edit_host;
 
     let len = 0;
-
-    for (const comp of edit_host.meta_UIs)
-        comp.transitionOut(0, 0, false, null, true);
+    console.log({ start_offset });
 
     for (const node of edit_host.root.children) {
         if (start_offset == len + 1) {
             if (node.ele) {
+                if (edit_host.meta_UIs.length > 0) {
+                    const comp = edit_host.meta_UIs[0];
+                    comp.update({ line: node });
+                } else {
 
-                //Enable the meta edit system at this point. 
-                const comp = wick.rt.create_named("meta_editor", edit_host.host_ele, { edit_host, line: node });
+                    //Enable the meta edit system at this point. 
+                    const comp = wick
+                        .rt
+                        .create_named(
+                            "meta_editor",
+                            edit_host.host_ele,
+                            { edit_host, line: node }
+                        );
 
-                edit_host.meta_UIs.push(comp);
+                    edit_host.meta_UIs.push(comp);
+                    comp.update({ edit_host, line: node });
+                }
+                return;
             }
-            break;
         }
         len += node.length;
     }
+
+
+    for (const comp of edit_host.meta_UIs)
+        comp.transitionOut(0, 0, false, null, true);
+
+    edit_host.meta_UIs.length = 0;
 }
 
 function getSelectionParts(

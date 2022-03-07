@@ -142,19 +142,21 @@ export class ReplaceableYielder extends Yielder {
         } else {
 
             const old_node = Array.isArray(repl) ? repl[0] : repl;
+            /*
 
-            const new_node = this.replace_tree_function(
-                old_node,
-                null,
-                0,
-                [],
-                () => { },
-                this.next_gen
-            );
+           const new_node = this.replace_tree_function(
+               old_node,
+               null,
+               0,
+               [],
+               () => { },
+               this.next_gen
+           );
 
-            new_node.children = old_node.children;
+           new_node.children = old_node.children; */
 
-            node_stack[0] = new_node;
+            node_stack[0] = old_node;
+
         }
     }
 
@@ -200,9 +202,12 @@ export class ReplaceableYielder extends Yielder {
                         (new_child_children_length << 16)
                         | (this.index_length_stack[sp] & 0xFFFF);
 
+                const p_len = this.index_length_stack[sp - 1] >> 16;
+                const p_index = this.index_length_stack[sp - 1] & 0xFFFF;
+
                 if (REPLACEMENT_IS_NULL) {
 
-                    this.index_length_stack[sp - 1] -= (1 << 16);
+                    this.index_length_stack[sp - 1] = ((p_len - 1) << 16);
 
                     children.splice(index, 1);
 
@@ -210,9 +215,8 @@ export class ReplaceableYielder extends Yielder {
                 } else if (REPLACEMENT_IS_ARRAY) {
                     //Increment the length of the stack and set the index to the end of the array
 
-                    this.index_length_stack[sp - 1] +=
-                        ((replacement.length) << 16
-                            | (replacement.length - 1));
+                    this.index_length_stack[sp - 1] =
+                        ((p_len + replacement.length - 1) << 16 | (p_index + replacement.length - 1));
 
                     children.splice(index, 1, ...replacement);
 
@@ -224,18 +228,17 @@ export class ReplaceableYielder extends Yielder {
                     node_stack[sp] = replacement;
                 }
 
-
                 parent.children = children;
 
                 if (REPLACEMENT_IS_NULL) {
-                    this.index_length_stack[sp - 1] -= 1;
+                    this.index_length_stack[sp - 1]--;
                     if (PROCESS_NEW_NODE)
-                        this.index_length_stack[sp - 1] -= 1;
+                        this.index_length_stack[sp - 1]--;
                 } else if (PROCESS_NEW_NODE) {
                     if (REPLACEMENT_IS_ARRAY) {
                         this.index_length_stack[sp - 1] -= replacement.length;
                     } else {
-                        this.index_length_stack[sp - 1] -= 1;
+                        this.index_length_stack[sp - 1]--;
                     }
                 }
             }

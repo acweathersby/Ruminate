@@ -9,8 +9,10 @@ import { deleteText } from './delete_text';
 import { registerAction } from './register_action';
 function insertText(edit_host: EditHost, new_text: string) {
 
-    const nonce = history.startRecording(edit_host);
-    const gen = edit_host.root.generation + 1;
+    const
+        nonce = history.startRecording(edit_host),
+
+        gen = edit_host.root.generation + 1;
 
     if (edit_host.start_offset != edit_host.end_offset) {
         //Remove text between these two points before inserting.
@@ -63,6 +65,7 @@ function insertText(edit_host: EditHost, new_text: string) {
     }
 
     edit_host.start_offset += new_text.length;
+    
     edit_host.end_offset = edit_host.start_offset;
 
     initLength(edit_host.root);

@@ -39,6 +39,14 @@ export interface EditHost {
 
     history_pointer: number;
 
+    NEW_LINE_MODE: boolean;
+
+    new_line_data: {
+        md_offset_start: number;
+        offset_start: number;
+        text_data: string;
+    };
+
     /**
      * Id's of notes already loaded in ancestors. 
      * Prevents recursive loading of notes.

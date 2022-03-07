@@ -1,21 +1,20 @@
-import {line as target, edit_host} from "@model";
+import { line, edit_host } from "@attributes";
 import { NodeType as NT} from "../../ts/editor/task_processors/md_node.ts";
 import * as vw from "../../ts/editor/task_processors/view.ts";
 import * as editor from "../../ts/editor/text_editor.ts";
+import header from "./meta_ui/header";
 
+//Export the component as a named component.
 export {this as meta_editor}
-
 const px = "px";
-
 let type = "test"
 
-function onload(){
+function $(line){
+
     const 
         root = "@root",
-        rect = target.ele.getBoundingClientRect();
-
-    type = NT[target.type];
-
+        rect = line.ele.getBoundingClientRect();
+        
     root.style.top = rect.top - 35 + px;
     root.style.left = rect.left + px;
 }
@@ -24,34 +23,25 @@ function click(e){
     //Prevent editor from interacting with this event.
     e.preventDefault()
     e.stopPropagation()
-
-    if(target.type == NT.HEADER){
-        
-        editor.getProcessor(
-            "edit",
-            editor.TextCommand.SET_HEADER_SIZE, 
-        )(target, Math.max(1, ((target.meta + 1) % 6)), edit_host);
-
-        if (edit_host.debug_data.DEBUGGER_ENABLED)
-            vw.updatePointerData(edit_host);
-
-        vw.updateHost(edit_host);
-    }
 }
 
-export default <div onpointerdown={click}> {type} </div>;
+export default <div onpointerdown={click}>
+    <container data={[{line:line, edit_host:edit_host}]}>
+    <header use-if={ m.line.type == NT.HEADER }/>
+    <div use-if={true}>ff</div>
+</container> </div>;
 
 <style>
     root {
+        height:auto;
         top:0;
         left:0;
         position:fixed;
-        background-color: rgb(20 20 30);
+        background-color: #48565D;
         border-radius:2px;
         line-height:1em;
-        padding:5px 20px;
         color:white;
         font-weight: 600;
         box-shadow: 2px 2px 5px rgba(0 0 0 0.1)
     }
-</style>
+</style>;

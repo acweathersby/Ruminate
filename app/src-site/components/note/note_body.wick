@@ -15,8 +15,11 @@ export default <div class=note-body></div>;
         border-radius:10px;
         outline:none;
         font-size:12px;
-        white-space: pre-wrap; 
         color:#222222
+    }
+
+    .editable-note {
+        white-space: pre-wrap; 
     }
 
     root * {

@@ -15,6 +15,30 @@
     changes during an edit task and maintain diff patches alongside edit trees
     within the history.
 
+- [ ] - 10min - Fix incorrectly set cursor offset at head of line
+- [ ] - 20min - Complete conversion of stem line to real line when space or other action is performed
+- [ ] - 10min - Add stem line meta UI
+- [ ] - 20min - Add anchor meta UI
+- [ ] - 20min - Add query meta UI
+- [ ] - 30min - Add picture meta UI
+- [ ] - 20min - Validate cursor position during different transforms
+                - Insert Text
+                - Delete Text
+                - Delete Line
+                - Insert Line
+                    - Start
+                    - Middle
+                    - End
+                - Toggle formatting
+                    - Bold
+                    - Inline Code
+                    - Italic
+                - Change line type
+                    - Header 1 - 6
+                    - Paragraph
+                    - List item
+                        - Ordered
+                        - Unordered
 - [ ] - 30min - Adjust styling for notes. 
 - [ ] - 30min - Enable basic not query 
 - [ ] - 30min - Optimize note rebuild

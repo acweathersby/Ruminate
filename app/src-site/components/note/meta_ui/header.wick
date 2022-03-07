@@ -1,0 +1,55 @@
+import {line, edit_host} from "@model";
+import { NodeType as NT} from "../../../ts/editor/task_processors/md_node.ts";
+import * as vw from "../../../ts/editor/task_processors/view.ts";
+import * as editor from "../../../ts/editor/text_editor.ts";
+
+
+let sizes = [1,2,3,4,5,6].map(v=>({v}))
+let size = line.meta;
+let set_size = 0;
+
+function $(set_size){
+    if(set_size != 0){
+        if(line.type == NT.HEADER){
+            
+            editor.getProcessor(
+                "edit",
+                editor.TextCommand.SET_HEADER_SIZE, 
+            )(line, set_size, edit_host);
+
+            if (edit_host.debug_data.DEBUGGER_ENABLED)
+                vw.updatePointerData(edit_host);
+
+            vw.updateHost(edit_host);
+            vw.handleMetaViews(edit_host);
+        }
+    }
+}
+
+export default <div>
+    <container data={sizes} element=null>
+        <div class=entry onclick={set_size=v}>h{v}</div>
+    </container>
+</div>;
+
+
+<style>
+    root {
+        display:flex;
+        flex-direction:row;
+    }
+
+    .entry {
+        text-align:center;
+        display:flex;
+        margin:2px 10px;
+        width:30px;
+        height:30px;
+    }
+
+    .entry:hover {
+
+        cursor:pointer;
+        background-color: #FFFFFF50;
+    }
+</style>
