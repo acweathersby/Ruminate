@@ -200,9 +200,10 @@ export function splitNode(
     offset: number,
     gen: number,
     md_offset: number,
+    ALLOW_HISTORY: boolean = true
 ) {
     const { left: [l], right: [r] }
-        = split([node], offset, gen, md_offset);
+        = split([node], offset, gen, md_offset, ALLOW_HISTORY);
 
     initLength(l);
     initLength(r);
@@ -229,6 +230,7 @@ export function split(
     offset: number,
     gen: number,
     md_offset: number = 0,
+    ALLOW_HISTORY: boolean = true
 ): { left: MDNode[], right: MDNode[]; } {
     const left = [], right = [];
     for (const node of nodes) {
@@ -251,13 +253,20 @@ export function split(
 
                     let b = copy(a);
 
-                    history.addInsert(
-                        md_offset + getMDOffsetFromEditOffset(node, offset).md,
-                        toMDPostText(node) + toMDPreText(node)
-                    );
+                    if (ALLOW_HISTORY)
+                        history.addInsert(
+                            md_offset + getMDOffsetFromEditOffset(node, offset).md,
+                            toMDPostText(node) + toMDPreText(node)
+                        );
 
                     const { left: cl, right: cr }
-                        = split(children, offset, gen, md_offset + node.pre_length);
+                        = split(
+                            children,
+                            offset - node.pre_length,
+                            gen,
+                            md_offset + node.pre_md_length,
+                            ALLOW_HISTORY
+                        );
 
                     a.children = cl;
 

@@ -10,19 +10,8 @@ let set_size = 0;
 
 function $(set_size){
     if(set_size != 0){
-        if(line.type == NT.HEADER){
-            
-            editor.getProcessor(
-                "edit",
-                editor.TextCommand.SET_HEADER_SIZE, 
-            )(line, set_size, edit_host);
-
-            if (edit_host.debug_data.DEBUGGER_ENABLED)
-                vw.updatePointerData(edit_host);
-
-            vw.updateHost(edit_host);
-            vw.handleMetaViews(edit_host);
-        }
+        if(line.type == NT.HEADER)
+            editor.runCommand(editor.TextCommand.SET_HEADER_SIZE, edit_host, line, set_size);
     }
 }
 

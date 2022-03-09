@@ -24,6 +24,9 @@ export function attachListeners(edit_host: EditHost) {
         },
         pointermove(e: PointerEvent) {
             if (edit_host.host_ele.hasPointerCapture(e.pointerId)) {
+                setTimeout(_ => {
+                    edit_host.event_handlers.selectionchange();
+                }, 1);
             }
         },
         pointerdown(e: PointerEvent) {

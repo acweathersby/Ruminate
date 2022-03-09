@@ -1,4 +1,7 @@
+import { EditHost } from '../../types/edit_host';
 import { TextCommand } from '../../types/text_command_types';
+import { initLength } from '../traverse/traverse';
+import * as vw from "../view";
 
 type TaskProcessor = (..._: any) => any;
 
@@ -17,6 +20,27 @@ export function registerAction(type: string, key: TextCommand, processor: TaskPr
 
 export function getProcessor(type: string, key: TextCommand): TaskProcessor {
     return task_registry.get(type)?.get(key) ?? null;
+}
+
+/**
+ * Runs a given command, passing arguments on to the 
+ * command function 
+ */
+export function runCommand(
+    command: TextCommand,
+    edit_host: EditHost,
+    ...args: any[]
+) {
+    getProcessor("edit", command,)(edit_host, ...args);
+
+    initLength(edit_host.root);
+
+    if (edit_host.debug_data.DEBUGGER_ENABLED)
+        vw.updatePointerData(edit_host);
+
+    vw.updateHost(edit_host);
+
+    vw.handleMetaViews(edit_host);
 }
 
 export { TextCommand };

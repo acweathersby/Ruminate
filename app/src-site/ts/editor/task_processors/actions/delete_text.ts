@@ -18,7 +18,6 @@ export function deleteText(edit_host: EditHost) {
 
         ng = edit_host.root.generation + 1;
 
-
     for (const { node, meta, reset, getAncestry } of traverse(edit_host.root)
         .skipRoot()
         .rangeFilter(start_offset, end_offset)
@@ -60,25 +59,40 @@ export function deleteText(edit_host: EditHost) {
                     skip();
                 } else if (prev && node.is(prev.type)) {
                     //Merge the two and then redo parsing
-                    history.addDelete(
-                        md_head - node.post_md_length,
-                        node.post_md_length + node.pre_md_length
-                    );
+
 
                     replace(null, ng);
 
                     const
                         parent = getAncestry()[0],
                         par_children = parent.children,
-                        new_node = ops.clone(prev);
+                        new_node = ops.clone(prev),
+                        { right, left } = ops.splitNode(
+                            node,
+                            overlap_length,
+                            ng,
+                            md_head,
+                            false
+                        );
 
-                    new_node.children = prev.children.concat(node.children);
+                    history.addDelete(
+                        md_head - prev.post_md_length,
+                        prev.post_md_length
+                        + node.pre_md_length
+                        + left.md_length
+                        - left.post_md_length
+                        - left.pre_md_length
+                    );
 
-                    meta.range_end--;
+                    new_node.children = prev.children.concat(right.children);
+
+                    meta.range_end -= overlap_length;
 
                     par_children[index - 1] = new_node;
 
                     parent.children = par_children;
+                } else {
+                    debugger;
                 }
             }
 
@@ -90,7 +104,6 @@ export function deleteText(edit_host: EditHost) {
 
             replace(null, ng);
 
-            //skip();
         } else if (node.is(NodeType.TEXT)) {
             switch (overlap_type) {
 
@@ -121,7 +134,7 @@ export function deleteText(edit_host: EditHost) {
 
                     meta.range_end -= overlap_length;
 
-                    replace([right], ng);
+                    replace(right, ng);
 
                     skip();
                 } break;
@@ -136,15 +149,13 @@ export function deleteText(edit_host: EditHost) {
 
                     meta.range_end -= overlap_length;
 
-                    replace([left], ng);
+                    replace(left, ng);
 
                     skip();
                 } break;
             }
         }
     }
-
-    console.log({ start_offset });
 
     edit_host.root = ops.heal(edit_host.root, ng).node;
 

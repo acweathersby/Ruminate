@@ -12,6 +12,8 @@ import {
 } from './task_processors/view.js';
 import { EditHost } from './types/edit_host.js';
 
+
+
 /**
  * Import processors. These will register
  * with processor store and made available
@@ -23,9 +25,10 @@ import "./task_processors/actions/insert_text.js";
 import "./task_processors/actions/toggle_bold.js";
 import "./task_processors/actions/toggle_italics.js";
 import "./task_processors/actions/set_header_size.js";
-
 export * from "./task_processors/actions/register_action.js";
 export * from "./task_processors/history/history.js";
+
+
 
 export async function constructReadOnlyHost(
     note_id: number,
@@ -156,3 +159,4 @@ export function setReadOnly(
         attachListeners(edit_host);
     }
 }
+

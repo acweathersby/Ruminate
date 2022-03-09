@@ -40,8 +40,8 @@ export class SkippableYielder extends Yielder {
     skip(skip_to_child_index: number = 0xFFFF) {
 
         const { stack_pointer: sp, val_length_stack, offset_stack, node_stack, md_offset_stack } = this;
-
-        const current_index = (val_length_stack[sp - 1] & 0x0000FFFF) - 1;
+        const current_len = (val_length_stack[sp - 1] >> 16);
+        const current_index = ((val_length_stack[sp - 1] & 0x0000FFFF) - 1) - 15;
 
         if (skip_to_child_index == undefined) skip_to_child_index = ((val_length_stack[sp] & 0xFFFF0000) >> 16) + 1;
 
@@ -51,7 +51,7 @@ export class SkippableYielder extends Yielder {
             //Something has already progressed the iteration beyond
             //this node. Do not try to adjust anything.
         } else {
-            if (sp > 0) {
+            if (sp > 0 && current_index < current_len - 1) {
                 const node = node_stack[sp];
                 offset_stack[sp] = offset_stack[sp - 1] + node.length - node.internal_length - node.post_length;
                 md_offset_stack[sp] = md_offset_stack[sp - 1] + node.md_length - node.internal_md_length - node.post_md_length;

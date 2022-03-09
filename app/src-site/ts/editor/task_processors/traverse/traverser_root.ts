@@ -11,6 +11,7 @@ import { inRangeYielder, range_filter } from './yielder/in_range';
 import { extract } from './yielder/extract_root_node';
 
 
+const index_zeropoint = 15;
 export class Traverser<B> implements ASTIterator<B> {
     protected node: MDNode;
     protected sp: number;
@@ -98,8 +99,8 @@ export class Traverser<B> implements ASTIterator<B> {
             if (node) {
                 //@ts-ignore
                 node_stack[0] = this.node;
-                val_length_stack[0] = this.node.children.length << 16;
-                val_length_stack[1] = 0;
+                val_length_stack[0] = (this.node.children.length << 16) + index_zeropoint;
+                val_length_stack[1] = 0 + index_zeropoint;
                 offset_stack[0] = 0;
                 offset_stack[1] = node.pre_length;
                 md_offset_stack[0] = 0;
@@ -125,7 +126,7 @@ export class Traverser<B> implements ASTIterator<B> {
             const
                 len = this.length_index_stack[this.sp],
                 limit = (len & 0xFFFF0000) >> 16,
-                index = (len & 0xFFFF);
+                index = (len & 0x0000FFFF) - index_zeropoint;
 
             if (this.sp < max_depth && index < limit) {
 
@@ -152,7 +153,7 @@ export class Traverser<B> implements ASTIterator<B> {
                 offset_stack[this.sp] = meta.head + child.pre_length;
                 md_offset_stack[this.sp] = meta.md_head + child.pre_md_length;
 
-                val_length_stack[this.sp] = child.children.length << 16;
+                val_length_stack[this.sp] = (child.children.length << 16) + index_zeropoint;
 
                 if (child) {
                     meta.prev = node_stack[this.sp - 1].children[index - 1];

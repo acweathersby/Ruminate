@@ -6,22 +6,32 @@
 - [x] - total 68min - Get basic inter-note rendering working
 - [x] - total 50min - Get basic note (by id) save and retrieval working
 - [x] - total 8min - Ensure path and name appear in note interface
-
----
-- [ ] - 60min - total 300min - Improve performance of text updates
+- [x] - total 4min - Fix multi-line selection offsets
+- [x] - total 300min - Improve performance of text updates
 
     Diff algorithms are prohibitively slow when processing large bodies of text at the
     character level. The solution being pursued is to actively track character level
     changes during an edit task and maintain diff patches alongside edit trees
     within the history.
+- [x] - total 113min - Fix incorrect portions removed when doing multi-element text deletion.
 
-- [ ] - 10min - Fix incorrectly set cursor offset at head of line
+---
+
+## Working:
+
+
+
+## FE
+- [ ] - 10min - Ensure heal actions take into account counterpart elements with differing meta states
+- [ ] - 10min - Fix incorrectly set cursor offset at head of line 
 - [ ] - 20min - Complete conversion of stem line to real line when space or other action is performed
 - [ ] - 10min - Add stem line meta UI
 - [ ] - 20min - Add anchor meta UI
 - [ ] - 20min - Add query meta UI
 - [ ] - 30min - Add picture meta UI
-- [ ] - 20min - Validate cursor position during different transforms
+- [ ] - 20min - Validate correct cursor position after different transforms
+                - Undo
+                - Redo
                 - Insert Text
                 - Delete Text
                 - Delete Line
@@ -56,3 +66,9 @@
 - [ ] - 30min - Implement checkbox & lists
 - [ ] - 60min - Investigate note execution models
 - [ ] - 60min - Build basic note scraper for VS code
+
+## BE
+
+- [ ] - 60min - Revise note storage to use line based CRDTs
+
+## API

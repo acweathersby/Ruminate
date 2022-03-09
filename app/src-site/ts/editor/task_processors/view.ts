@@ -50,6 +50,8 @@ export function getOffsetsFromSelection(edit_host: EditHost) {
         ? getCumulativeOffset(n2, edit_host) + o2
         : 0;
 
+    console.log({ n1, n2, o1, o2 });
+
     edit_host.start_offset = Math.min(anchor_offset, focus_offset) + 1;
     edit_host.end_offset = Math.max(anchor_offset, focus_offset) + 1;
 }

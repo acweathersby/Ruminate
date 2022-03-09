@@ -92,11 +92,13 @@ export class ReplaceableYielder extends Yielder {
 
         this.next_gen = next_gen;
 
+        let sp = this.stack_pointer;
+
         const
             node_stack: MDNode[] = this.node_stack,
-            val_length_stack: number[] = this.index_length_stack;
+            curr_index: number = (this.index_length_stack[sp] & 0x0000FFFF) - 15 - 1,
+            curr_len: number = this.index_length_stack[sp] >> 16;
 
-        let sp = this.stack_pointer;
 
         //need to trace up the current stack and replace each node with a duplicate
         if (sp > 0) {
@@ -116,10 +118,12 @@ export class ReplaceableYielder extends Yielder {
                 if (repl) {
                     if (Array.isArray(repl)) {
                         if (PROCESS_NEW_NODE) {
+                            debugger;
                             const r = repl[0];
                             this.offset_stack[sp] = this.curr_offset + r.pre_length;
                             this.md_offset_stack[sp] = this.curr_md_offset + r.pre_md_length;
                         } else {
+                            debugger;
                             const len = repl.reduce((r, n) => r + n.length, 0);;
                             const md_len = len + repl.reduce((r, n) => r + n.pre_md_length + n.post_md_length, 0);
                             this.offset_stack[sp] = this.curr_offset + len;
@@ -127,9 +131,11 @@ export class ReplaceableYielder extends Yielder {
                         }
                     } else {
                         if (PROCESS_NEW_NODE) {
+                            debugger;
                             this.offset_stack[sp] = this.curr_offset;
                             this.md_offset_stack[sp] = this.curr_md_offset;
-                        } else {
+                        } else if (curr_len < curr_index - 1) {
+                            debugger;
                             this.offset_stack[sp] = incrementOffset(repl, this.curr_offset);
                             this.md_offset_stack[sp] = incrementOffset(repl, this.curr_offset) + repl.pre_md_length;
                         }
@@ -175,7 +181,7 @@ export class ReplaceableYielder extends Yielder {
                 REPLACEMENT_IS_ARRAY = Array.isArray(replacement),
                 REPLACEMENT_IS_NULL = null === replacement,
                 len = this.index_length_stack[sp - 1],
-                index = (len & 0xFFFF) - 1,
+                index = (len & 0xFFFF) - 1 - 15,
                 new_child_children_length = REPLACEMENT_IS_NULL
                     ? 0
                     : (REPLACEMENT_IS_ARRAY ? replacement[0] : replacement).children.length,
@@ -203,15 +209,13 @@ export class ReplaceableYielder extends Yielder {
                         | (this.index_length_stack[sp] & 0xFFFF);
 
                 const p_len = this.index_length_stack[sp - 1] >> 16;
-                const p_index = this.index_length_stack[sp - 1] & 0xFFFF;
+                const p_index = (this.index_length_stack[sp - 1] & 0xFFFF);
 
                 if (REPLACEMENT_IS_NULL) {
 
-                    this.index_length_stack[sp - 1] = ((p_len - 1) << 16);
+                    this.index_length_stack[sp - 1] = ((p_len - 1) << 16) + (p_index);
 
                     children.splice(index, 1);
-
-                    node_stack[sp] = children[index - 1];
                 } else if (REPLACEMENT_IS_ARRAY) {
                     //Increment the length of the stack and set the index to the end of the array
 
@@ -219,22 +223,17 @@ export class ReplaceableYielder extends Yielder {
                         ((p_len + replacement.length - 1) << 16 | (p_index + replacement.length - 1));
 
                     children.splice(index, 1, ...replacement);
-
-                    node_stack[sp] = replacement[0];
                 } else {
-
                     children[index] = replacement;
-
-                    node_stack[sp] = replacement;
                 }
 
                 parent.children = children;
+                node_stack[sp] = children[index];
 
                 if (REPLACEMENT_IS_NULL) {
                     this.index_length_stack[sp - 1]--;
-                    if (PROCESS_NEW_NODE)
-                        this.index_length_stack[sp - 1]--;
                 } else if (PROCESS_NEW_NODE) {
+                    node_stack[sp] = children[index - 1];
                     if (REPLACEMENT_IS_ARRAY) {
                         this.index_length_stack[sp - 1] -= replacement.length;
                     } else {
