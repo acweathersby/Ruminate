@@ -35,7 +35,7 @@ export interface EditHost {
 
     options?: {};
 
-    command_history: HistoryTask[];
+    history: HistoryTask[];
 
     history_pointer: number;
 

@@ -13,7 +13,7 @@
     "build": "npm run build:fe && npm run build:app",
     "build:fe": "candle.wick compile --output ./build ./src-site",
     "build:app": "cargo tauri build",
-    "test:fe": "candle.wick test ./src/tests/",
+    "test:fe": "candle.wick test ./src-site/tests/",
     "copy_cm_css": "cp node_modules/codemirror/lib/codemirror.css ./src/css/cm.css"
   },
   "dependencies": {

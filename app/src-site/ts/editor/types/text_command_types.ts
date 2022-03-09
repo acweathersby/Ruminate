@@ -1,4 +1,4 @@
-import { AddAction, DeleteAction } from '../task_processors/history/changes';
+import { InsertDiff, DeleteDiff } from '../task_processors/history/changes';
 import { MDNode, NodeType } from '../task_processors/md_node';
 
 /**
@@ -16,6 +16,6 @@ export interface HistoryTask {
     state: MDNode<NodeType.ROOT>,
     start_offset: number,
     end_offset: number;
-    recordings: (DeleteAction | AddAction)[];
+    diffs: (DeleteDiff | InsertDiff)[];
     clock: number;
 }

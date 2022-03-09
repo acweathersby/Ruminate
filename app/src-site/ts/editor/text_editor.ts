@@ -27,6 +27,7 @@ import "./task_processors/actions/toggle_italics.js";
 import "./task_processors/actions/set_header_size.js";
 export * from "./task_processors/actions/register_action.js";
 export * from "./task_processors/history/history.js";
+export * from "./task_processors/view.js";
 
 
 
@@ -56,6 +57,36 @@ export async function constructReadOnlyHost(
     return edit_host;
 }
 
+
+export async function constructTestHost(
+    md_text: string
+): Promise<EditHost> {
+
+    const
+        edit_host: EditHost = createEditHostObj(1, false),
+
+        result = parseMarkdownText(md_text),
+
+        lines = convertMDASTToMDNodeLines(result, edit_host, 0);
+
+    edit_host.root = new MDNode(NodeType.ROOT);
+
+    edit_host.root = setChildren(edit_host.root, 0, ...lines);
+
+    initLength(edit_host.root);
+
+    edit_host.history.push({
+        state: edit_host.root,
+        end_offset: edit_host.end_offset,
+        start_offset: edit_host.start_offset,
+        diffs: [],
+        clock: 0
+    });
+
+    edit_host.history_pointer = 0;
+
+    return edit_host;
+}
 export async function constructEditHost(
     note_id: number
 ): Promise<EditHost> {
@@ -75,11 +106,11 @@ export async function constructEditHost(
 
     initLength(edit_host.root);
 
-    edit_host.command_history.push({
+    edit_host.history.push({
         state: edit_host.root,
         end_offset: edit_host.end_offset,
         start_offset: edit_host.start_offset,
-        recordings: [],
+        diffs: [],
         clock: 0
     });
 
@@ -103,7 +134,7 @@ function createEditHostObj(
         note_id: note_id,
         DIRTY_METRICS: true,
         READ_ONLY: READ_ONLY,
-        command_history: [],
+        history: [],
         root: null,
         host_ele: null,
         history_pointer: -1,
@@ -159,4 +190,3 @@ export function setReadOnly(
         attachListeners(edit_host);
     }
 }
-

@@ -7,30 +7,36 @@ export default <div></div>;
 
 test: { 
 
-    const edit_host = await txt.constructEditHost(-1, ele);
+    const edit_host = await txt.constructTestHost("Hello World");
 
-    assert_group("Basic text insertion w/ history actions", sequence, ()=>{
-    
-        txt.getProcessor("edit", TextCommand.INSERT_TEXT)({
-            command: TextCommand.INSERT_TEXT,
-            data: {
-                APPLY_MARKDOWN_FORMAT: false,
-                input_text: "[TESTING]: ",
-                offset: 0
-            }
-            
-        }, edit_host);
+    txt.setHostElement(edit_host, "@root");
 
-        assert("Inserts text using TextCommand.INSERT_TEXT", txt.renderMarkdown(edit_host) === "[TESTING]: Welcome To Ruminate");
+    assert_group(solo, "Basic text insertion", sequence, ()=>{
+
+        edit_host.start_offset = 6;
+        edit_host.end_offset = 6;
+
+        txt.runCommand(TextCommand.INSERT_TEXT, edit_host, " You Beautiful");
+
+        assert(edit_host.history.length == 2);
+
+        assert(edit_host.history[1].diffs.length > 0);
+
+        assert("Inserts text using TextCommand.INSERT_TEXT", txt.toMDString(edit_host.root) === "\nHello You Beautiful World\n");
 
         txt.undo(edit_host);
 
-        assert("Undoes insert text operation", txt.renderMarkdown(edit_host) === "Welcome To Ruminate")
+        assert("Undoes insert text operation", txt.toMDString(edit_host.root) === "\nHello World\n")
         
         txt.redo(edit_host);
 
-        assert("Redoes insert text operation", txt.renderMarkdown(edit_host) === "[TESTING]: Welcome To Ruminate")
+        assert("Redoes insert text operation", txt.toMDString(edit_host.root) === "\nHello You Beautiful World\n")
 
+        assert(
+            "Diffs recorded correctly", 
+            txt.applyDiffs("\nHello World\n",edit_host.history[1].diffs) 
+            === 
+            "\nHello You Beautiful World\n"
+        )
     });
-
 }

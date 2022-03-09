@@ -1,9 +1,9 @@
 
 
-const enum ChangeType {
-    ADD, DEL
+export const enum ChangeType {
+    INS, DEL
 }
-export class DeleteAction {
+export class DeleteDiff {
     off: number;
     len: number;
 
@@ -16,12 +16,12 @@ export class DeleteAction {
         this.len = len;
     }
 }
-export class AddAction {
+export class InsertDiff {
     off: number;
     txt: string;
 
     get type() {
-        return ChangeType.ADD;
+        return ChangeType.INS;
     }
     constructor(off: number, txt: string) {
         this.off = off;
