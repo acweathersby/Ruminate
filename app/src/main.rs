@@ -22,13 +22,15 @@ mod rumi_app {
     }
 
     #[tauri::command]
-    pub fn create_note() -> u32 {
+    pub fn create_note() -> NoteLocalID {
         if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
             return note_create(store);
         }
         return 0;
     }
 
+    /// Retrieve a Vector of local note ids that are matched from the
+    /// given query string.
     #[tauri::command]
     pub fn get_notes_from_query(query: String) -> Vec<NoteLocalID> {
         if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
@@ -36,6 +38,17 @@ mod rumi_app {
             execute_query(store, string)
         } else {
             vec![]
+        }
+    }
+
+    /// Return the most recent clock value from the givin note, ignoring
+    /// site component.
+    #[tauri::command]
+    pub fn get_note_clock(note_local_id: u32) -> u32 {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            note_get_clock(store, note_local_id).get_clock()
+        } else {
+            0
         }
     }
 
@@ -203,15 +216,6 @@ mod rumi_app {
     }
 
     #[tauri::command]
-    pub fn get_clock(note_local_id: u32) -> u32 {
-        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
-            note_get_clock(store, note_local_id).get_clock()
-        } else {
-            0
-        }
-    }
-
-    #[tauri::command]
     pub fn debug_print_note(note_local_id: u32, comment: String) -> bool {
         if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
             if let Some(string) = note_get_text(store, note_local_id) {
@@ -259,14 +263,6 @@ mod rumi_app {
         String::from("")
     }
 
-    // Updates a note's data store with differences found in the input string and
-    // the note's data.
-    // Input string should be the full note text as it appears to the user.
-    #[tauri::command]
-    pub fn update_note_text(note_local_id: u32, new_text: String) -> bool {
-        false
-    }
-
     pub fn main() {
         tauri::Builder::default()
             .setup(|_app| {
@@ -301,6 +297,7 @@ Welcome to Ruminate. {{chocolate}}
             .invoke_handler(tauri::generate_handler![
                 init,
                 create_note,
+                get_note_clock,
                 get_local_id_from_uuid,
                 get_note_uuid_string,
                 get_tags,

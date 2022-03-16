@@ -1,11 +1,11 @@
 import { get_text } from '../tauri/bridge.js';
 import { attachListeners, removeListeners } from './events';
 import {
-    convertMDASTToEditLines as convertMDASTToMDNodeLines,
+    convertMDASTToEditLines,
     parseMarkdownText
 } from './parser/parse_markdown.js';
 import { MDNode, NodeType } from './task_processors/md_node.js';
-import { setChildren } from './task_processors/operators.js';
+import { heal, setChildren } from './task_processors/operators.js';
 import { initLength } from './task_processors/traverse/traverse.js';
 import {
     setEditable, updateHost, updateMarkdownDebugger
@@ -20,7 +20,7 @@ import { EditHost } from './types/edit_host.js';
  * through the `getProcessor` function.
  */
 import "./task_processors/actions/delete_text.js";
-import "./task_processors/actions/insert_paragraph.js";
+import "./task_processors/actions/insert_line.js";
 import "./task_processors/actions/insert_text.js";
 import "./task_processors/actions/toggle_bold.js";
 import "./task_processors/actions/toggle_italics.js";
@@ -46,7 +46,7 @@ export async function constructReadOnlyHost(
 
         result = parseMarkdownText(string),
 
-        lines = convertMDASTToMDNodeLines(result, edit_host);
+        lines = convertMDASTToEditLines(result, edit_host);
 
     edit_host.root = new MDNode(NodeType.ROOT);
 
@@ -67,11 +67,13 @@ export async function constructTestHost(
 
         result = parseMarkdownText(md_text),
 
-        lines = convertMDASTToMDNodeLines(result, edit_host, 0);
+        lines = convertMDASTToEditLines(result, edit_host, 0);
 
     edit_host.root = new MDNode(NodeType.ROOT);
 
     edit_host.root = setChildren(edit_host.root, 0, ...lines);
+
+    edit_host.root = heal(edit_host.root, 0).node;
 
     initLength(edit_host.root);
 
@@ -98,11 +100,13 @@ export async function constructEditHost(
 
         result = parseMarkdownText(string),
 
-        lines = convertMDASTToMDNodeLines(result, edit_host, 0);
+        lines = convertMDASTToEditLines(result, edit_host, 0);
 
     edit_host.root = new MDNode(NodeType.ROOT);
 
     edit_host.root = setChildren(edit_host.root, 0, ...lines);
+
+    edit_host.root = heal(edit_host.root, 0).node;
 
     initLength(edit_host.root);
 

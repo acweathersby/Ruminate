@@ -11,11 +11,12 @@ export default <div class=note-body></div>;
 <style>
     root {
         background:#FDFDFD;
-        padding:80px;
+        padding:40px;
         border-radius:10px;
         outline:none;
-        font-size:12px;
-        color:#222222
+        font-size:16px;
+        color:#666;
+        line-height:1.5em;
     }
 
     .editable-note {
@@ -29,7 +30,16 @@ export default <div class=note-body></div>;
     h1, h2, h3, h4, h5, h6
     {
         color:#5a5176;
+        margin:0.3em 0;
+        line-height:1em;
     }
+
+    h1 { font-size:3.1em; }
+    h2 { font-size:2.6em }
+    h3 { font-size:2.2em }
+    h4 { font-size:1.8em }
+    h5 { font-size:1.4em }
+    h6 { font-size:1.1em }
 
     h1::selection, h2::selection, h3::selection, h4::selection, p::selection {
         color:white;
@@ -37,10 +47,14 @@ export default <div class=note-body></div>;
     }
 
     h1 {
-        color:#5a5176;
         width: 100%;
-        padding-bottom:20px;
+        border-bottom: 2px solid #5a517650;
+        margin: 0.8em 0;
+    }
+
+    h2 {
         border-bottom: 1px solid #5a517650;
+        margin: 0.4em 0;
     }
 
     a {
@@ -92,15 +106,30 @@ export default <div class=note-body></div>;
         background: #ffb7b7; 
     }
 
-    i {
-        color:black;
+    p {
+        margin: 10px 5px;
+        box-sizing:border-box;
     }
 
-    p {
-        margin: 40px 0;
-        background-color:#F8f8f8;
-        padding: 10px 20px;
-        box-sizing:border-box;
+    quote {
+        background-color: #f1f1f1;
+        padding: 5px 0px 5px 10px;
+        margin: 20px 0px;
+        border-radius: 8px;
+        display:block;
+    }
+
+    :empty{
+        display: block;
+        min-height: 1em;
+    }
+
+    :empty::after {
+        content: ' '
+    }
+
+    li {
+        list-style:disc
     }
 
 </style>

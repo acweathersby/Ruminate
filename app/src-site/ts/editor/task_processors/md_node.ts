@@ -16,8 +16,8 @@ export enum NodeType {
     QUOTE,
     ROOT,
     TEXT,
+    STEM_HEADER,
     UNDEFINED,
-
     STEM_LINE,
     UNORDERED_LIST,
 }
@@ -85,6 +85,7 @@ export interface NodeMeta {
     [NodeType.ROOT]: null;
     [NodeType.TEXT]: string;
     [NodeType.STEM_LINE]: string;
+    [NodeType.STEM_HEADER]: string;
     [NodeType.UNDEFINED]: null;
     [NodeType.UNORDERED_LIST]: number;
 }
@@ -103,7 +104,8 @@ export interface NodeChildren {
     [NodeType.QUOTE]: MDNode[];
     [NodeType.ROOT]: MDNode[];
     [NodeType.TEXT]: MDNode[];
-    [NodeType.STEM_LINE]: MDNode[];
+    [NodeType.STEM_LINE]: [MDNode<NodeType.STEM_HEADER>, ...MDNode[]];
+    [NodeType.STEM_HEADER]: MDNode[];
     [NodeType.UNDEFINED]: MDNode[];
     [NodeType.UNORDERED_LIST]: MDNode[];
 }
@@ -120,7 +122,7 @@ const NodeMDData = {
         post: (n: MDNode<NodeType.BOLD>) => 2
     },
     [NodeType.CODE_BLOCK]: {
-        pre: (n: MDNode<NodeType.CODE_BLOCK>) => 5 + n.meta.syntax.length, // <nl> <```> <sp> <syntax> <nl>
+        pre: (n: MDNode<NodeType.CODE_BLOCK>) => 5 + n.meta.syntax.length, // <nl> <```> <syntax> <nl>
         internal: (n: MDNode<NodeType.CODE_BLOCK>) =>
             n.meta.view
                 ? n.meta.view.state.doc.length
@@ -168,7 +170,7 @@ const NodeMDData = {
         post: (n: MDNode<NodeType.QUERY>) => 1
     },
     [NodeType.QUOTE]: {
-        pre: (n: MDNode<NodeType.QUOTE>) => 1,
+        pre: (n: MDNode<NodeType.QUOTE>) => 3,
         internal: (n: MDNode<NodeType.QUOTE>) => 0,
         post: (n: MDNode<NodeType.QUOTE>) => 1
     },
@@ -182,13 +184,18 @@ const NodeMDData = {
         internal: (n: MDNode<NodeType.TEXT>) => n.meta.length,
         post: (n: MDNode<NodeType.TEXT>) => 0
     },
+    [NodeType.STEM_HEADER]: {
+        pre: (n: MDNode<NodeType.TEXT>) => 0,
+        internal: (n: MDNode<NodeType.TEXT>) => n.meta.length,
+        post: (n: MDNode<NodeType.TEXT>) => 0
+    },
     [NodeType.UNDEFINED]: {
         pre: (n: MDNode<NodeType.UNDEFINED>) => 0,
         internal: (n: MDNode<NodeType.UNDEFINED>) => 0,
         post: (n: MDNode<NodeType.UNDEFINED>) => 0
     },
     [NodeType.UNORDERED_LIST]: {
-        pre: (n: MDNode<NodeType.UNORDERED_LIST>) => 1,
+        pre: (n: MDNode<NodeType.UNORDERED_LIST>) => 3,
         internal: (n: MDNode<NodeType.UNORDERED_LIST>) => 0,
         post: (n: MDNode<NodeType.UNORDERED_LIST>) => 1
     },
@@ -252,7 +259,7 @@ const NodeData = {
         post: (n: MDNode<NodeType.QUERY>) => 0,
     },
     [NodeType.QUOTE]: {
-        pre: (n: MDNode<NodeType.QUOTE>) => 0,
+        pre: (n: MDNode<NodeType.QUOTE>) => 1,
         internal: (n: MDNode<NodeType.QUOTE>) => 0,
         post: (n: MDNode<NodeType.QUOTE>) => 0,
     },
@@ -262,6 +269,11 @@ const NodeData = {
         post: (n: MDNode<NodeType.ROOT>) => 0,
     },
     [NodeType.TEXT]: {
+        pre: (n: MDNode<NodeType.TEXT>) => 0,
+        internal: (n: MDNode<NodeType.TEXT>) => n.meta.length,
+        post: (n: MDNode<NodeType.TEXT>) => 0,
+    },
+    [NodeType.STEM_HEADER]: {
         pre: (n: MDNode<NodeType.TEXT>) => 0,
         internal: (n: MDNode<NodeType.TEXT>) => n.meta.length,
         post: (n: MDNode<NodeType.TEXT>) => 0,
@@ -292,6 +304,7 @@ const NodeClasses = {
     [NodeType.QUOTE]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
     [NodeType.ROOT]: NodeClass.UNDEFINED | NodeClass.TEXT_CONTAINER,
     [NodeType.TEXT]: NodeClass.MERGEABLE | NodeClass.CARET_TARGET,
+    [NodeType.STEM_HEADER]: NodeClass.CARET_TARGET,
     [NodeType.UNDEFINED]: NodeClass.UNDEFINED,
     [NodeType.UNORDERED_LIST]: NodeClass.LINE | NodeClass.TEXT_CONTAINER,
 };

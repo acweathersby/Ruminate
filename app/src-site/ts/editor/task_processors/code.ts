@@ -3,11 +3,34 @@ import { EditorView, highlightSpecialChars } from '@codemirror/view';
 import { lineNumbers } from '@codemirror/gutter';
 import { defaultHighlightStyle } from '@codemirror/highlight';
 import { javascript } from "@codemirror/lang-javascript";
+import { cpp } from "@codemirror/lang-cpp";
+import { python } from "@codemirror/lang-python";
 
 import { MDNode, NodeType, NodeMeta } from "./md_node";
 import { clone } from './operators';
 
 type Code = MDNode<NodeType.CODE_BLOCK>;
+
+const js_regex = /^j(ava)?s(cript)?$/i;
+const ts_regex = /^t(type)?s(cript)?$/i;
+const cpp_regex = /^c(\+\+|pp|plusplus)$/i;
+const python_regex = /^p(y(thon)?)$/i;
+
+function getLanguage(syntax: string) {
+    syntax = syntax.toLocaleLowerCase();
+
+    if (js_regex.test(syntax)) {
+        return (new Compartment).of(javascript({ typescript: false }));
+    } else if (ts_regex.test(syntax)) {
+        return (new Compartment).of(javascript({ typescript: true }));
+    } else if (cpp_regex.test(syntax)) {
+        return (new Compartment).of(cpp());
+    } else if (python_regex.test(syntax)) {
+        return (new Compartment).of(python());
+    }
+
+    return void 0;
+}
 
 /**
  * Ensure code data is initialized
@@ -27,8 +50,7 @@ export function getCodeMeta(
                     defaultHighlightStyle,
                     highlightSpecialChars({}),
                     lineNumbers({}),
-                    (new Compartment).of(javascript({ typescript: true })),
-
+                    getLanguage(meta.syntax)
                     //defaultHighlightStyle,
                     //drawSelection()
                 ]

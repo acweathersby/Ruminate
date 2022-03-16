@@ -29,36 +29,14 @@ export default <div class=note>
 
 
 <style>
+
 root {
     outline:none;
     width:100%;
-}
-
-i {
-    color:black;
-}
-
-code{
-    caret-color:red;
-    font-family:monospace;
-    color:#707070;
-    font-size:0.8em;
-    background:#f2f3e8;
-    padding:5px 2px;
-    border-radius:3px;
-}
-
- code::selection {
-    color:white;
-    background: #ffb7b7; 
 }
 
 .note-md-preview pre {
     white-space: pre-wrap
 }
 
-:empty{
-    display: block;
-    height: 1em;
-}
 </style>

@@ -4,54 +4,59 @@
 
     f:r { {t_Markdown, lines:$1 } }
 
-<> lines > g:nl? line
+<> lines > g:nl? ro_line
 
     f:r { [$2] }
     
-    | lines g:nl line
+    | lines g:nl ro_line
     
     f:r { $1 + [$3] }
 
-    | lines g:nl
+    | lines g:nl 
 
     f:r { $1 + [{ t_EmptyLine, c_Line }]}
 
+<> ro_line > line
+    
+    read_only line f:r{ $2.read_only = true, $2 }
+
+<> read_only >  \>< 
 
 <> line >
 
     header_token content
 
-    f:r { { t_Header, c_Line, length:f64($1), content:$2 } }
+    f:r { { t_Header, c_Line, length:f64($1), content:$2, read_only:false } }
 
     | 
     
     tk:spaces? tk:ol_token content
 
-    f:r { { t_OL, c_Line, spaces:str($1), content:$3 } }
+    f:r { { t_OL, c_Line, spaces:str($1), content:$3, read_only:false } }
 
     |
 
     tk:spaces? tk:ul_token content
 
-    f:r { { t_UL, c_Line, spaces:str($1), content:$3 } }
+    f:r { { t_UL, c_Line, spaces:str($1), content:$3, read_only:false } }
 
     |
 
     tk:spaces? tk:quote_token content
 
-    f:r { { t_Quote, c_Line, spaces:str($1), content:$3 } }
+    f:r { { t_Quote, c_Line, spaces:str($1), content:$3, read_only:false } }
 
     | 
 
     tk:spaces? content
 
-    f:r { { t_Paragraph, c_Line, spaces:str($1), content:$2 } }
+    f:r { { t_Paragraph, c_Line, spaces:str($1), content:$2, read_only:false } }
 
     |
      
     tk:code_block_delimiter code_line_text? code_line(*) cb_sentinel
 
-    f:r { { t_CodeBlock, c_Line, syntax:str($2), data:$3 } }
+    f:r { { t_CodeBlock, c_Line, syntax:str($2), data:$3, read_only:false } }
 
 
 <> spaces > (g:sp)(*)

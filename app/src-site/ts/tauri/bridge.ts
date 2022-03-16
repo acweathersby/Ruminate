@@ -4,25 +4,7 @@
  */
 import { invoke } from '@tauri-apps/api/tauri';
 import { locale } from '../locale/locale';
-
-function assert_DB_decorator<T>(fn: T, alternate_value?: any): T {
-
-    if (typeof globalThis["__TAURI__"] == "undefined") {
-        //@ts-ignore
-        return async function (...data) {
-            console.warn(
-                `[${fn.name}] `
-                + locale["bridge warning"]
-                + `\n arg_data: \n ${JSON.stringify(data)}`,
-                "color:orange",
-                "color:black",
-            );
-            return alternate_value;
-        };
-    }
-
-    return fn;
-}
+import * as mock from "./mock";
 
 export const init = assert_DB_decorator(
     async function init(): Promise<void> {
@@ -32,12 +14,13 @@ export const init = assert_DB_decorator(
 export const debug_print_note = assert_DB_decorator(
     async function debug_print_note(noteLocalId: number, comment: string = ""): Promise<number[]> {
         return invoke("debug_print_note", { noteLocalId, comment });
-    });
+    }, (id: number, cmt: string) => mock.debugPrintNote(id, cmt));
 
 export const get_note_clock = assert_DB_decorator(
     async function get_note_clock(noteLocalId: number): Promise<number> {
         return invoke("get_note_clock", { noteLocalId });
-    }, [1]);
+    }, ((nonce: number = 0) => () => nonce++)());
+
 export const get_notes_from_query = assert_DB_decorator(
     async function get_notes_from_query(query: string): Promise<number[]> {
         return invoke("get_notes_from_query", { query });
@@ -95,11 +78,6 @@ export const get_tag_ids = assert_DB_decorator(
         return invoke("get_tag_ids", { noteLocalId });
     });
 
-export const update_note_text = assert_DB_decorator(
-    async function update_note_text(noteLocalId: number, new_text: string): Promise<boolean> {
-        return invoke("update_note_text", { noteLocalId, new_text });
-    });
-
 export const merge_text = assert_DB_decorator(
     async function merge_text(noteLocalId: number, string: string): Promise<boolean> {
         return invoke("merge_text", { noteLocalId, string });
@@ -109,42 +87,39 @@ export const merge_text = assert_DB_decorator(
 export const insert_text = assert_DB_decorator(
     async function insert_text(noteLocalId: number, insertIndex: number, string: string): Promise<boolean> {
         return invoke("insert_text", { noteLocalId, insertIndex, string });
-    });
+    }, (id: number, ind: number, txt: string) => mock.insertText(id, ind, txt));
+
 export const delete_text = assert_DB_decorator(
     async function delete_text(noteLocalId: number, insertIndex: number, count: number): Promise<boolean> {
         return invoke("delete_text", { noteLocalId, insertIndex, count });
-    });
+    }, (id: number, ind: number, c: number) => mock.deleteText(id, ind, c));
+
 export const get_text = assert_DB_decorator(
     async function get_text(noteLocalId: number): Promise<string> {
         return invoke("get_text", { noteLocalId });
-    },
+    }, (id: number) => mock.getText(id));
 
-    `# Hello World
-
-This is a [test](#rainbow) of the emergency broadcast system. This is a [te](#rainbow)
-
-[st](#rainbow) of the emergency broadcast system.
-
-\`\`\`javascript
-
-import { Section } from '../types/types';
-import { Node } from './base/node';
-
-const history_command = <HistoryTask[TextCommand.TOGGLE_ITALICS]>{
-    type: TextCommand.TOGGLE_ITALICS,
-    redo_data: {
-        ranges,
-        type: ADD_ITALICS ? FormatType.ADD : FormatType.REMOVE
-    },
-    undo_data: {
-        ranges,
-        type: ADD_ITALICS ? FormatType.REMOVE : FormatType.ADD
-    },
-};
-
-\`\`\`
-
-This is only a test
-`);
 export const main = assert_DB_decorator(
     async function main() { });
+
+function assert_DB_decorator<T>(fn: T, alternate_value?: any): T {
+
+    if (typeof globalThis["__TAURI__"] == "undefined") {
+        //@ts-ignore
+        return async function (...data) {
+            console.warn(
+                //@ts-ignore
+                `[${fn.name}] `
+                + locale["bridge warning"]
+                + `\n arg_data: \n ${JSON.stringify(data)}`,
+                "color:orange",
+                "color:black",
+            );
+            if (typeof alternate_value == "function")
+                return alternate_value(...data);
+            return alternate_value;
+        };
+    }
+
+    return fn;
+}

@@ -42,8 +42,10 @@ export default <div id="app">
 </div>;
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito&family=Varela+Round&display=swap');
+
     root {
-        font-family: arial, sans-serif;
+        font-family: 'Varela Round', sans-serif;
         width:100%;
         display:flex;
         min-height:100vh;

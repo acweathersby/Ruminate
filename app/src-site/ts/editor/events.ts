@@ -1,10 +1,12 @@
 import { getProcessor } from './task_processors/actions/register_action';
+import { resolveStemLine } from './task_processors/actions/resolve_stem_line';
 import {
     redo,
     undo,
     updatePointer
 } from './task_processors/history/history';
 import * as vw from './task_processors/view';
+import * as history from './task_processors/history/history';
 import { EditHost } from "./types/edit_host";
 import { TextCommand } from './types/text_command_types';
 
@@ -59,7 +61,7 @@ export function attachListeners(edit_host: EditHost) {
             const sel = window.getSelection();
 
             if (
-                ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
+                ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "End", "Home"].includes(e.key)
             )
                 return adaptArrowPress(e, edit_host);
 
@@ -116,6 +118,11 @@ export function removeListeners(edit_host: EditHost) {
 function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
     setTimeout(_ => {
         edit_host.event_handlers.selectionchange();
+        if (resolveStemLine(edit_host)) {
+            if (edit_host.debug_data.DEBUGGER_ENABLED)
+                vw.updatePointerData(edit_host);
+            vw.updateHost(edit_host);
+        }
     }, 1);
     return;
     let { start_offset, end_offset } = edit_host;
@@ -177,11 +184,18 @@ function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
 async function processInputEvent(e: InputEvent, edit_host: EditHost) {
     updatePointer(edit_host);
     switch (e.inputType) {
-        case "insertText": insertText(edit_host, e.data); break;
 
+        case "insertText": {
+            insertText(edit_host, e.data);
+            await resolveStemLine(edit_host);
+            if (e.data == " ")
+                await history.sync(edit_host);
+            break;
+        }
         case "insertLineBreak":
         case "insertParagraph": {
-            getProcessor("edit", TextCommand.INSERT_PARAGRAPH)(edit_host);
+            await history.sync(edit_host);
+            getProcessor("edit", TextCommand.INSERT_LINE)(edit_host);
         } break;
         case "insertOrderedList": debugger; break;
         case "insertUnorderedList": debugger; break;
@@ -218,6 +232,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "deleteByCut": debugger; break;
         case "deleteContent": debugger; break;
         case "deleteContentBackward": {
+            await history.sync(edit_host);
             if (edit_host.start_offset == edit_host.end_offset) {
                 edit_host.end_offset = edit_host.start_offset;
                 edit_host.start_offset--;
@@ -225,18 +240,29 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
             getProcessor("edit", TextCommand.DELETE_TEXT)(edit_host);
         } break;
         case "deleteContentForward": {
+            await history.sync(edit_host);
             if (edit_host.start_offset == edit_host.end_offset)
                 edit_host.end_offset = edit_host.start_offset + 1;
 
             getProcessor("edit", TextCommand.DELETE_TEXT)(edit_host);
         }; break;
-        case "historyUndo": { undo(edit_host); } break;
-        case "historyRedo": { redo(edit_host); } break;
+        case "historyUndo": {
+            await history.sync(edit_host);
+            undo(edit_host);
+        } break;
+        case "historyRedo": {
+            await history.sync(edit_host);
+            redo(edit_host);
+        } break;
         case "formatBold": {
+            await history.sync(edit_host);
             getProcessor("edit", TextCommand.TOGGLE_BOLD)(edit_host);
+            await history.sync(edit_host);
         }; break;
         case "formatItalic": {
+            await history.sync(edit_host);
             getProcessor("edit", TextCommand.TOGGLE_ITALICS)(edit_host);
+            await history.sync(edit_host);
         }; break;
         case "formatUnderline": debugger; break;
         case "formatStrikeThrough": debugger; break;
@@ -257,7 +283,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
     }
 
     if (edit_host.debug_data.DEBUGGER_ENABLED)
-        vw.updatePointerData(edit_host);
+        await vw.updatePointerData(edit_host);
 
     vw.updateHost(edit_host);
 }

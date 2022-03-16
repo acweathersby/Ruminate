@@ -1,4 +1,6 @@
+import { getRawDebugText } from '../../tauri/mock';
 import { EditHost } from '../types/edit_host';
+import { resolveStemLine } from './actions/resolve_stem_line';
 import * as code from './code';
 import { MDNode, NodeClass, NodeType } from "./md_node";
 import { traverse } from './traverse/traverse';
@@ -19,6 +21,7 @@ const {
     ROOT,
     TEXT,
     UNORDERED_LIST,
+    STEM_HEADER,
     STEM_LINE
 } = NodeType;
 
@@ -42,15 +45,14 @@ export function getOffsetsFromSelection(edit_host: EditHost) {
 
     //Ensure nodes are within the editable area
 
-    let anchor_offset = nodeIsInEditTree(n1, edit_host)
-        ? getCumulativeOffset(n1, edit_host) + o1
-        : 0;
+    let
+        anchor_offset = nodeIsInEditTree(n1, edit_host)
+            ? getCumulativeOffset(n1, edit_host) + o1
+            : 0,
 
-    let focus_offset = nodeIsInEditTree(n2, edit_host)
-        ? getCumulativeOffset(n2, edit_host) + o2
-        : 0;
-
-    console.log({ n1, n2, o1, o2 });
+        focus_offset = nodeIsInEditTree(n2, edit_host)
+            ? getCumulativeOffset(n2, edit_host) + o2
+            : 0;
 
     edit_host.start_offset = Math.min(anchor_offset, focus_offset) + 1;
     edit_host.end_offset = Math.max(anchor_offset, focus_offset) + 1;
@@ -149,6 +151,9 @@ function toHTMLNaive(
     LAST_CHILD: boolean = false
 ): Node {
 
+    //if (node.ele)
+    //    return node.ele;
+
     const head = vp.offset;
     const tail = vp.offset + node.length;
 
@@ -157,26 +162,7 @@ function toHTMLNaive(
         let tag = "";
 
         if (node.is(STEM_LINE)) {
-
-            const text = toMDString(node).trimStart();
-
-            if (text.slice(0, 4) == "``` ") {
-                tag = "pre";
-            } else if (text.slice(0, 2) == "# ") {
-                tag = "h1";
-            } else if (text.slice(0, 3) == "## ") {
-                tag = "h2";
-            } else if (text.slice(0, 4) == "### ") {
-                tag = "h3";
-            } else if (text.slice(0, 5) == "#### ") {
-                tag = "h4";
-            } else if (text.slice(0, 6) == "##### ") {
-                tag = "h5";
-            } else if (text.slice(0, 7) == "###### ") {
-                tag = "h6";
-            } else {
-                tag = "p";
-            }
+            tag = getStemTag(node.children[0]);
         } else if (node.is(PARAGRAPH)) {
             tag = "p";
         } else if (node.is(HEADER)) {
@@ -197,8 +183,9 @@ function toHTMLNaive(
             return div;
         }
 
-        const ele = addChildNodes(node, cE(tag), vp);
-        const last_child = node.children.slice().pop();
+        const
+            ele = addChildNodes(node, cE(tag), vp),
+            last_child = node.children.slice().pop();
 
         if (last_child) {
             if (last_child.is(QUERY)) {
@@ -212,7 +199,7 @@ function toHTMLNaive(
         return ele;
 
 
-    } else if (node.is(TEXT)) {
+    } else if (node.is(TEXT) || node.is(STEM_HEADER)) {
         const text = new Text(node.meta);
         vp.offset = tail;
         node.ele = text;
@@ -242,7 +229,6 @@ function toHTMLNaive(
         else
             div.innerHTML = 'Too many recursions!';
 
-
         div.classList.add("query-field");
         return div;
     } else if (node.is(ROOT)) {
@@ -258,6 +244,38 @@ function toHTMLNaive(
 
         return div;
     } else node.ele = cE('div');
+}
+
+export function getStemTag(node: MDNode<NodeType.STEM_HEADER>) {
+
+    let tag = "div";
+
+    const text = node.meta.slice(0, -1).trim();
+
+    if (/\d\./g.test(text)) {
+        tag = "li";
+    } else if (text == "+" || text == "-") {
+        tag = "li";
+    } else if (text == ">") {
+        tag = "quote";
+    } else if (text.slice(0, 3) == "```") {
+        tag = "pre";
+    } else if (text == "#") {
+        tag = "h1";
+    } else if (text == "##") {
+        tag = "h2";
+    } else if (text == "###") {
+        tag = "h3";
+    } else if (text == "####") {
+        tag = "h4";
+    } else if (text == "#####") {
+        tag = "h5";
+    } else if (text == "######") {
+        tag = "h6";
+    } else {
+        tag = "p";
+    }
+    return tag;
 }
 
 function addChildNodes<T extends Node>(
@@ -279,7 +297,7 @@ export function toMDPreText(n: MDNode): string {
         return "\n";
     } else if (n.is(STEM_LINE)) {
         return "\n";
-    } else if (n.is(TEXT)) {
+    } else if (n.is(TEXT) || n.is(STEM_HEADER)) {
         return "";
     } else if (n.is(ANCHOR)) {
         return "[";
@@ -315,36 +333,36 @@ export function toMDPreText(n: MDNode): string {
 
 // Return a string that represents the markdown text
 // that occurs after the text of the node's children.
-export function toMDPostText(node: MDNode): string {
-    if (node.is(PARAGRAPH)) {
+export function toMDPostText(n: MDNode): string {
+    if (n.is(PARAGRAPH)) {
         return "\n";
-    } else if (node.is(STEM_LINE)) {
+    } else if (n.is(STEM_LINE)) {
         return "\n";
-    } else if (node.is(TEXT)) {
-        return node.meta;
-    } if (node.is(ANCHOR)) {
-        return ["]", "(", node.meta, ")"].join("");
-    } else if (node.is(BOLD)) {
+    } else if (n.is(TEXT) || n.is(STEM_HEADER)) {
+        return n.meta;
+    } if (n.is(ANCHOR)) {
+        return ["]", "(", n.meta, ")"].join("");
+    } else if (n.is(BOLD)) {
         return "__";
-    } else if (node.is(CODE_BLOCK)) {
+    } else if (n.is(CODE_BLOCK)) {
         return "\n```\n";
-    } else if (node.is(CODE_INLINE)) {
+    } else if (n.is(CODE_INLINE)) {
         return "`";
-    } else if (node.is(HEADER)) {
+    } else if (n.is(HEADER)) {
         return "\n";
-    } else if (node.is(IMAGE)) {
-        return ["]", "(", node.meta, ")"].join("");
-    } else if (node.is(ITALIC)) {
+    } else if (n.is(IMAGE)) {
+        return ["]", "(", n.meta, ")"].join("");
+    } else if (n.is(ITALIC)) {
         return "*";
-    } else if (node.is(ORDERED_LIST)) {
+    } else if (n.is(ORDERED_LIST)) {
         return "\n";
-    } else if (node.is(QUERY)) {
+    } else if (n.is(QUERY)) {
         return "}";
-    } else if (node.is(QUOTE)) {
+    } else if (n.is(QUOTE)) {
         return "\n";
-    } else if (node.is(ROOT)) {
+    } else if (n.is(ROOT)) {
         return "";
-    } else if (node.is(UNORDERED_LIST)) {
+    } else if (n.is(UNORDERED_LIST)) {
         return "\n";
     } else return "";
 }
@@ -388,7 +406,9 @@ export function updateMarkdownDebugger(host: EditHost) {
 Start offset: ${host.debug_data.cursor_start}
 End offset  : ${host.debug_data.cursor_end}
 =====================Markdown===================
-${toMDString(host.root).trim()}
+
+${getRawDebugText(host.note_id)}
+
 ================================================
 `;
         } else {
@@ -454,12 +474,10 @@ export function updateCaretData(edit_host: EditHost) {
 }
 export function handleMetaViews(edit_host: EditHost) {
     const {
-        start_offset,
-        end_offset
+        start_offset
     } = edit_host;
 
     let len = 0;
-    console.log({ start_offset });
 
     for (const node of edit_host.root.children) {
         if (start_offset == len + 1) {
@@ -509,30 +527,40 @@ function getSelectionParts(
 
     for (const { node, meta: { overlap_start, overlap_type, overlap_length } } of
         traverse(edit_host.root)
-            .typeFilter(NodeType.TEXT, NodeType.CODE_BLOCK)
+            .typeFilter(NodeType.TEXT, NodeType.STEM_HEADER, NodeType.CODE_BLOCK)
             .rangeFilter(start_offset, end_offset)
     ) {
-        if (node.is((NodeType.TEXT))) {
-            if (overlap_type == RangeOverlapType.COMPLETE)
+        if (node.is(NodeType.TEXT, NodeType.STEM_HEADER)) {
+
+            if (overlap_type == RangeOverlapType.PARTIAL_CONTAINED || overlap_length == 0) {
+
+                range.start = { ele: node.ele, offset: overlap_start, node };
+                range.end = { ele: node.ele, offset: overlap_start + overlap_length, node };
+            } else if (overlap_type == RangeOverlapType.COMPLETE)
+
                 continue;
             else if (overlap_type == RangeOverlapType.PARTIAL_HEAD) {
+
                 range.end = { ele: node.ele, offset: overlap_start + overlap_length, node };
             } else if (overlap_type == RangeOverlapType.PARTIAL_TAIL) {
+
                 range.start = { ele: node.ele, offset: overlap_start, node };
-            } else {
-                range.start = { ele: node.ele, offset: overlap_start, node };
-                range.end = { ele: node.ele, offset: overlap_start + overlap_length, node };
             }
         } else if (node.is(NodeType.CODE_BLOCK) && overlap_start > 0) {
-            if (overlap_type == RangeOverlapType.COMPLETE)
+
+            if (overlap_type == RangeOverlapType.PARTIAL_CONTAINED || overlap_length == 0) {
+
+                range.start = code.getElementAtOffset(node, overlap_start - 1);
+                range.end = code.getElementAtOffset(node, overlap_start + overlap_length - 1);
+            } else if (overlap_type == RangeOverlapType.COMPLETE)
+
                 continue;
             else if (overlap_type == RangeOverlapType.PARTIAL_HEAD) {
+
                 range.end = code.getElementAtOffset(node, overlap_start + overlap_length - 1);
             } else if (overlap_type == RangeOverlapType.PARTIAL_TAIL) {
+
                 range.start = code.getElementAtOffset(node, overlap_start - 1);
-            } else {
-                range.start = code.getElementAtOffset(node, overlap_start - 1);
-                range.end = code.getElementAtOffset(node, overlap_start + overlap_length - 1);
             }
         }
     }
@@ -540,20 +568,26 @@ function getSelectionParts(
     function getRangePart(offset) {
         for (const { node, meta: { overlap_start }, getAncestry } of
             traverse(edit_host.root)
-                .typeFilter(NodeType.TEXT, NodeType.CODE_BLOCK, NodeType.QUERY)
+                .classFilter(NodeClass.LINE)
                 .rangeFilter(offset - 1, offset - 1)
         ) {
-            if (node.is(NodeType.TEXT)) {
-                return { ele: node.ele, offset: node.length, node };
-            } else if (node.is(NodeType.QUERY)) {
-                const line = getAncestry().filter(d => d.containsClass(NodeClass.LINE))[0];
-                return { ele: line.ele.lastChild, offset: 0, node };
-            } else if (node.is(NodeType.CODE_BLOCK)) {
+            if (node.is(NodeType.CODE_BLOCK)) {
                 return code.getElementAtOffset(node, node.length - 1);
-            } else if (node.is(NodeType.PARAGRAPH)) {
-                return { ele: node.ele, offset: 0, node };
+            } else {
+
+                let child: any = node.ele;
+
+                while (child.lastChild && !(child instanceof Text))
+                    child = child.lastChild;
+
+                if (child instanceof Text) {
+                    return { ele: child, offset: child.data.length, node };
+                } else {
+                    return { ele: node.ele, offset: 0, node };
+                }
             }
         }
+
         return null;
     }
 

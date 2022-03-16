@@ -2,7 +2,6 @@ import { ASTNode, complete, state_index_mask } from "@hctoolkit/runtime";
 import { Token } from '@hctoolkit/runtime/build';
 import { LineNode, MDNode, NodeType } from '../task_processors/md_node';
 import { newNode } from '../task_processors/operators';
-import { EditHost } from '../types/edit_host';
 import {
     AnchorEnd,
     AnchorMiddle,
@@ -30,7 +29,6 @@ const {
     PARAGRAPH,
     QUERY,
     QUOTE,
-    ROOT,
     TEXT,
     UNORDERED_LIST,
     UNDEFINED
@@ -65,8 +63,6 @@ export function parseMarkdownText(text: string): Markdown {
 
     return result;
 }
-
-
 
 export function getText(obj: any): string {
     if (obj instanceof ASTNode)
@@ -103,63 +99,109 @@ export function getText(obj: any): string {
 
 const undefined_node = newNode(UNDEFINED);
 
-export function convertMDASTToEditLines(md: Markdown, edit_host: EditHost, gen = edit_host.root.generation + 1): LineNode[] {
+export function convertMDASTToEditLines(md: Markdown, gen = 0): LineNode[] {
 
     const lines: MDNode[] = [];
 
     let prev: MDNode = undefined_node;
 
-    for (const line of md.lines) {
-        switch (line.type) {
-            case ASTType.CodeBlock: {
-                prev = newNode(CODE_BLOCK,
-                    [],
-                    gen,
-                    {
-                        view: null,
-                        state: null,
-                        syntax: getText(line.syntax),
-                        text: line.data.map(getText).join("\n"),
-                    }
-                );
-                lines.push(prev);
-            } break;
-            case ASTType.EmptyLine:
-                prev = undefined_node;
-                break;
-            case ASTType.OL:
-            case ASTType.UL:
-                break;
-            case ASTType.Header: {
+    let head = null;
 
-                const [first] = line.content;
-                // Enforce that at least one space character proceed the 
-                // # chars
-                if (!first || line.length > 6 || first.type != ASTType.Text || first.value[0] !== " ") {
-                    prev = newNode(PARAGRAPH, convertContent([new MDText(getText(line)), ...line.content], gen), gen);
-                    lines.push(prev);
-                } else {
-                    //Remove leading space
+    let accumulator = [];
+
+    function parseNonCodeLine() {
+        if (head) {
+            const
+                contents: c_Content[] = [...head.content, ...accumulator.flatMap(h => h.content)],
+                [first] = contents;
+
+            let new_node: MDNode = null;
+
+            switch (head.type) {
+                case ASTType.Quote: {
                     first.value = first.value.slice(1);
-                    prev = newNode(HEADER, convertContent(line.content, gen), gen, line.length);
-                    lines.push(prev);
+                    new_node = newNode(QUOTE, [], gen, head.length);
+                    break;
                 }
-            } break;
-            case ASTType.Paragraph: {
-                //If the line data is empty then ignore it. 
-                if (line.content.length == 0)
-                    continue;
+                case ASTType.OL:
+                    first.value = first.value.slice(1);
+                    new_node = newNode(ORDERED_LIST, [], gen, head.length);
+                    break;
+                case ASTType.UL:
+                    first.value = first.value.slice(1);
+                    new_node = newNode(UNORDERED_LIST, [], gen, head.length);
+                    break;
+                case ASTType.Header: {
+                    // Enforce that at least one space character proceed the 
+                    // # chars
+                    if (!first || head.length > 6 || first.type != ASTType.Text || first.value[0] !== " ") {
+                        contents.unshift(new MDText(getText(head)));
+                        new_node = newNode(PARAGRAPH, [], gen);
+                    } else {
+                        //Remove leading space
+                        first.value = first.value.slice(1);
+                        new_node = newNode(HEADER, [], gen, head.length);
+                    }
+                } break;
+                case ASTType.Paragraph: {
+                    //If the head data is empty then ignore it. 
+                    if (head.content.length == 0)
+                        break;
+                    new_node = newNode(PARAGRAPH, [], gen);
+                } break;
+            }
 
-                if (prev.type == PARAGRAPH) {
-                    prev.children.push(newNode(TEXT, [], gen, " "), ...convertContent(line.content, gen));
-                } else {
-                    prev = newNode(PARAGRAPH, convertContent(line.content, gen), gen);
-                    lines.push(prev);
+            if (new_node) {
+                new_node.children = convertContent(contents, gen);
+                lines.push(new_node);
+            }
+        }
+
+
+        head = null;
+        accumulator.length = 0;
+    }
+
+    for (const line of md.lines) {
+
+        if (line.type == ASTType.CodeBlock) {
+
+            parseNonCodeLine();
+
+            prev = newNode(CODE_BLOCK,
+                [],
+                gen,
+                {
+                    view: null,
+                    state: null,
+                    syntax: getText(line.syntax),
+                    text: line.data.map(getText).join("\n"),
                 }
-
-            } break;
+            );
+            head = null;
+            accumulator.length = 0;
+            lines.push(prev);
+        } else if (
+            line.type == ASTType.EmptyLine
+            ||
+            (
+                head &&
+                (
+                    line.type !== head.type
+                    &&
+                    line.type !== ASTType.Paragraph
+                )
+            )
+        ) {
+            parseNonCodeLine();
+        } else if (!head) {
+            head = line;
+        } else {
+            accumulator.push(line);
         }
     }
+
+    parseNonCodeLine();
 
     return <LineNode[]>lines;
 }

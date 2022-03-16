@@ -17,6 +17,7 @@ const {
     QUOTE,
     ROOT,
     TEXT,
+    STEM_HEADER,
     UNORDERED_LIST,
 } = NodeType;
 
@@ -142,7 +143,7 @@ export function heal<T extends NodeType>(
                         l--;
                         i--;
                         continue;
-                    } else if (curr_node.is(TEXT)) {
+                    } else if (curr_node.is(TEXT, STEM_HEADER)) {
 
                         MODIFIED = true;
 
@@ -253,12 +254,6 @@ export function split(
 
                     let b = copy(a);
 
-                    if (ALLOW_HISTORY)
-                        history.addInsert(
-                            md_offset + getMDOffsetFromEditOffset(node, offset).md,
-                            toMDPostText(node) + toMDPreText(node)
-                        );
-
                     const { left: cl, right: cr }
                         = split(
                             children,
@@ -269,8 +264,14 @@ export function split(
                         );
 
                     a.children = cl;
-
                     b.children = cr;
+
+                    initLength(a);
+                    initLength(b);
+
+                    if (ALLOW_HISTORY) {
+                        history.addInsert(md_offset + a.md_length - a.post_md_length, toMDPostText(node) + toMDPreText(node));
+                    }
 
                     left.push(a);
 
@@ -279,15 +280,17 @@ export function split(
                 case QUERY:
                     left.push(node);
                     break;
-                case TEXT: if (node.is(TEXT)) {
-                    const meta = node.meta;
-                    let a = clone(node, gen);
-                    let b = copy(a);
-                    a.meta = meta.slice(0, offset);
-                    b.meta = meta.slice(offset);
-                    left.push(a);
-                    right.push(b);
-                } break;
+                case TEXT:
+                case STEM_HEADER:
+                    if (node.is(TEXT, STEM_HEADER)) {
+                        const meta = node.meta;
+                        let a = clone(node, gen);
+                        let b = copy(a);
+                        a.meta = meta.slice(0, offset);
+                        b.meta = meta.slice(offset);
+                        left.push(a);
+                        right.push(b);
+                    } break;
                 case CODE_BLOCK:
                     debugger;
                     break;
@@ -484,7 +487,7 @@ function setChildrenMut<T extends NodeType>(
 
 
 export function insertTextNode(
-    node: MDNode<NodeType.TEXT>,
+    node: MDNode<NodeType.TEXT | NodeType.STEM_HEADER>,
     split_point: number,
     new_text: string,
     gen: number,

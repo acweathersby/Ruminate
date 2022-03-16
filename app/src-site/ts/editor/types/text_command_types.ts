@@ -6,7 +6,7 @@ import { MDNode, NodeType } from '../task_processors/md_node';
  */
 export enum TextCommand {
     INSERT_TEXT,
-    INSERT_PARAGRAPH,
+    INSERT_LINE,
     DELETE_TEXT,
     TOGGLE_ITALICS,
     TOGGLE_BOLD,

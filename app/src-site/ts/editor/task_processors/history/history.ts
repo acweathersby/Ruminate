@@ -68,35 +68,25 @@ export function addInsert(md_offset: number, text: string) {
         recording_data.push(new InsertDiff(md_offset, text));
 }
 
-export function processRecordings(edit_host: EditHost) {
+export function resolveRecordings(edit_host: EditHost) {
 
     const cache = recording_data;
     recording_data = null;
     //TODO: Some kind of cleanup
 
     if (cache) {
-
-        const { note_id } = edit_host;
-
-        bridge.debug_print_note(note_id, "Pre Change");
-
-        for (const obj of cache) {
-            if (obj instanceof InsertDiff) {
-                bridge.insert_text(note_id, obj.off, obj.txt);
-            } else {
-                bridge.delete_text(note_id, obj.off, obj.len);
-            }
-        }
-
-        bridge.debug_print_note(note_id, "Post Change");
-
         return cache;
     } else {
         return [];
     }
 }
 
-export async function endRecording(edit_host: EditHost, checked_out_nonce: number) {
+export async function endRecording(
+    edit_host: EditHost,
+    checked_out_nonce: number,
+    start_offset: number = edit_host.start_offset,
+    end_offset: number = edit_host.end_offset,
+) {
 
     if (edit_host.root == root) {
         //No changes detected.
@@ -108,19 +98,15 @@ export async function endRecording(edit_host: EditHost, checked_out_nonce: numbe
         return;
 
 
-    const obj = <HistoryTask>{
+    const obj: HistoryTask = {
         state: edit_host.root,
-        end_offset: edit_host.end_offset,
-        start_offset: edit_host.start_offset,
-        diffs: processRecordings(edit_host),
+        end_offset: end_offset,
+        start_offset: start_offset,
+        diffs: resolveRecordings(edit_host),
         clock: -1
     };
 
     edit_host.history.push(obj);
-
-    edit_host.history_pointer++;
-
-    obj.clock = await bridge.get_note_clock(edit_host.note_id);
 }
 
 export function updatePointer(edit_host: EditHost) {
@@ -134,7 +120,7 @@ export function updatePointer(edit_host: EditHost) {
 }
 
 export function applyDiffs(string: string, recordings: (DeleteDiff | InsertDiff)[]) {
-    console.log(recordings[0] instanceof InsertDiff);
+
     for (const data of recordings) {
         if (data instanceof InsertDiff) {
             string = string.slice(0, data.off) + data.txt + string.slice(data.off);
@@ -146,3 +132,114 @@ export function applyDiffs(string: string, recordings: (DeleteDiff | InsertDiff)
     return string;
 }
 
+export function enableLineEditMode(edit_host: EditHost) {
+    edit_host.NEW_LINE_MODE = true;
+}
+
+export function disableLineEditMode(edit_host: EditHost) {
+    edit_host.NEW_LINE_MODE = false;
+}
+
+export function IN_LINE_EDIT_MODE(edit_host: EditHost) {
+    return edit_host.NEW_LINE_MODE;
+}
+
+export function sync(edit_host: EditHost) {
+
+    if (IN_LINE_EDIT_MODE(edit_host))
+        return;
+
+    const {
+        note_id,
+        history
+    } = edit_host;
+
+    //Find last synced history
+    let first = 0;
+
+    for (const task of history) {
+        if (task.clock < 0)
+            break;
+        first++;
+    }
+
+    const count = history.length - first;
+
+    if (count > 0) {
+
+        const
+            last_state = history[history.length - 1],
+            first_state = history[first],
+            changes = history.slice(first, history.length).flatMap(i => i.diffs),
+            outgoing_changes = [];
+
+        let prev = null;
+
+        for (let i = 0; i < changes.length; i++) {
+            const change = changes[i];
+            if (prev) {
+                if (change instanceof InsertDiff) {
+                    if (prev instanceof InsertDiff) {
+
+                        const
+                            prev_head = prev.off,
+                            prev_tail = prev.txt.length,
+                            off = change.off - prev_head;
+
+                        if (off >= 0 && off <= prev_tail) {
+                            prev.txt = prev.txt.slice(0, off)
+                                + change.txt
+                                + prev.txt.slice(off);
+                            continue;
+                        }
+                    } else {
+                        //debugger;
+                    }
+                } else {
+                    if (prev instanceof InsertDiff) {
+
+                        const
+                            prev_head = prev.off,
+                            prev_tail = prev.txt.length,
+                            off = change.off - prev_head;
+
+                        if (off >= 0 && off <= prev_tail) {
+                            prev.txt = prev.txt.slice(0, off) + prev.txt.slice(Math.min(off + change.len, prev_tail));
+                            const diff = off + change.len - prev_tail;
+                            if (diff > 0) {
+                                change.off = prev_tail;
+                                change.len = diff;
+                                outgoing_changes.push(change);
+                            }
+                            continue;
+                        }
+                    } else {
+                        //debugger;
+                    }
+                }
+            }
+
+
+            outgoing_changes.push(change);
+            prev = change;
+        }
+
+        last_state.clock = bridge.get_note_clock(edit_host.note_id);
+
+        last_state.diffs = outgoing_changes;
+
+        bridge.debug_print_note(note_id, "Pre Change");
+
+        for (const change of outgoing_changes)
+            if (change instanceof InsertDiff)
+                bridge.insert_text(note_id, change.off, change.txt);
+            else
+                bridge.delete_text(note_id, change.off, change.len);
+
+        bridge.debug_print_note(note_id, "Post Change");
+
+        edit_host.history = history.slice(0, first).concat(last_state);
+
+        edit_host.history_pointer = edit_host.history.length - 1;
+    }
+}

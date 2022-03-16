@@ -41,13 +41,37 @@ export function deleteText(edit_host: EditHost) {
         if (overlap_length == 0) continue;
 
         if (node.containsClass(NodeClass.LINE)) {
+
             if (node.is(NodeType.CODE_BLOCK)) {
 
-                history.addDelete(md_head + overlap_start, overlap_length);
+                if (overlap_type == RangeOverlapType.COMPLETE) {
 
-                replace(code.removeText(node, overlap_start - 1, overlap_length));
+                    meta.range_end -= node.length;
+
+                    history.addDelete(md_head, node.md_length);
+
+                    replace(null, ng);
+                } else {
+
+
+                    const
+                        offset = Math.max(overlap_start - 1, 0),
+                        o_length = overlap_start == 0
+                            ? overlap_length - 1
+                            : overlap_length;
+
+                    history.addDelete(
+                        md_head + node.pre_md_length + offset,
+                        o_length
+                    );
+
+                    meta.range_end -= o_length;
+
+                    replace(code.removeText(node, offset, o_length));
+                }
 
             } else if (overlap_start == 0) {
+
                 if (RangeOverlapType.COMPLETE == overlap_type) {
 
                     meta.range_end -= node.length;
@@ -57,40 +81,51 @@ export function deleteText(edit_host: EditHost) {
                     replace(null, ng);
 
                     skip();
-                } else if (prev && node.is(prev.type)) {
-                    //Merge the two and then redo parsing
 
+                } else if (prev) {
+                    // Normally, the contents of any line can be merged 
+                    // into any other line. Since CODE_BLOCK lines represent
+                    // raw character data that does not translate markdown syntax, 
+                    // we must treat them differently. So we filter out cases where
+                    // a line might be merged into a CODE_BLOCK.
 
-                    replace(null, ng);
+                    if (!prev.is(NodeType.CODE_BLOCK)) {
 
-                    const
-                        parent = getAncestry()[0],
-                        par_children = parent.children,
-                        new_node = ops.clone(prev),
-                        { right, left } = ops.splitNode(
-                            node,
-                            overlap_length,
-                            ng,
-                            md_head,
-                            false
+                        replace(null, ng);
+
+                        const
+                            parent = getAncestry()[0],
+                            par_children = parent.children,
+                            new_node = ops.clone(prev, ng),
+                            { left, right } = ops.splitNode(
+                                node,
+                                overlap_length,
+                                ng,
+                                md_head,
+                                false
+                            );
+
+                        history.addDelete(
+                            md_head - prev.post_md_length,
+                            prev.post_md_length
+                            + node.pre_md_length
+                            + left.md_length
+                            - left.post_md_length
+                            - left.pre_md_length
                         );
 
-                    history.addDelete(
-                        md_head - prev.post_md_length,
-                        prev.post_md_length
-                        + node.pre_md_length
-                        + left.md_length
-                        - left.post_md_length
-                        - left.pre_md_length
-                    );
+                        new_node.children = prev.children.concat(right.children);
 
-                    new_node.children = prev.children.concat(right.children);
+                        meta.range_end -= overlap_length;
 
-                    meta.range_end -= overlap_length;
+                        par_children[index - 1] = new_node;
 
-                    par_children[index - 1] = new_node;
-
-                    parent.children = par_children;
+                        parent.children = par_children;
+                    } else {
+                        if (prev.length == 1) {
+                            //Delete this node. 
+                        }
+                    }
                 } else {
                     debugger;
                 }
@@ -104,7 +139,8 @@ export function deleteText(edit_host: EditHost) {
 
             replace(null, ng);
 
-        } else if (node.is(NodeType.TEXT)) {
+        } else if (node.is(NodeType.TEXT, NodeType.STEM_HEADER)) {
+
             switch (overlap_type) {
 
                 case RangeOverlapType.PARTIAL_CONTAINED: {
@@ -112,8 +148,6 @@ export function deleteText(edit_host: EditHost) {
                     var
                         { left, right: mid } = ops.splitNode(node, overlap_start, ng, md_head),
                         { left: mid, right } = ops.splitNode(mid, overlap_length, ng, md_head);
-
-                    [left, mid, right].forEach(initLength);
 
                     history.addDelete(md_head + left.md_length, mid.md_length);
 
@@ -128,8 +162,6 @@ export function deleteText(edit_host: EditHost) {
 
                     const { left, right } = ops.splitNode(node, overlap_length, ng, md_head);
 
-                    [left, right].forEach(initLength);
-
                     history.addDelete(md_head, left.md_length);
 
                     meta.range_end -= overlap_length;
@@ -142,8 +174,6 @@ export function deleteText(edit_host: EditHost) {
                 case RangeOverlapType.PARTIAL_TAIL: {
 
                     const { left, right } = ops.splitNode(node, overlap_start, ng, md_head);
-
-                    [left, right].forEach(initLength);
 
                     history.addDelete(md_head + left.md_length, right.md_length);
 

@@ -14,41 +14,24 @@
     changes during an edit task and maintain diff patches alongside edit trees
     within the history.
 - [x] - total 113min - Fix incorrect portions removed when doing multi-element text deletion.
+- [x] - total 10min - Fix incorrectly set cursor offset at head of line. This can occur during insertion of new line.
+- [x] - total 30min - Fix newline insertion at end of line.
+- [x] - total 0min - Add logic that can insert header text in stem line.
+- [x] - total 80min - Add logic that resolves stem lines.
+- [x] - total 20min - Complete conversion of stem line to real line when space or other action is performed
 
 ---
 
 ## Working:
 
 
-
 ## FE
 - [ ] - 10min - Ensure heal actions take into account counterpart elements with differing meta states
-- [ ] - 10min - Fix incorrectly set cursor offset at head of line 
-- [ ] - 20min - Complete conversion of stem line to real line when space or other action is performed
-- [ ] - 10min - Add stem line meta UI
 - [ ] - 20min - Add anchor meta UI
 - [ ] - 20min - Add query meta UI
+- [ ] - 10min - Add stem line meta UI
 - [ ] - 30min - Add picture meta UI
-- [ ] - 20min - Validate correct cursor position after different transforms
-                - Undo
-                - Redo
-                - Insert Text
-                - Delete Text
-                - Delete Line
-                - Insert Line
-                    - Start
-                    - Middle
-                    - End
-                - Toggle formatting
-                    - Bold
-                    - Inline Code
-                    - Italic
-                - Change line type
-                    - Header 1 - 6
-                    - Paragraph
-                    - List item
-                        - Ordered
-                        - Unordered
+- [ ] - 10min - Ensure meta popup position is updated on scroll / window resize
 - [ ] - 30min - Adjust styling for notes. 
 - [ ] - 30min - Enable basic not query 
 - [ ] - 30min - Optimize note rebuild
@@ -66,9 +49,46 @@
 - [ ] - 30min - Implement checkbox & lists
 - [ ] - 60min - Investigate note execution models
 - [ ] - 60min - Build basic note scraper for VS code
+- [ ] - 60min - Create default dark mode
+- [ ] - 60min - Create default light mode
+- [ ] - 60min - Validate correct cursor position after different transforms
+                - [] Undo
+                - [] Redo
+                - [] Insert Text
+                - [] Delete Text
+                - [] Delete Line
+                - [] Insert Line
+                    - Start
+                    - Middle
+                    - End
+                - [] Toggle formatting
+                    - Bold
+                    - Inline Code
+                    - Italic
+                - [] Change line type
+                    - [] Header 1 - 6
+                        - [ ] 1
+                        - [ ] 2
+                        - [ ] 3 
+                        - [ ] 4
+                        - [ ] 5
+                        - [ ] 6
+                    - Paragraph
+                    - List item
+                        - Ordered
+                        - Unordered
+
+## Editing errors
+
+Deleting multiple lines
 
 ## BE
 
 - [ ] - 60min - Revise note storage to use line based CRDTs
+- [ ] - 60min - Build persistent local storage system.
+
+## SEttings
+
+- [ ] - 120min - Add 
 
 ## API
