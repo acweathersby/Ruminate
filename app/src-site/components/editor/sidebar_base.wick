@@ -1,0 +1,62 @@
+import { SHOW_SIDE_BAR } from "@attributes";
+
+export default <div class={SHOW_SIDE_BAR; "open"}></div>;
+
+<style>
+
+    root {
+        font-size: 12px;
+        top:0;
+        left:0;
+        width:0;
+        position:sticky;
+        height:100vh;
+        z-index:1;
+        background:#EFEFEF;
+        transition: width 250ms, padding 250ms;
+        margin:0;
+        overflow:hidden;
+        flex-grow:0;
+        flex-shrink:0;
+        user-select:none;
+    }
+
+    root.open {
+        width:300px;
+    }
+
+    .header {
+        position:relative;
+        height: 50px;
+        border-bottom:1px solid #DADADA;
+        display:flex;
+        flex-direction:row;
+        justify-content:space-between;
+        padding:10px 14px;
+        width:300px;
+    }
+
+    .icon-placeholder {
+        width:27px;
+        height:27px;
+        background: #DFDFDF;
+        border-radius:3px;
+    }
+
+    .content {
+        position:relative;
+        padding:0;
+        width:300px;
+    }
+
+    h1 {
+        color:#939393;
+        font-size: 1em;
+        line-height:1em;
+        margin: 22px 20px 10px;
+        padding: 0 0 10px;
+        border-bottom: 1px solid #DADADA; 
+    }
+    
+
+</style>

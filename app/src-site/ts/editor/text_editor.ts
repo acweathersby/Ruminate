@@ -6,7 +6,7 @@ import {
 } from './parser/parse_markdown.js';
 import { MDNode, NodeType } from './task_processors/md_node.js';
 import { heal, setChildren } from './task_processors/operators.js';
-import { initLength } from './task_processors/traverse/traverse.js';
+import { initLength, traverse } from './task_processors/traverse/traverse.js';
 import {
     setEditable, updateHost, updateMarkdownDebugger
 } from './task_processors/view.js';
@@ -121,6 +121,33 @@ export async function constructEditHost(
     edit_host.history_pointer = 0;
 
     return edit_host;
+}
+
+/**
+ * Null all object references in an @type {EditHost} object in preparation
+ * for garbage collection.
+ */
+export async function releaseEditHost(
+    edit_host: EditHost
+) {
+    if (edit_host) {
+
+        edit_host.history = null;
+
+        edit_host.active = null;
+
+        edit_host.debug_data = null;
+
+        if (edit_host.host_ele && edit_host.host_ele.parentElement)
+            edit_host.host_ele.parentElement.removeChild(edit_host.host_ele);
+
+        for (const node of traverse(edit_host.root).map(v => v)) {
+            node.meta = null;
+            node.ele = null;
+        }
+
+        edit_host.root = null;
+    }
 }
 function createEditHostObj(
     note_id: number,

@@ -1,0 +1,104 @@
+import "@radiate";
+
+export default <div id=app>
+    <head>
+        <link rel="stylesheet" href="/css/cm.css">
+        <link rel="stylesheet" href="/fonts/icons/style.css">
+    </head>
+</div>;
+    
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito&family=Varela+Round&display=swap');
+
+html {
+  border-radius:10px;  
+}
+
+body {
+    font-family: Varela, arial, sans-serif;
+    font-size:12px;
+    background:white;
+    border:0;
+    border-radius:10px;
+}
+
+root { position:absolute; }
+
+
+.fc-purple { color: #AD1FEA }
+.fc-blue1 { color: #4661E6 }
+.fc-blue2 { color: #62BCFA }
+.fc-blue3 { color: #373F68 }
+.fc-blue4 { color: #3A4374 }
+.fc-blue5 { color: #647196 }
+.fc-white1 { color: #FFF }
+.fc-white2 { color: #F2F4FF }
+.fc-white3 { color: #F7F8FD }
+.fc-orange { color: #F49F85 }
+
+.bgc-purple { background-color: #AD1FEA }
+.bgc-blue1 { background-color: #4661E6 }
+.bgc-blue2 { background-color: #62BCFA }
+.bgc-blue3 { background-color: #373F68 }
+.bgc-blue4 { background-color: #3A4374 }
+.bgc-blue5 { background-color: #647196 }
+.bgc-white1 { background-color: #FFF }
+.bgc-white2 { background-color: #F2F4FF }
+.bgc-white3 { background-color: #F7F8FD }
+.bgc-orange { background-color: #F49F85 }
+.bgc-red { background-color: #D73737 }
+
+.p1 { font-size:1.32em; line-height:1.43em }
+.p2 { font-size:1.25em; line-height:1.46em }
+.p3 { font-size:1.08em; line-height:1.46em; font-weight: 800 }
+
+button {
+    outline:none;
+    border:none;
+    text-align:center;
+    color:#F2F4FE;
+    border-radius:10px;
+    font-size:1.1667em;
+    font-weight:bold;
+}
+
+button:hover { cursor:pointer }
+button.bgc-purple:hover{background-color:#C75AF6;}
+button.bgc-blue1:hover{background-color:#7C91F9;}
+button.bgc-blue4:hover{ background-color:#656EA3; }
+button.bgc-red:hover{ background-color:#E98888;}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight:800;
+    padding:0;
+    margin:0;
+}
+h1 {
+    font-size: 2em;
+    line-height: 3em;
+}
+
+h2 {
+    font-size: 1.67em;
+    line-height: 1.67em;
+}
+
+h3 {
+    font-size: 1.5em;
+    line-height: 1.5em;
+}
+
+h4 {
+    font-size: 1.167em;
+}
+
+h5 {
+    font-size: 1.1em;
+}
+
+h6 {
+    font-size: 1.05em;
+}
+
+</style>

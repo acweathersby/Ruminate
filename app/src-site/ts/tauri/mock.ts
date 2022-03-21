@@ -4,10 +4,12 @@ import { heal, setChildren } from '../editor/task_processors/operators';
 import { toMDString } from '../editor/text_editor';
 
 const debug_store: Map<number, MockNote> = new Map();
-
+let index_nonce = 0;
 interface MockNote {
+    name: string,
     text: string;
     id: number;
+    path: string;
 }
 
 function getMockNote(index: number): MockNote {
@@ -17,7 +19,7 @@ function getMockNote(index: number): MockNote {
 }
 
 export function createMockNote(
-    index: number = debug_store.size,
+    index: number = index_nonce,
     base_text: string = getPlaceHolderText(),
     ALLOW_OVERWRITE: boolean = false
 ): MockNote {
@@ -43,9 +45,39 @@ export function createMockNote(
 
     debug_store.set(index, mock_note);
 
+    index_nonce = Math.max(index + 1, index_nonce + 1);
+
+    console.debug(`Created new note [${index}]`);
+
     return mock_note;
 }
 
+export function setNoteName(note_id: number, name: string) {
+    const note = getMockNote(note_id);
+    note.name = name;
+    console.debug(`Set name of note [${note.id}] to "${name}"`);
+}
+
+export function getNoteName(note_id: number,): string {
+    return getMockNote(note_id).name ?? "";
+}
+
+export function setNotePath(note_id: number, path: string) {
+    const note = getMockNote(note_id);
+    note.path = path;
+    console.debug(`Set path of note [${note.id}] to "${path}"`);
+}
+
+export function getNotePath(note_id: number,): string {
+    return getMockNote(note_id).path ?? "/";
+}
+
+export function getNotesFromContainer(path: string) {
+    return Array.from(debug_store.values()).map(v => v.id);
+}
+export function getNotesFromQuery(query: string) {
+    return [1];
+}
 export function insertText(note_id: number, offset: number, text: string) {
 
 
@@ -87,7 +119,19 @@ export function getText(note_id: number): string {
 }
 
 function getPlaceHolderText() {
-    return `
+    const candidates = [`
+# Introduction
+
+I was writing some documentation for things and stuff, and thought to myself how nice it would be 
+to have my own small app for that. Even though there are at least fifty of those open-sourced - 
+for science is for science :) Anyway, this is how I imagine it would initially look like, as simple 
+and readable as possible
+
+## Coorporate
+
+Me and a friend have just released the first version of a minimal markdown text editor website, FocusFox. 
+Go check it out at www.focusfox.co and tell us what you think!
+`, `
 # Header 1
 
 ## Header 2 
@@ -131,6 +175,9 @@ Then End!
 Do da do
 
 Mi da do
-`;
+`];
+    const index = Math.floor((Math.random() * (candidates.length)));
+    console.log({ index });
+    return candidates[index];
 }
 

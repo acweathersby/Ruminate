@@ -1,0 +1,56 @@
+import "@radiate";
+import {load_note, init} from "../../ts/app.ts";
+import editable_note from "../../components/note/editable_note.wick";
+import readonly_note from "../../components/note/readonly_note.wick";
+import meta_editor from "../../components/note/meta_editor.wick";
+import left_sidebar from "../../components/editor/left_sidebar.wick";
+import right_sidebar from "../../components/editor/right_sidebar.wick";
+import intro from "../../components/intro.wick";
+import app from "../../components/wrapper/app.wick";
+import {active_note} from "@store";
+
+let note = [];
+
+function onload(){ 
+    init(); 
+    "@root".classList.add("display"); 
+}
+
+function $(active_note){
+    note = [{id:active_note}];
+}
+
+export default <app>
+    <left_sidebar/>
+    <div class=main>
+        <container class=note-view data={note}>
+            <intro use-if-empty/>
+            <editable_note/>
+        </container>
+    </div>
+    <right_sidebar/>
+</app>;
+
+<style>
+    root {
+        width:100%;
+        display:flex;
+        min-height:100vh;
+        opacity:0;
+        transition:opacity 3000ms;
+    }
+
+    root.display {
+        opacity:1;
+    }
+
+    .main {
+        position:relative;
+        display:flex;
+        flex-direction:row;
+        justify-content: center;
+        width:100%;
+        height:100vh;
+        overflow-y:hidden;
+    }
+</style>

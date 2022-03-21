@@ -1,0 +1,60 @@
+import sidebar from "./sidebar_base.wick";
+import folders from "./folders.wick";
+import item_details from "./item_details.wick";
+import widget from "./widgets/sidebar_reveal.wick";
+
+let SHOW_SIDE_BAR = true;
+const folder_scroll_target = "@#sbfolders";
+
+export default <sidebar 
+    class="light" 
+    {SHOW_SIDE_BAR} 
+    >
+    <widget id="revealer" onclick={SHOW_SIDE_BAR = !SHOW_SIDE_BAR}/>
+
+    <div class="header">
+        <div class="icon-placeholder"></div>
+        <div class="icon-placeholder icon-Search"></div>
+        <a href="/views/settings" class="icon-placeholder icon-Settings"></a>
+    </div>
+
+    <div class=content>
+        <folders id="sbfolders" class="sb-folders"></folders>
+        <item_details/>
+    </div>
+
+</sidebar>;
+
+<style>
+    root.light {
+        border-right: 1px solid #C4C4C4;
+    }
+
+    #revealer {
+        position:fixed;
+        top:10px;
+        left:12px;
+        z-index:1;
+    }
+
+    .sb-folders {
+        height:40%;
+    }
+
+    .content {
+        display:flex;
+        flex-direction:column;
+        height:100%;
+    }
+    
+    .icon-placeholder {
+        font-size: 26px;
+        color:#C7C7C7;
+        background:none;
+        cursor:pointer;
+    }
+
+    .icon-placeholder:hover {
+        color:#A6A6A6;
+    }
+</style>

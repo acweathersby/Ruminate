@@ -1,5 +1,5 @@
 import { ASTNode, complete, state_index_mask } from "@hctoolkit/runtime";
-import { Token } from '@hctoolkit/runtime/build';
+import { Token } from '@hctoolkit/runtime';
 import { LineNode, MDNode, NodeType } from '../task_processors/md_node';
 import { newNode } from '../task_processors/operators';
 import {

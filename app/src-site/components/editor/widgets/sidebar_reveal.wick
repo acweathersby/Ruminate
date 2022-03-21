@@ -1,0 +1,17 @@
+export default <div>
+</div>;
+
+<style>
+
+    root {
+        width:27px;
+        height:27px;
+        background: #DFDFDF;
+        border-radius:3px;
+    }
+
+    root:hover {
+        cursor: pointer;
+    }
+
+</style>

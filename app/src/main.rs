@@ -41,6 +41,17 @@ mod rumi_app {
         }
     }
 
+    /// Retrieve a Vector of local note ids that are container in the
+    /// given container path.
+    #[tauri::command]
+    pub fn get_notes_from_container(container_path: String) -> Vec<NoteLocalID> {
+        if let Some(store) = unsafe { GLOBAL_STORE.as_mut() } {
+            vec![]
+        } else {
+            vec![]
+        }
+    }
+
     /// Return the most recent clock value from the givin note, ignoring
     /// site component.
     #[tauri::command]
@@ -314,7 +325,8 @@ Welcome to Ruminate. {{chocolate}}
                 get_note_name,
                 set_note_container_path,
                 get_note_container_path,
-                debug_print_note
+                debug_print_note,
+                get_notes_from_container
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

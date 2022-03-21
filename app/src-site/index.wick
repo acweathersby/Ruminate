@@ -1,110 +1,15 @@
 import "@radiate";
-import {init, load_note} from "./ts/app.ts";
-import editable_note from "./components/note/editable_note.wick";
-import readonly_note from "./components/note/readonly_note.wick";
-import meta_editor from "./components/note/meta_editor.wick";
 
-let active_note = [];
+import app from "./components/wrapper/app.wick";
 
-function onload(){
-    init();
-    active_note = [{id:1}]
-}
+import { init } from "./ts/app.ts";
 
-export default <div id="app">
-    <head>
-        <link rel="stylesheet" href="css/cm.css">
-    </head>
-    <div class=leftsb></div>
-    <div class=main>
-        <div class=search>
-            <input class=search-input type=text placeholder="Begin your note journey">
-        </div>
-        <container class=note-view data={active_note}>
-            <editable_note/>
-        </container>
-    </div>
-    <div class=rightsb>
-        <section>
-            <h4>Publish</h4>
-            <ul>
-                <li>medium</li>
-                <li>facebook</li>
-                <li>devto</li>
-                <li>reddit</li>
-                <li>netlify</li>
-            </ul>
-        </section>
-        <section>
-            <h4>Link</h4>
-        </section>
-    </div>
-</div>;
+function onload(){ await init(); }
 
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Nunito&family=Varela+Round&display=swap');
+export default <app>
+    <h1>Ruminate</h1>
+    <a href="/views/editor/">editor</a>
+    <a href="/views/settings/">settings</a>
+</app>;
 
-    root {
-        font-family: 'Varela Round', sans-serif;
-        width:100%;
-        display:flex;
-        min-height:100vh;
-        background:#F9F9F9;
-        font-size:14px;
-    }
-
-    .main {
-        height:100%;
-        width:70%;
-        margin: 20px 80px;
-    }
-
-    .leftsb {
-        background: #FFF;
-        width:15%;
-    }
-
-    .rightsb {
-        background: #FFF;
-        width:15%;
-        padding:10px;
-    }
-
-    .rightsb ul {
-        margin:0;
-        padding:0;
-        padding-left:10px;
-        display: flex;
-        width: 100%;
-        flex-basis: fit-content;
-        flex-direction: row;
-        justify-content: space-between;
-        flex-flow: wrap;
-    }
-
-    .rightsb li {
-        width:50%;
-        margin:8px 0;
-    }
-
-    .search {
-        width:100%;
-    }
-
-    .search-input {
-        width:100%;
-        background:#F0F0F0;
-        font-size:1.2em;
-        border:none;
-        padding:10px 20px;
-        border-radius:20px;
-        outline:none;
-        transition:background 200ms;
-    }
-
-    .search-input:active,
-    .search-input:hover{ 
-        background:#E0E0E0;
-    }
-
-</style>
+<style></style>

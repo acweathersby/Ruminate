@@ -59,9 +59,12 @@
     f:r { { t_CodeBlock, c_Line, syntax:str($2), data:$3, read_only:false } }
 
 
-<> spaces > (g:sp)(*)
+<> spaces > 
+
+    (g:sp)(*)
 
 <> header_token > 
+
     \# (+)
 
 <> ol_token > 
@@ -78,9 +81,9 @@
 
 <> code_line >
 
-        g:nl code_line_text?
+    g:nl code_line_text?
 
-        f:r { { t_Text, c_Content, value: str($2) } }
+    f:r { { t_Text, c_Content, value: str($2) } }
 
 <> code_block_delimiter > \```
 

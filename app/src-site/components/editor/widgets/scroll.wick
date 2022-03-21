@@ -1,0 +1,116 @@
+
+import {target} from "@attributes";
+
+let handle = "@.handle";
+let HANDLE_MODE = false;
+let handle_position = 0;
+let scroll_amount = 0;
+let resize_observer = new ResizeObserver(this.handleResize.bind(this));
+
+function $setTarget(target){
+    resize_observer.disconnect();
+
+    resize_observer.observe(target)
+
+    for(const ele of Array.from(target.children))
+        resize_observer.observe(ele);
+}
+
+function $(handle_position){
+    const ratio = handle_position / "@root".clientHeight;
+    target.scrollTop = scroll_amount *ratio;
+    handle.style.top = handle_position + "px";
+}
+
+function getTop(ele){
+    let top = 0;
+
+    while(ele){
+        top += ele.offsetTop;
+        ele = ele.parentElement
+    }
+
+    return top
+}
+
+function handleResize(e){
+    scroll_amount = target.scrollHeight - target.clientHeight;
+}
+
+import scroll from "./widgets/scroll.wick";
+
+function handleDown(e){
+     handle.setPointerCapture(e.pointerId);
+     HANDLE_MODE = true;
+}
+
+function handleMove(e){
+    if(HANDLE_MODE){
+        const y = e.movementY;
+        handle_position += y;
+        console.log({y})
+    }
+}
+
+function handleUp(e){
+    handle.releasePointerCapture(e.pointerId);
+    HANDLE_MODE = false;
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function onpointerup(e){
+    handle_position = (e.clientY - getTop("@root"));
+}
+
+export default <div class={scroll_amount > 0; 'show'}>
+    <div class=scroll-begin></div>
+    <div class=handle
+        onpointerdown={handleDown}
+        onpointermove={handleMove}
+        onpointerup={handleUp}
+    ></div>
+    <div class=scroll-end></div>
+</div>;
+
+<style>
+    root {
+        width:10px;
+        top:0;
+        right:0;
+        position:relative;
+        opacity:0;
+        transition:opacity 300ms;
+    }
+
+    .scroll-end, .scroll-begin{
+        width:5px;
+        height:5px;
+        position:absolute;
+        left:2px;
+        background:#DFDFDF;
+        border-radius:3px;
+    }
+
+    .scroll-begin {
+        top:0;
+    }
+
+    .scroll-end{
+        bottom:0;
+    }
+
+    root.show{
+        opacity:1;
+    }
+
+    .handle {
+        top:0;
+        left:-2px;
+        position:absolute;
+        width:14px;
+        height:14px;
+        border-radius:7px;
+        background:#939393;
+    }
+</style>

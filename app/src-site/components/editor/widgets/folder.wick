@@ -1,0 +1,72 @@
+import { items, name } from "@model";
+
+let count = 0;
+let SHOW = false;
+
+export default <div>
+    <div class=entry onclick={SHOW=!SHOW}>
+    <div class=folder-data><span class=icon-Folder></span> {name} </div>
+    <div class=item-count>{items.length}</div>
+    </div>
+    <container 
+        data={items}
+        filter={SHOW}
+        class=sub-folders
+    >
+        <self/>
+    </continer>
+</div>;
+
+<style>
+    root {
+        position:relative;
+        font-size:12px;
+        font-weight:bold;
+        cursor:pointer;
+        transition: color 200ms, background 200ms;
+        border-radius:3px;
+        width:100%;
+        color:#939393;
+    }
+
+    .entry {
+        padding: 5px 0 5px 0px;
+    }
+
+    .entry:hover {
+        color:#92C4C8;
+    }
+
+    .folder-data {
+        position:relative;
+        display:inline-block;
+    }
+
+    .item-count {
+        position:relative;
+        display: inline-block;
+        float:right;
+        text-justify:right;
+    }
+
+    .sub-folders {
+        margin: 0 0 0 5px;
+        padding: 0 0 0 5px;
+        border-left: 1px solid #00000000;
+    }
+
+    root:hover > .sub-folders {
+        border-left: 1px solid #00000010;
+    }
+
+    root.test {
+        background-color: red;
+        color: #ffffff;
+        background-color: #3c3c4c;
+    }
+
+    .icon-Folder {
+        vertical-align: middle;
+        font-size:1.16em;
+    }
+</style>

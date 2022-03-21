@@ -1,12 +1,12 @@
-import { EditHost } from "../../types/edit_host";
-import { TextCommand } from '../../types/text_command_types';
-import * as code from '../code';
-import * as history from '../history/history';
-import * as ops from '../operators';
-import { NodeClass, NodeType } from '../md_node';
-import { initLength, traverse } from '../traverse/traverse';
-import { RangeOverlapType } from '../traverse/yielder/in_range';
-import { registerAction } from './register_action';
+import { EditHost } from "../../types/edit_host.js";
+import { TextCommand } from '../../types/text_command_types.js';
+import * as code from '../code.js';
+import * as history from '../history/history.js';
+import * as ops from '../operators.js';
+import { NodeClass, NodeType } from '../md_node.js';
+import { initLength, traverse } from '../traverse/traverse.js';
+import { RangeOverlapType } from '../traverse/yielder/in_range.js';
+import { registerAction } from './register_action.js';
 
 
 export function deleteText(edit_host: EditHost) {

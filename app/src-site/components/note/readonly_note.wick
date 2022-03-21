@@ -10,12 +10,16 @@ let path = "/rumi-tutorials/";
 let name = "test";
 let host = null;
 
-async function onload(){
+async function onLoad(){
     id = 2;
     host = await editor.constructReadOnlyHost(id, active);
     editor.setReadOnly(host,true);
     rm.get_note_name(id).then(n=>name=n);
     rm.get_note_container_path(id).then(p=>path=p);
+}
+
+function onDisconnecting(){
+    editor.releaseEditHost(host);
 }
 
 export default <div class=note> 
@@ -24,7 +28,6 @@ export default <div class=note>
         <h1 class=note-title>{name}</h1>
     </div>
     <note_body {host}/>
-    <div class=note-md-preview></div>
 </div>;
 
 
@@ -33,10 +36,6 @@ export default <div class=note>
 root {
     outline:none;
     width:100%;
-}
-
-.note-md-preview pre {
-    white-space: pre-wrap
 }
 
 </style>

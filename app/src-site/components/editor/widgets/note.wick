@@ -1,0 +1,30 @@
+import { id, name } from "@model";
+import * as bridge from "../../ts/tauri/bridge.ts";
+import {active_note} from "@store";
+
+export default <div onclick={active_note = id} class={ active_note == id; "test" }>
+    📝 { name } | { id } | tree
+</div>;
+
+<style>
+    root {
+        font-size:12px;
+        padding: 2px 0 2px 5px;
+        margin: 3px 0;
+        cursor:pointer;
+        transition: color 200ms, background 200ms;
+        border-radius:3px;
+    }
+
+    root:hover {
+        background-color: #FFEEEE;
+    }
+
+    root.test {
+        background-color: red;
+        color: #ffffFF;
+        background-color: #624a61;
+    }
+
+
+</style>

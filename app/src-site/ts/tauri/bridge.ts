@@ -14,7 +14,7 @@ export const init = assert_DB_decorator(
 export const debug_print_note = assert_DB_decorator(
     async function debug_print_note(noteLocalId: number, comment: string = ""): Promise<number[]> {
         return invoke("debug_print_note", { noteLocalId, comment });
-    }, (id: number, cmt: string) => mock.debugPrintNote(id, cmt));
+    }, mock.debugPrintNote);
 
 export const get_note_clock = assert_DB_decorator(
     async function get_note_clock(noteLocalId: number): Promise<number> {
@@ -24,27 +24,32 @@ export const get_note_clock = assert_DB_decorator(
 export const get_notes_from_query = assert_DB_decorator(
     async function get_notes_from_query(query: string): Promise<number[]> {
         return invoke("get_notes_from_query", { query });
-    }, [1]);
+    }, mock.getNotesFromQuery);
+
+export const get_notes_from_container = assert_DB_decorator(
+    async function get_notes_from_container(containerPath: string): Promise<number[]> {
+        return invoke("get_notes_from_container_path", { containerPath });
+    }, mock.getNotesFromContainer);
 export const create_note = assert_DB_decorator(
     async function create_note(): Promise<number> {
         return invoke("create_note");
-    }, 1);
+    }, () => mock.createMockNote().id);
 export const set_note_name = assert_DB_decorator(
     async function set_note_name(noteLocalId: number, name: String) {
         return invoke("set_note_name", { noteLocalId: noteLocalId, name });
-    });
+    }, mock.setNoteName);
 export const get_note_name = assert_DB_decorator(
     async function get_note_name(noteLocalId: number): Promise<string> {
         return invoke("get_note_name", { noteLocalId });
-    }, "Dummy Note");
+    }, mock.getNoteName);
 export const set_note_container_path = assert_DB_decorator(
     async function set_note_container_path(noteLocalId: number, containerPath: String) {
         return invoke("set_note_container_path", { noteLocalId, containerPath });
-    });
+    }, mock.setNotePath);
 export const get_note_container_path = assert_DB_decorator(
     async function get_note_container_path(noteLocalId: number): Promise<string> {
         return invoke("get_note_container_path", { noteLocalId });
-    }, "/temp/notes");
+    }, mock.getNotePath);
 export const get_local_id_from_uuid = assert_DB_decorator(
     async function get_local_id_from_uuid(uuidString: string): Promise<number> {
         return invoke("get_local_id_from_uuid", { uuidString });

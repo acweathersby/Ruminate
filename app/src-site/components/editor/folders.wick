@@ -1,0 +1,84 @@
+import folder from "./widgets/folder.wick";
+import scroll from "./widgets/scroll.wick";
+
+let contents = "@.contents";
+
+let test_data = [
+    {type:"folder", name:"test", items:[
+        {type:"folder", name:"test", items:[
+        {type:"folder", name:"test", items:[
+        {type:"folder", name:"test", items:[]},
+        {type:"file", name:"testA", items:[]},
+        {type:"folder", name:"testB", items:[]}]},
+        {type:"file", name:"testA", items:[
+        {type:"folder", name:"test", items:[]},
+        {type:"file", name:"testA", items:[
+        {type:"folder", name:"test", items:[]},
+        {type:"file", name:"testA", items:[]},
+        {type:"folder", name:"testB", items:[]}]},
+        {type:"folder", name:"testB", items:[]}]},
+        {type:"folder", name:"testB", items:[]}]},
+        {type:"file", name:"testA", items:[]},
+        {type:"folder", name:"testB", items:[
+        {type:"folder", name:"test", items:[]},
+        {type:"file", name:"testA", items:[
+        {type:"folder", name:"test", items:[]},
+        {type:"file", name:"testA", items:[]},
+        {type:"folder", name:"testB", items:[
+        {type:"folder", name:"test", items:[]},
+        {type:"file", name:"testA", items:[]},
+        {type:"folder", name:"testB", items:[]}]}]},
+        {type:"folder", name:"testB", items:[]}]}
+    ]}
+];
+
+
+export default <div>
+    <h1>Folders</h1>
+
+    <div class=content-box>
+        <container
+            class=contents
+            data={test_data}
+        >
+    
+        <folder/>
+    
+        </container>
+        <scroll class=scroll target={contents}/>
+    </div>
+</div>;
+
+<style>
+
+    root {
+        position:relative;
+    }
+
+    .contents {
+        position:relative;
+        margin: 0;
+        padding: 24px 40px 24px 20px;
+        top:0;
+        bottom:0;
+        height:100%;
+        overflow:hidden;
+        
+    }
+
+    .content-box {
+        position: absolute;
+        top: 44px;
+        right: 20px;
+        left: 0;
+        bottom: 0;
+    }
+
+    .scroll {
+        position:absolute;
+        right:0;
+        top:20px;
+        bottom:20px;
+    }
+
+</style>

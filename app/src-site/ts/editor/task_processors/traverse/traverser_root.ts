@@ -253,6 +253,22 @@ export class Traverser<B> implements ASTIterator<B> {
         }
     }
 
+
+    map<A>(fn: ((node: MDNode, meta: B) => A)): A[] | MDNode[] {
+
+        const output: A[] = [];
+
+        for (const { node, meta } of this) {
+
+            const val: A = fn(node, meta);
+
+            if (typeof val == "undefined" || val === null)
+                continue;
+        }
+
+        return output;
+    }
+
     rangeFilter(range_start: number, range_end: number): Traverser<CombinedYielded<inRangeYielder, B>> {
         return this.then(range_filter(range_start, range_end));
     }

@@ -1,0 +1,38 @@
+
+import glow from "@candlelib/glow";
+
+function ontransitionin(row, col, trs, anim) {
+    anim({
+        obj:"@root",
+        opacity: [{tic:100,val:0}, {tic:400, val:1}],
+            transform:[
+            {tic:100,val:`translateY(${100}px)`},{tic:400,val:`translateY(0)`, eas:glow.easing.ease_out},
+        ] })
+}
+
+function ontransitionout(row, col, trs, anim) {
+    
+    anim({
+        obj:"@root",
+        opacity: [{tic:0,val:1}, {tic:200, val:0}],
+            transform:[
+            {tic:0,val:`translateY(0)`},{tic:300,val:`translateY(${-100}px)`, eas:glow.easing.ease_in_out},
+        ] 
+    })
+}
+
+export default <div>
+    Hello World
+    <p>
+        Using Wick
+    </p>
+</div>;
+
+<style>
+
+    root {
+        position:relative;
+        width:720px;
+    }
+
+</style>

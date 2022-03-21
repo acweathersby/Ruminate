@@ -14,11 +14,12 @@ export function toggleFormat<T extends NodeType>(
 
 ) {
 
-
     const
-        start_len = start_sentinel.length, end_len = end_sentinel.length, nonce = history.startRecording(edit_host), {
-            start_offset, end_offset
-        } = edit_host, ng = edit_host.root.generation + 1;
+        start_len = start_sentinel.length,
+        end_len = end_sentinel.length,
+        nonce = history.startRecording(edit_host),
+        { start_offset, end_offset } = edit_host,
+        ng = edit_host.root.generation + 1;
 
     let
         prev = start_offset, ADD_FORMATTING = false, HAVE_ITALICS = false;
