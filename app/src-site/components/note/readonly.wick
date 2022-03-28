@@ -1,7 +1,7 @@
 import {id, active} from "@model";
 import * as editor from "../../ts/editor/text_editor.ts";
 import * as rm from "../../ts/tauri/bridge.ts";
-import note_body from "./note_body"
+import note_body from "./note"
 
 export { this as readonly }
 

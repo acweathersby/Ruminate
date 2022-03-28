@@ -1,4 +1,6 @@
-export default <div>
+import {active_folders} from "@store";
+
+export default <div onclick={active_folders = new Set([id])}  class={ active_folders?.has(id) ?? false; "active" }>
     <div class=icon-Folder></div>
     <div class=item-content>
         <div class=item-name> {name} </div>
@@ -20,8 +22,8 @@ export default <div>
         margin: 0 0 10px 0;
     }
 
-    root:hover {
-        color:#BA8282
+    root:hover, root.active{
+        color:#92C4C8
     }
 
     .item-name {

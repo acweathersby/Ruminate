@@ -7,14 +7,25 @@ import * as history from '../history/history';
 import { NodeClass, NodeType } from '../md_node';
 import { initLength, traverse } from '../traverse/traverse';
 import { registerAction } from './register_action';
-function insertParagraph(edit_host: EditHost) {
+import { insertText } from './insert_text';
+import { resolveStemLine } from './resolve_stem_line';
+async function insertLine(edit_host: EditHost) {
 
     const
         nonce = history.startRecording(edit_host),
 
-        { start_offset } = edit_host,
 
         gen = edit_host.root.generation + 1;
+    let
+        { start_offset } = edit_host;
+
+    if (history.IN_LINE_EDIT_MODE(edit_host)) {
+        insertText(edit_host, " ");
+        await resolveStemLine(edit_host);
+        return;
+        //edit_host.start_offset++;
+        //start_offset++;
+    }
 
     for (const { node, meta } of
         traverse(edit_host.root)
@@ -43,9 +54,7 @@ function insertParagraph(edit_host: EditHost) {
 
         const new_node = ops.newNode(
             NodeType.STEM_LINE,
-            [
-                ops.newNode(NodeType.STEM_HEADER, [], gen, " "),
-            ],
+            [ops.newNode(NodeType.STEM_HEADER, [], gen, " "),],
             gen
         );
 
@@ -59,8 +68,7 @@ function insertParagraph(edit_host: EditHost) {
             edit_host.start_offset += 3;
             replace([new_node, node], gen);
         } else {
-            // split the node into two, convert the right node into a 
-            // stem line 
+
             const
 
                 { left, right } = ops.splitNode(node, overlap_start + 1, gen, md_head),
@@ -94,9 +102,7 @@ function insertParagraph(edit_host: EditHost) {
     initLength(edit_host.root);
 
     history.endRecording(edit_host, nonce,);
-
-    initLength(edit_host.root);
 };
 
 
-registerAction("edit", TextCommand.INSERT_LINE, insertParagraph);
+registerAction("edit", TextCommand.INSERT_LINE, insertLine);

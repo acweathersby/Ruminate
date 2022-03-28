@@ -1,16 +1,18 @@
 import { items, name } from "@model";
+import {active_folders} from "@store";
 
 let count = 0;
 let SHOW = false;
 
-export default <div>
-    <div class=entry onclick={SHOW=!SHOW}>
-    <div class=folder-data><span class=icon-Folder></span> {name} </div>
-    <div class=item-count>{items.length}</div>
+export default <div class={ active_folders?.has(id) ?? false; "active" }>
+    <span class=drop-down onclick={SHOW=!SHOW}> > </span>
+    <div class=entry onclick={ active_folders = new Set([id])}>
+        <div class=folder-data><span class=icon-Folder></span> {name} </div>
     </div>
+    <div class=item-count>{items.length}</div>
     <container 
         data={items}
-        filter={SHOW}
+        filter={SHOW && m.type=="folder"}
         class=sub-folders
     >
         <self/>
@@ -29,8 +31,13 @@ export default <div>
         color:#939393;
     }
 
+    root.active{
+        color:#92C4C8
+    }
+
     .entry {
         padding: 5px 0 5px 0px;
+        display:inline-block;
     }
 
     .entry:hover {

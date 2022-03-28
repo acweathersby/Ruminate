@@ -1,11 +1,20 @@
 
-import {target} from "@attributes";
+import {target, scrolled} from "@attributes";
 
 let handle = "@.handle";
+let root = "@root";
 let HANDLE_MODE = false;
-let handle_position = 0;
+let target_handle_position = 0; 
+let curr_handle_position = 0;
 let scroll_amount = 0;
 let resize_observer = new ResizeObserver(this.handleResize.bind(this));
+let start_offset = 0;
+let scroll_box_ratio = 1;
+let sb_distance = 0;
+let grab_diff = 0;
+let target_handle_height = 0;
+let curr_handle_height = 0;
+//let scrolled = false;
 
 function $setTarget(target){
     resize_observer.disconnect();
@@ -14,12 +23,79 @@ function $setTarget(target){
 
     for(const ele of Array.from(target.children))
         resize_observer.observe(ele);
+
+    target.addEventListener("wheel", this.onwheel.bind(this));
+    target.addEventListener("scroll", this.scroll.bind(this));
 }
 
-function $(handle_position){
-    const ratio = handle_position / "@root".clientHeight;
-    target.scrollTop = scroll_amount *ratio;
-    handle.style.top = handle_position + "px";
+
+function handle_height_adjust(){
+    if(curr_handle_height != target_handle_height){
+        const diff = (target_handle_height - curr_handle_height) * 0.5;
+        
+        if(Math.abs(diff) > 0.01){
+            curr_handle_height += diff;
+
+            setTimeout(this.handle_height_adjust.bind(this), 10);
+        }else {
+            curr_handle_height = target_handle_height;
+        }
+
+        if(curr_handle_height + target_handle_position > root.scrollHeight)
+            curr_handle_height -= ((curr_handle_height + target_handle_position)- root.scrollHeight);
+
+        handle.style.height = curr_handle_height + "px";
+    }
+}
+
+function handle_pos_adjust(){
+    if(curr_handle_position != target_handle_position){
+        const diff = (target_handle_position - curr_handle_position) * 0.5;
+        
+        if(Math.abs(diff) > 10000000000000000000){
+            curr_handle_position += diff;
+
+            setTimeout(this.handle_pos_adjust.bind(this), 10);
+        }else {
+            curr_handle_position = target_handle_position;
+        }
+        handle.style.top = curr_handle_position + "px";
+    }
+}
+
+function handleResize(e){
+    scroll_amount = target.scrollHeight - target.clientHeight;
+    scroll_box_ratio = target.clientHeight / target.scrollHeight;
+    target_handle_height = (scroll_box_ratio * root.clientHeight);
+    target_handle_position = ((target.scrollTop / scroll_amount) * (root.clientHeight - target_handle_height));
+    sb_distance = (root.clientHeight - target_handle_height);
+    handle_pos_adjust();
+    handle_height_adjust();
+    handle_scrolled();
+}
+
+function handle_scrolled(){
+    scrolled = curr_handle_position > 0
+}
+
+function setHandlePosDiff(diff){
+    setHandlePos(target_handle_position + diff);
+}
+
+function setHandlePos(pos){
+    target_handle_position = Math.max(Math.min(pos, sb_distance), 0);
+    handle_pos_adjust();
+    handle_scrolled();
+    const ratio = target_handle_position / sb_distance;
+    target.scrollTop = scroll_amount * ratio;
+}
+
+function onwheel(e){
+    setHandlePosDiff(Math.sign(e.deltaY)*20*scroll_box_ratio);
+}
+
+function scroll(e){
+    handleResize()
 }
 
 function getTop(ele){
@@ -33,22 +109,19 @@ function getTop(ele){
     return top
 }
 
-function handleResize(e){
-    scroll_amount = target.scrollHeight - target.clientHeight;
-}
-
-import scroll from "./widgets/scroll.wick";
-
 function handleDown(e){
      handle.setPointerCapture(e.pointerId);
+     grab_diff = -(e.clientY - getTop(root)) + target_handle_position;
+        
      HANDLE_MODE = true;
 }
 
 function handleMove(e){
     if(HANDLE_MODE){
-        const y = e.movementY;
-        handle_position += y;
-        console.log({y})
+        const y = (e.clientY 
+            - getTop(root))
+            + grab_diff;
+        setHandlePos(y);
     }
 }
 
@@ -60,36 +133,42 @@ function handleUp(e){
 }
 
 function onpointerup(e){
-    handle_position = (e.clientY - getTop("@root"));
+    setHandlePos(
+        sb_distance * (e.clientY - getTop(root)) / root.clientHeight
+    );
 }
 
+export { scrolled };
+
 export default <div class={scroll_amount > 0; 'show'}>
+ 
     <div class=scroll-begin></div>
+    <div class=scroll-end></div>
     <div class=handle
         onpointerdown={handleDown}
         onpointermove={handleMove}
         onpointerup={handleUp}
     ></div>
-    <div class=scroll-end></div>
 </div>;
 
 <style>
     root {
         width:10px;
+        margin: 4px 0;
         top:0;
         right:0;
         position:relative;
         opacity:0;
-        transition:opacity 300ms;
+        transition:opacity 150ms;
     }
 
     .scroll-end, .scroll-begin{
-        width:5px;
-        height:5px;
+        width:3px;
+        height:3px;
+        border-radius:1.5px;
+        left:4px;
         position:absolute;
-        left:2px;
         background:#DFDFDF;
-        border-radius:3px;
     }
 
     .scroll-begin {
@@ -106,11 +185,17 @@ export default <div class={scroll_amount > 0; 'show'}>
 
     .handle {
         top:0;
-        left:-2px;
+        left:5px;
         position:absolute;
-        width:14px;
+        width:1px;
         height:14px;
         border-radius:7px;
-        background:#939393;
+        background:#DFDFDF;
+        transition: left 200ms, width 200ms;
+    }
+
+    root:hover .handle{
+        left:1px;
+        width:8px;
     }
 </style>

@@ -4,6 +4,8 @@ import { get_note_name } from "./tauri/bridge.js";
 var Note, Folder;
 
 let INITIALIZED = false;
+export const folders = new Map;
+export const notes = new Map;
 export function init(wick: WickLibrary) {
 
     if (INITIALIZED) return;
@@ -16,30 +18,47 @@ export function init(wick: WickLibrary) {
         constructor(id: number, name: string) {
             super({ id, name }, { name: String, id: Number });
             this.type = "note";
-
+            notes.set(id, this);
         }
     };
 
     Folder = class F extends ObservableSchemeClass {
         type: "folder";
+        id: number;
         name: string;
         items: (any)[];
+        SHOW: boolean;
         constructor(name: string, ...items) {
             super({
                 name, items
             }, {
                 items: [Note],
-                name: String
+                name: String,
+                SHOW: Boolean,
+                id: Number
             });
             this.type = "folder";
+            this.SHOW = true;
+            const id = folders.size;
+            this.id = id;
+            folders.set(id, this);
         }
     };
 
-    new Note();
-    new Folder();
+    new Note(-1);
+    new Folder("-/");
 }
 
 let root = null;
+
+export function getFoldersById(...folder_id: number[]) {
+    let f = [];
+    for (const i of folder_id) {
+        f.push(folders.get(i));
+    }
+
+    return f;
+}
 
 export function getFolders(path: string = '/') {
     //@ts-ignore

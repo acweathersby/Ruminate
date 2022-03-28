@@ -1,6 +1,7 @@
 import folderitem from "./widgets/folder_item.wick";
 import noteitem from "./widgets/note_item.wick";
-
+import {getFoldersById} from "../../ts/store.ts";
+import {active_folders} from "@store";
 
 let test_data = [
     {type:"folder", name:"test", items:[
@@ -31,15 +32,33 @@ let test_data = [
 ];
 
 
+let data = [];
+let name = "";
+
+
+function $(active_folders){
+    const active = getFoldersById(...active_folders);
+    data = getFoldersById(...active_folders).flatMap(f=>[...f.items]);
+
+    if(active.length == 1){
+        name = active[0].name;
+    } else if(active.length > 1){
+        name == "multiple"
+    }else {
+        name = 'none';
+    }
+}
+
+
 export default <div>
-    <h1>Items</h1>
+    <h1>{name}</h1>
 
     <div class=item-add-section>
         <div class="item-add note-add icon-Add"></div>
     </div>
     <container
         class=contents
-        data={test_data}
+        data={data}
         filter={m.type == "note"}
     >
         <noteitem/>
@@ -53,7 +72,7 @@ export default <div>
 
     <container
         class=contents
-        data={test_data}
+        data={data}
         filter={m.type == "folder"}
     >
         <folderitem/>

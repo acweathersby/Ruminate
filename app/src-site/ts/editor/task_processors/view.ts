@@ -139,7 +139,9 @@ export function updateHost(edit_host: EditHost) {
         edit_host,
         offset: 0
     }));
+
     updateCaretData(edit_host);
+    ensureVisibleCaret(edit_host);
 }
 
 const OffsetMap = new WeakMap();
@@ -703,10 +705,51 @@ export function setSelection(
     offset_tail: number
 ) {
 
-    const selection = window.getSelection();
-    var range = document.createRange();
+    const
+        selection = window.getSelection(),
+        range = document.createRange();
     range.setStart(text_node_head, offset_head);
     range.setEnd(text_node_tail, offset_tail);
     selection.removeAllRanges();
     selection.addRange(range);
+}
+
+/**
+ * Ensures the cursor is visible.
+ */
+export function ensureVisibleCaret(edit_host: EditHost) {
+    const
+        selection = window.getSelection();
+
+    if (selection.rangeCount == 0)
+        return;
+
+    const
+        range = selection.getRangeAt(0);
+
+    if (!edit_host.host_ele.contains(range.startContainer))
+        return;
+
+    const temp_ele = document.createElement('span');
+
+    range.insertNode(temp_ele);
+
+    const scrollable = edit_host.host_ele.parentElement;
+
+    let offset = 0, ele: HTMLElement = temp_ele;
+
+    while (ele != scrollable) {
+        offset += ele.offsetTop;
+        ele = ele.parentElement;
+    }
+
+    if (offset - scrollable.scrollTop > scrollable.offsetHeight) {
+        const diff = (offset) - scrollable.offsetHeight;
+        scrollable.scrollTo({
+            top: diff + 20,
+            behavior: "smooth"
+        });
+    }
+
+    temp_ele.remove();
 }

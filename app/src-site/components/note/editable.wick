@@ -1,0 +1,133 @@
+import {id, name} from "@model";
+import * as editor from "../../ts/editor/text_editor.ts";
+import * as bridge from "../../ts/tauri/bridge.ts";
+import scroll from "../editor/widgets/scroll.wick";
+import note from "./note";
+import glow from "@candlelib/glow";
+
+const root = "@root";
+let notefield = "@.body-container";
+const small_size = 65;
+let path = "";
+let host = null;
+let r = 0;
+let c = 0;
+let display_name = name;
+let scrolled = false;
+
+async function onload(){
+    host = await editor.constructEditHost(id);
+    //editor.addMarkdownPreviewTarget(host, "@.note-md-preview");
+    editor.setReadOnly(false);
+    //bridge.get_note_name(id).then(n=>name=n);
+    bridge.get_note_container_path(id).then(p=>path=p);
+}
+
+function onDisconnecting(){
+    editor.releaseEditHost(host);
+}
+
+function ontransitionin(row, col, trs, anim) {
+    anim({
+        obj:root,
+        opacity: [{tic:100,val:0}, {tic:400, val:1}],
+            transform:[
+            {tic:100,val:`translateY(${100}px)`},{tic:400,val:`translateY(0)`, eas:glow.easing.ease_out},
+        ] })
+}
+
+function ontransitionout(row, col, trs, anim) {
+    anim({
+        obj:root,
+        opacity: [{tic:0,val:1}, {tic:200, val:0}],
+            transform:[
+            {tic:0,val:`translateY(0)`},{tic:300,val:`translateY(${-100}px)`, eas:glow.easing.ease_in_out},
+        ] 
+    })
+} 
+let gaurd = false;
+function updateDisplayName(e){
+    gaurd = true;
+    name=e.target.innerText
+}
+
+function $(name) {
+    if(!gaurd)
+    display_name = name;
+    gaurd = false;
+}
+
+export default <div class=note>
+    <div class=note-sleeve>
+        <div class=note-header class={scrolled; "minified"}>
+            <h1 type=text class=note-title contenteditable=true oninput={updateDisplayName }>{display_name}</h1>
+        </div>
+        <div class=body-container>
+            <note {host}/>
+        </div>
+        <scroll class=scrollbar target={notefield} onscrolled={ e => scrolled = e.val }/>
+    </div>
+</div>;
+
+<style>
+root {
+    position:absolute;
+    outline:none;
+    left:0;
+    right:0;
+}
+
+.note-header {
+    position:relative;
+    font-size:1em;
+    margin: 0 10px;
+    border-bottom: 0px solid #00000000;
+    transition:font-size 200ms, border 200ms;
+}
+
+.note-header.minified {
+    text-align::center;
+    font-size:0.35em;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+.note-sleeve {
+    margin:auto;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+}
+
+.note-md-preview pre {
+    white-space: pre-wrap
+}
+
+.note-title {
+    background:none;
+    border:none;
+    width:100%;
+    position:relative;
+    display:block;
+    font-size: 3em;
+    outline:none;
+    transition:background 200ms;
+    border-radius:3px;
+    padding:5px;
+}
+
+.note-title:hover{
+    background-color:#F0F0F0;
+}
+
+.body-container{
+    position:relative;
+    overflow:hidden;
+}
+
+.scrollbar {
+    height:100% !important;
+    position:absolute;
+    right:0;
+    top:0;
+}
+</style>

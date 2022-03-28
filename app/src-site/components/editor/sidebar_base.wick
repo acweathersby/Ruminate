@@ -7,12 +7,11 @@ export default <div class={SHOW_SIDE_BAR; "open"}></div>;
     root {
         font-size: 12px;
         top:0;
-        left:0;
-        width:0;
+        width:50px;
         position:sticky;
         height:100vh;
         z-index:1;
-        background:#EFEFEF;
+        background:transparent;
         transition: width 250ms, padding 250ms;
         margin:0;
         overflow:hidden;
@@ -21,8 +20,21 @@ export default <div class={SHOW_SIDE_BAR; "open"}></div>;
         user-select:none;
     }
 
+    .content {
+        position:relative;
+        padding:0;
+        width:300px;
+        opacity: 0;
+        transition: opacity 250ms, padding 250ms;
+    }
+
+    root.open .content {
+        opacity: 1
+    }
+
     root.open {
         width:300px;
+        background:#EFEFEF;
     }
 
     .header {
@@ -38,15 +50,9 @@ export default <div class={SHOW_SIDE_BAR; "open"}></div>;
 
     .icon-placeholder {
         width:27px;
-        height:27px;
+        height:27px;h1
         background: #DFDFDF;
         border-radius:3px;
-    }
-
-    .content {
-        position:relative;
-        padding:0;
-        width:300px;
     }
 
     h1 {
@@ -57,6 +63,15 @@ export default <div class={SHOW_SIDE_BAR; "open"}></div>;
         padding: 0 0 10px;
         border-bottom: 1px solid #DADADA; 
     }
+
+    .border-bottom {
+        position:absolute;
+        left:22px;
+        right:20px;
+        bottom:0;
+        border-bottom: 1px solid #DADADA; 
+    }
+    
     
 
 </style>

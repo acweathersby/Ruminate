@@ -1,0 +1,23 @@
+@font-face {
+    font-family: CooperHewitt;
+    src:  url('/fonts/cooper-hewitt/CooperHewitt-Book.ttf');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}
+
+@font-face {
+    font-family: CooperHewitt;
+    src:  url('/fonts/cooper-hewitt/CooperHewitt-Bold.ttf');
+    font-weight: bold;
+    font-style: normal;
+    font-display: block;
+}
+
+@font-face {
+    font-family: CooperHewitt;
+    src:  url('/fonts/cooper-hewitt/CooperHewitt-BoldItalic.ttf');
+    font-weight: bold;
+    font-style: italic;
+    font-display: block;
+}

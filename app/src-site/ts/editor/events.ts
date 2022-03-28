@@ -195,7 +195,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "insertLineBreak":
         case "insertParagraph": {
             await history.sync(edit_host);
-            getProcessor("edit", TextCommand.INSERT_LINE)(edit_host);
+            await getProcessor("edit", TextCommand.INSERT_LINE)(edit_host);
         } break;
         case "insertOrderedList": debugger; break;
         case "insertUnorderedList": debugger; break;

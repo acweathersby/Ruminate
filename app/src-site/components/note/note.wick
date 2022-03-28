@@ -6,15 +6,13 @@ async function $host(host){
     if(host)  editor.setHostElement(host, "@root");
 }
 
-export default <div class=note-body></div>;
+export default <div class=note></div>;
 
 <style>
     root {
-        background:#FDFDFD;
         padding:40px;
         border-radius:10px;
         outline:none;
-        font-size:16px;
         color:#666;
         line-height:1.5em;
     }
@@ -24,22 +22,17 @@ export default <div class=note-body></div>;
     }
 
     root * {
-        outline:none
+        outline:none;
+        position:relative;
     }
 
     h1, h2, h3, h4, h5, h6
     {
-        color:#5a5176;
-        margin:0.3em 0;
+        margin:20px 0;
+        padding:0;
+        border:0;
         line-height:1em;
     }
-
-    h1 { font-size:3.1em; }
-    h2 { font-size:2.6em }
-    h3 { font-size:2.2em }
-    h4 { font-size:1.8em }
-    h5 { font-size:1.4em }
-    h6 { font-size:1.1em }
 
     h1::selection, h2::selection, h3::selection, h4::selection, p::selection {
         color:white;
@@ -48,13 +41,14 @@ export default <div class=note-body></div>;
 
     h1 {
         width: 100%;
-        border-bottom: 2px solid #5a517650;
-        margin: 0.8em 0;
     }
 
     h2 {
-        border-bottom: 1px solid #5a517650;
         margin: 0.4em 0;
+    }
+
+    h4, h5, h6 {
+        margin-left: 20px;
     }
 
     a {
@@ -87,15 +81,9 @@ export default <div class=note-body></div>;
         padding-left:20px;
     }
 
-    .code-block {
-        font-size:0.8em;
-    }
-
     code{
         caret-color:red;
-        font-family:monospace;
         color:#707070;
-        font-size:0.8em;
         background:#f2f3e8;
         padding:5px 2px;
         border-radius:3px;
@@ -107,7 +95,7 @@ export default <div class=note-body></div>;
     }
 
     p {
-        margin: 10px 5px;
+        margin: 10px 5px 10px 30px;
         box-sizing:border-box;
     }
 

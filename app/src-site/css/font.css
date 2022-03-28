@@ -1,0 +1,49 @@
+@import "/css/font-faces/cantarell.css";
+@import "/css/font-faces/firasans.css";
+@import "/css/font-faces/cooperhewitt.css";
+
+* {
+    font-family:"Arial", sans-serif;
+}
+
+.typewriter {
+
+}
+
+.note {
+    font-size: 16px;
+}
+
+.note-title {
+    font-family:"CooperHewitt", sans-serif;
+    letter-spacing: .05em;
+    font-weight: 800;
+}
+
+
+.note h1, .note h2, .note h3, .note h4, .note h5, .note h6 {
+    font-family:"CooperHewitt", sans-serif;
+    letter-spacing: .05em;
+}
+
+.note h1 { font-size:3.1em; }
+.note h2 { font-size:2.6em }
+.note h3 { font-size:2.2em }
+.note h4 { font-size:1.8em }
+.note h5 { font-size:1.4em }
+.note h6 { font-size:1.1em }
+
+.note p, .note li, .note quote {
+    font-family:"CooperHewitt", sans-serif;
+    letter-spacing: 0.005em;
+}
+
+.note pre {
+
+}
+
+.note code, .note .code-block {
+    font-family:monospace;
+    font-size:1em;
+}
+

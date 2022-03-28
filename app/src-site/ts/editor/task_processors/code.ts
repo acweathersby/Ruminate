@@ -14,7 +14,7 @@ type Code = MDNode<NodeType.CODE_BLOCK>;
 const js_regex = /^j(ava)?s(cript)?$/i;
 const ts_regex = /^t(type)?s(cript)?$/i;
 const cpp_regex = /^c(\+\+|pp|plusplus)$/i;
-const python_regex = /^p(y(thon)?)$/i;
+const python_regex = /^p(y(thon)?)?$/i;
 
 function getLanguage(syntax: string) {
     syntax = syntax.toLocaleLowerCase();
@@ -53,7 +53,7 @@ export function getCodeMeta(
                     getLanguage(meta.syntax)
                     //defaultHighlightStyle,
                     //drawSelection()
-                ]
+                ].filter(i => !!i)
             }
         );
 

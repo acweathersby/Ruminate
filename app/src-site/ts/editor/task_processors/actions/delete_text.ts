@@ -91,30 +91,44 @@ export function deleteText(edit_host: EditHost) {
 
                     if (!prev.is(NodeType.CODE_BLOCK)) {
 
+                        let merge_node = null;
+
                         replace(null, ng);
+
+                        if (node.is(NodeType.STEM_LINE)) {
+                            if (!history.IN_LINE_EDIT_MODE(edit_host))
+                                throw new Error("Stem node encountered while not in edit line mode");
+                            merge_node = node;
+                            history.disableLineEditMode(edit_host);
+                        } else {
+
+                            const
+                                { left, right } = ops.splitNode(
+                                    node,
+                                    overlap_length,
+                                    ng,
+                                    md_head,
+                                    false
+                                );
+
+                            merge_node = right;
+
+                            history.addDelete(
+                                md_head - prev.post_md_length,
+                                prev.post_md_length
+                                + node.pre_md_length
+                                + left.md_length
+                                - left.post_md_length
+                                - left.pre_md_length
+                            );
+                        }
 
                         const
                             parent = getAncestry()[0],
                             par_children = parent.children,
-                            new_node = ops.clone(prev, ng),
-                            { left, right } = ops.splitNode(
-                                node,
-                                overlap_length,
-                                ng,
-                                md_head,
-                                false
-                            );
+                            new_node = ops.clone(prev, ng);
 
-                        history.addDelete(
-                            md_head - prev.post_md_length,
-                            prev.post_md_length
-                            + node.pre_md_length
-                            + left.md_length
-                            - left.post_md_length
-                            - left.pre_md_length
-                        );
-
-                        new_node.children = prev.children.concat(right.children);
+                        new_node.children = prev.children.concat(merge_node.children);
 
                         meta.range_end -= overlap_length;
 

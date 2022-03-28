@@ -1,8 +1,8 @@
 import "@radiate";
 
-import editable_note from "../../components/note/editable_note.wick";
-import readonly_note from "../../components/note/readonly_note.wick";
-import meta_editor from "../../components/note/meta_editor.wick";
+import editable_note from "../../components/note/editable.wick";
+import readonly_note from "../../components/note/readonly.wick";
+import meta_editor from "../../components/editor/meta_editor.wick";
 import sidebar from "../../components/sidebar.wick";
 import intro from "../../components/intro.wick";
 import app from "../../components/wrapper/app.wick";

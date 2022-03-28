@@ -3,13 +3,13 @@ import "@radiate";
 export default <div id=app>
     <head>
         <link rel="stylesheet" href="/css/cm.css">
-        <link rel="stylesheet" href="/fonts/icons/style.css">
+        <link rel="stylesheet" href="/css/icon.css">
+        <link rel="stylesheet" href="/css/font.css">
     </head>
 </div>;
     
 <style>
 
-@import url('https://fonts.googleapis.com/css2?family=Nunito&family=Varela+Round&display=swap');
 
 html {
   border-radius:10px;  
@@ -70,35 +70,8 @@ button.bgc-blue4:hover{ background-color:#656EA3; }
 button.bgc-red:hover{ background-color:#E98888;}
 
 h1, h2, h3, h4, h5, h6 {
-    font-weight:800;
     padding:0;
     margin:0;
-}
-h1 {
-    font-size: 2em;
-    line-height: 3em;
-}
-
-h2 {
-    font-size: 1.67em;
-    line-height: 1.67em;
-}
-
-h3 {
-    font-size: 1.5em;
-    line-height: 1.5em;
-}
-
-h4 {
-    font-size: 1.167em;
-}
-
-h5 {
-    font-size: 1.1em;
-}
-
-h6 {
-    font-size: 1.05em;
 }
 
 </style>

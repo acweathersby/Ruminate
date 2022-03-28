@@ -7,7 +7,7 @@ import * as ops from '../operators';
 import { initLength, traverse } from '../traverse/traverse';
 import { deleteText } from './delete_text';
 import { registerAction } from './register_action';
-function insertText(edit_host: EditHost, new_text: string) {
+export function insertText(edit_host: EditHost, new_text: string) {
 
     const
         nonce = history.startRecording(edit_host),

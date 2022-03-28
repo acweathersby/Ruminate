@@ -1,37 +1,8 @@
 import folder from "./widgets/folder.wick";
 import scroll from "./widgets/scroll.wick";
+import {getFolders} from "../../ts/store.ts";
 
 let contents = "@.contents";
-
-let test_data = [
-    {type:"folder", name:"test", items:[
-        {type:"folder", name:"test", items:[
-        {type:"folder", name:"test", items:[
-        {type:"folder", name:"test", items:[]},
-        {type:"file", name:"testA", items:[]},
-        {type:"folder", name:"testB", items:[]}]},
-        {type:"file", name:"testA", items:[
-        {type:"folder", name:"test", items:[]},
-        {type:"file", name:"testA", items:[
-        {type:"folder", name:"test", items:[]},
-        {type:"file", name:"testA", items:[]},
-        {type:"folder", name:"testB", items:[]}]},
-        {type:"folder", name:"testB", items:[]}]},
-        {type:"folder", name:"testB", items:[]}]},
-        {type:"file", name:"testA", items:[]},
-        {type:"folder", name:"testB", items:[
-        {type:"folder", name:"test", items:[]},
-        {type:"file", name:"testA", items:[
-        {type:"folder", name:"test", items:[]},
-        {type:"file", name:"testA", items:[]},
-        {type:"folder", name:"testB", items:[
-        {type:"folder", name:"test", items:[]},
-        {type:"file", name:"testA", items:[]},
-        {type:"folder", name:"testB", items:[]}]}]},
-        {type:"folder", name:"testB", items:[]}]}
-    ]}
-];
-
 
 export default <div>
     <h1>Folders</h1>
@@ -39,7 +10,8 @@ export default <div>
     <div class=content-box>
         <container
             class=contents
-            data={test_data}
+            data={getFolders()}
+            filter={m.type == "folder"}
         >
     
         <folder/>
@@ -47,6 +19,8 @@ export default <div>
         </container>
         <scroll class=scroll target={contents}/>
     </div>
+
+    <div class=border-bottom></div>
 </div>;
 
 <style>

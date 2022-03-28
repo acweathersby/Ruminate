@@ -1,0 +1,61 @@
+import "@radiate";
+import {load_note, init} from "../../ts/app.ts";
+import {notes} from "../../ts/store.ts";
+import editable_note from "../../components/note/editable.wick";
+import readonly_note from "../../components/note/readonly.wick";
+import meta_editor from "../../components/editor/meta_editor.wick";
+import left_sidebar from "../../components/editor/left_sidebar.wick";
+import right_sidebar from "../../components/editor/right_sidebar.wick";
+import scroll from "../../components/editor/widgets/scroll.wick";
+import intro from "../../components/intro.wick";
+import app from "../../components/wrapper/app.wick";
+import {active_note} from "@store";
+
+let note = [];
+let notefield = "@.note-view"
+
+function onload(){ 
+    init(); 
+    "@root".classList.add("display"); 
+    note = [notes.get(1)];
+}
+
+export default <app>
+    <div class=main>
+        <container class=note-view data={note}>
+            <intro use-if-empty/>
+            <editable_note/>
+        </container>
+    </div>
+</app>;
+
+<style>
+    root {
+        width:100%;
+        display:flex;
+        min-height:100vh;
+        opacity:0;
+        transition:opacity 3000ms;
+    }
+
+    root.display {
+        opacity:1;
+    }
+
+    .main {
+        position:relative;
+        display:flex;
+        flex-direction:row;
+        justify-content: center;
+        width:100%;
+        height:100vh;
+    }
+
+    .note-view {
+        width:100%;
+        position:relative;
+        overflow-y:hidden;
+        height:100vh;
+        
+    }
+</style>
