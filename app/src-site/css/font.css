@@ -2,12 +2,8 @@
 @import "/css/font-faces/firasans.css";
 @import "/css/font-faces/cooperhewitt.css";
 
-* {
+body {
     font-family:"Arial", sans-serif;
-}
-
-.typewriter {
-
 }
 
 .note {
@@ -26,20 +22,20 @@
     letter-spacing: .05em;
 }
 
-.note h1 { font-size:3.1em; }
-.note h2 { font-size:2.6em }
-.note h3 { font-size:2.2em }
-.note h4 { font-size:1.8em }
-.note h5 { font-size:1.4em }
-.note h6 { font-size:1.1em }
+.note h1 { font-size:2.5em; }
+.note h2 { font-size:2.1em }
+.note h3 { font-size:1.8em }
+.note h4 { font-size:1.4em }
+.note h5 { font-size:1.2em }
+.note h6 { font-size:1.05em }
 
 .note p, .note li, .note quote {
     font-family:"CooperHewitt", sans-serif;
     letter-spacing: 0.005em;
 }
 
-.note pre {
-
+.note .code-block, .note pre {
+    font-family: monospace;
 }
 
 .note code, .note .code-block {

@@ -22,9 +22,10 @@ async function insertLine(edit_host: EditHost) {
     if (history.IN_LINE_EDIT_MODE(edit_host)) {
         insertText(edit_host, " ");
         await resolveStemLine(edit_host);
+        edit_host.end_offset = edit_host.start_offset;
+        initLength(edit_host.root);
+        history.endRecording(edit_host, nonce,);
         return;
-        //edit_host.start_offset++;
-        //start_offset++;
     }
 
     for (const { node, meta } of
@@ -37,17 +38,33 @@ async function insertLine(edit_host: EditHost) {
             .makeReplaceable()
     ) {
 
-        const { overlap_start, replace, md_head, md_tail } = meta;
+        const { overlap_start, replace, md_head, md_tail, tail, head } = meta;
 
         if (node.is(NodeType.CODE_BLOCK)) {
 
-            history.addInsert(md_head + node.pre_md_length + overlap_start, "\n");
+            let TREAT_AS_CM_INSERT = true;
 
-            replace(code.insertText(node, overlap_start, "\n"), gen);
+            if (overlap_start + 1 == tail - head) {
+                // If the previous line is ``` then delete previous line
+                // and create a new line
+                if (code.getLastLine(node) == "```") {
+                    code.removeText(node, overlap_start - 4, 4);
+                    history.addDelete(md_head + node.pre_md_length + overlap_start - 4, 4);
+                    edit_host.start_offset -= 4;
+                    TREAT_AS_CM_INSERT = false;
+                }
+            }
 
-            edit_host.start_offset++;
+            if (TREAT_AS_CM_INSERT) {
 
-            continue;
+                history.addInsert(md_head + node.pre_md_length + overlap_start, "\n");
+
+                replace(code.insertText(node, overlap_start, "\n"), gen);
+
+                edit_host.start_offset++;
+
+                continue;
+            }
         }
 
         edit_host.NEW_LINE_MODE = true;

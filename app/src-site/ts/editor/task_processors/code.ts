@@ -143,6 +143,14 @@ export function setSelection(node: Code, start: number, end: number = start) {
 export function getSyntax(node: Code): string {
     return getCodeMeta(node).syntax;
 }
+
+export function getLastLine(code: Code): string {
+    const meta = getCodeMeta(code);
+
+    const line = meta.view.state.doc.lineAt(code.length - 1);
+
+    return line.text;
+}
 export function insertText(code: Code, offset: number, text: string): Code {
 
     const new_node = clone(code);

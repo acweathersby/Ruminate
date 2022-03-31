@@ -84,7 +84,9 @@ Deleting multiple lines
 
 ## BE
 
-- [ ] - 60min - Revise note storage to use line based CRDTs
+- [ ] - 60min - Revise note storage to use line based CRDTs?
+- [ ] - 30min - Create workflow for new note creation
+- [ ] - 30min - Create workflow for searching notes.
 - [ ] - 60min - Build persistent local storage system.
 
 ## SEttings

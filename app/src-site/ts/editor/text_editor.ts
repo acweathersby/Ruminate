@@ -1,5 +1,5 @@
 import { get_text } from '../tauri/bridge.js';
-import { attachListeners, removeListeners } from './events';
+import { attachListeners, removeListeners } from './events.js';
 import {
     convertMDASTToEditLines,
     parseMarkdownText
@@ -35,8 +35,6 @@ export async function constructReadOnlyHost(
     note_id: number,
     active: Set<number> = new Set
 ): Promise<EditHost> {
-
-
     const
         edit_host: EditHost =
 
@@ -46,7 +44,7 @@ export async function constructReadOnlyHost(
 
         result = parseMarkdownText(string),
 
-        lines = convertMDASTToEditLines(result, edit_host);
+        lines = convertMDASTToEditLines(result, 0);
 
     edit_host.root = new MDNode(NodeType.ROOT);
 
@@ -91,8 +89,8 @@ export async function constructTestHost(
 }
 export async function constructEditHost(
     note_id: number
-): Promise<EditHost> {
 
+): Promise<EditHost> {
     const
         edit_host: EditHost = createEditHostObj(note_id, false),
 
@@ -100,7 +98,7 @@ export async function constructEditHost(
 
         result = parseMarkdownText(string),
 
-        lines = convertMDASTToEditLines(result, edit_host, 0);
+        lines = convertMDASTToEditLines(result, 0);
 
     edit_host.root = new MDNode(NodeType.ROOT);
 

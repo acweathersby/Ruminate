@@ -31,8 +31,10 @@ export default <div>
 <style>
 
     root {
-        position:relative;
+        position:absolute;
         width:720px;
+        left:0;
+        right:0;
     }
 
 </style>

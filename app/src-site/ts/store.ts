@@ -6,6 +6,20 @@ var Note, Folder;
 let INITIALIZED = false;
 export const folders = new Map;
 export const notes = new Map;
+
+
+export function getNoteByLocalId(id: number) {
+    init(wick);
+    if (!notes.has(id)) {
+        notes.set(id, new Note(
+            id, "unnamed"
+        ));
+    }
+
+    return notes.get(id);
+}
+
+
 export function init(wick: WickLibrary) {
 
     if (INITIALIZED) return;

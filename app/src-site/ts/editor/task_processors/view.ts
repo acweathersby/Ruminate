@@ -1,6 +1,6 @@
 import { getRawDebugText } from '../../tauri/mock';
 import { EditHost } from '../types/edit_host';
-import { resolveStemLine } from './actions/resolve_stem_line';
+import * as mn from "../types/magic_numbers";
 import * as code from './code';
 import { MDNode, NodeClass, NodeType } from "./md_node";
 import { traverse } from './traverse/traverse';
@@ -132,13 +132,15 @@ export function getCumulativeOffset(node: Node, edit_host: EditHost): number {
 
 export function updateHost(edit_host: EditHost) {
 
-    for (const note of edit_host.host_ele.getElementsByClassName("editable-note"))
-        edit_host.host_ele.removeChild(note);
 
-    edit_host.host_ele.appendChild(toHTMLNaive(edit_host.root, {
-        edit_host,
-        offset: 0
-    }));
+    if (!edit_host.root.ele) {
+        for (const note of edit_host.host_ele.getElementsByClassName("editable-note"))
+            edit_host.host_ele.removeChild(note);
+        edit_host.host_ele.appendChild(toHTMLNaive(edit_host.root, {
+            edit_host,
+            offset: 0
+        }));
+    }
 
     updateCaretData(edit_host);
     ensureVisibleCaret(edit_host);
@@ -718,6 +720,7 @@ export function setSelection(
  * Ensures the cursor is visible.
  */
 export function ensureVisibleCaret(edit_host: EditHost) {
+
     const
         selection = window.getSelection();
 
@@ -730,26 +733,47 @@ export function ensureVisibleCaret(edit_host: EditHost) {
     if (!edit_host.host_ele.contains(range.startContainer))
         return;
 
-    const temp_ele = document.createElement('span');
+    // Compare the range BB with the Scrollable areas BB. If the range
+    // top edge is at or outside the bottom edge of the scroll area then adjust
+    // scroll down until the top edge is within scrollable area with some 
+    // reasonable padding. 
 
-    range.insertNode(temp_ele);
+    const
+        scrollable = edit_host.host_ele.parentElement;
 
-    const scrollable = edit_host.host_ele.parentElement;
+    let range_rect;
 
-    let offset = 0, ele: HTMLElement = temp_ele;
-
-    while (ele != scrollable) {
-        offset += ele.offsetTop;
-        ele = ele.parentElement;
+    if (range.getClientRects().length > 0) {
+        range_rect = range.getBoundingClientRect();
+    } else if (range.startContainer.getBoundingClientRect) {
+        range_rect = range.startContainer.getBoundingClientRect();
+    } else {
+        return;
     }
 
-    if (offset - scrollable.scrollTop > scrollable.offsetHeight) {
-        const diff = (offset) - scrollable.offsetHeight;
+    const
+
+        root_rect = scrollable.getBoundingClientRect(),
+
+        padding = mn.scroll_padding,
+
+        top_offset = (range_rect.bottom - root_rect.top) + scrollable.scrollTop + padding,
+
+        bottom_offset = (range_rect.top - root_rect.top) + scrollable.scrollTop - padding;
+
+    if (top_offset - scrollable.scrollTop > scrollable.offsetHeight) {
         scrollable.scrollTo({
-            top: diff + 20,
+            top: Math.min(
+                top_offset - scrollable.offsetHeight,
+                scrollable.scrollHeight - scrollable.offsetHeight
+            ),
+            behavior: "smooth"
+        });
+    } else if (bottom_offset - scrollable.scrollTop < 0) {
+        scrollable.scrollTo({
+            top: Math.max(0, bottom_offset),
             behavior: "smooth"
         });
     }
 
-    temp_ele.remove();
 }

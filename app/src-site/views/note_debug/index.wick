@@ -1,6 +1,5 @@
 import "@radiate";
-import {load_note, init} from "../../ts/app.ts";
-import {notes} from "../../ts/store.ts";
+import {notes, getNoteByLocalId} from "../../ts/store.ts";
 import editable_note from "../../components/note/editable.wick";
 import readonly_note from "../../components/note/readonly.wick";
 import meta_editor from "../../components/editor/meta_editor.wick";
@@ -15,9 +14,8 @@ let note = [];
 let notefield = "@.note-view"
 
 function onload(){ 
-    init(); 
     "@root".classList.add("display"); 
-    note = [notes.get(1)];
+    note = [getNoteByLocalId(1)];
 }
 
 export default <app>

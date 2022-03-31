@@ -119,7 +119,7 @@ export function getText(note_id: number): string {
 }
 
 function getPlaceHolderText() {
-    const candidates = [`
+    const candidates = [/* `
 # Introduction
 
 I was writing some documentation for things and stuff, and thought to myself how nice it would be 
@@ -131,53 +131,48 @@ and readable as possible
 
 Me and a friend have just released the first version of a minimal markdown text editor website, FocusFox. 
 Go check it out at www.focusfox.co and tell us what you think!
-`, `
-# Header 1
+`, */ `
+# What Is Ruminate Notes
 
-## Header 2 
+Note taking is a journey. It is an expression of ideas and promise manifest in physical form. 
+Ruminate aims to be a companion that provides you with the most useful tools for managing the 
+state of notes and ideas from initiation to completion. 
 
-### Header 3
+## Planner
 
-#### Header 4
+## Organizer
 
-##### Header 5
+## Sticky Notes
 
-###### Header 6
+## Prototyper
 
-Pa__ragraph__ 1: "*Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-incididunt ut labore et dolore magna aliqua.* __Ut enim ad minim veniam__, quis nostrud exercitation 
-ullamco laboris nisi ut aliquip ex ea commodo consequat..."
+## Personal Database
 
-\`\`\`javascript
+## Text Editor
 
-console.log("hello world")
+# What is this Markdown I keep hearing about?
 
+Markdown is a text-to-HTML conversion tool for web writers. Markdown allows you to write 
+using an easy-to-read, easy-to-write plain text format, then convert it to structurally valid XHTML (or HTML).
+
+Thus, "Markdown" is two things: (1) a plain text formatting syntax; and (2) a software tool, written in Perl, 
+that converts the plain text formatting to HTML. See the Syntax page for details pertaining to Markdown's 
+formatting syntax. You can try it out, right now, using the online Dingus.
+
+## Syntax
+
+### Headers
+
+Headers: \`##### h1 \`
+
+#### Example
+
+\`\`\`markdown
+#### h1
 \`\`\`
-
-Paragraph 2: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut 
-labore et dolore magna aliqua..."
-
-- Unordered 1
-
-- Unordered 2
-
-> Quote: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-
-\`\`\`c++
-int main(char ** argv, int argc){
-    std::cout << "Hello World" << std::endl;
-}
-\`\`\`
-
-Then End!
-
-Do da do
-
-Mi da do
 `];
-    const index = Math.floor((Math.random() * (candidates.length)));
-    console.log({ index });
+    const index = Math.min(candidates.length - 1, Math.max(0, Math.floor((Math.random() * (candidates.length)))));
+    console.log({ index, txt: candidates[index] });
     return candidates[index];
 }
 

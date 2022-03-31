@@ -1,26 +1,51 @@
 import test from "@test";
 import * as txt from "../../ts/editor/text_editor.ts";
-import { getProcessor } from "../../ts/editor/task_processors/register_task.ts";
+import { getProcessor } from "../../ts/editor/task_processors/actions/register_task.ts";
 import { TextCommand } from '../../ts/editor/types/text_command_types.ts';
 
 export default <div></div>;
 
 test: { 
 
-    const edit_host = await txt.constructTestHost("Hello World");
+    assert_group("Basic text insertion", sequence, ()=>{
 
-    txt.setHostElement(edit_host, "@root");
-
-    assert_group(solo, "Basic text insertion", sequence, ()=>{
+        const edit_host = await txt.constructTestHost("Hello World");
+        txt.setHostElement(edit_host, "@root");
 
         edit_host.start_offset = 6;
         edit_host.end_offset = 6;
 
         txt.runCommand(TextCommand.INSERT_TEXT, edit_host, " You Beautiful");
+        
+        await history.sync(edit_host);
 
-        assert(edit_host.history.length == 2);
+        assert("Inserts text using TextCommand.INSERT_TEXT", txt.toMDString(edit_host.root) === "\nHello You Beautiful World\n");
 
-        assert(edit_host.history[1].diffs.length > 0);
+        txt.undo(edit_host);
+
+        assert("Undoes insert text operation", txt.toMDString(edit_host.root) === "\nHello World\n")
+        
+        txt.redo(edit_host);
+
+        assert("Redoes insert text operation", txt.toMDString(edit_host.root) === "\nHello You Beautiful World\n")
+
+        assert(
+            "Diffs recorded correctly", 
+            txt.applyDiffs("\nHello World\n",edit_host.history[1].diffs) 
+            === 
+            "\nHello You Beautiful World\n"
+        )
+    });
+
+    assert_group(solo, "Codeline insertion", sequence, ()=>{
+
+        const edit_host = await txt.constructTestHost("Hello World ");
+        txt.setHostElement(edit_host, "@root");
+
+        edit_host.start_offset = 6;
+        edit_host.end_offset = 6;
+
+        txt.runCommand(TextCommand.INSERT_LINE, edit_host);
 
         assert("Inserts text using TextCommand.INSERT_TEXT", txt.toMDString(edit_host.root) === "\nHello You Beautiful World\n");
 

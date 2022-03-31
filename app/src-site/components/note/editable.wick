@@ -16,6 +16,7 @@ let display_name = name;
 let scrolled = false;
 
 async function onload(){
+    console.log(id)
     host = await editor.constructEditHost(id);
     //editor.addMarkdownPreviewTarget(host, "@.note-md-preview");
     editor.setReadOnly(false);
@@ -125,9 +126,10 @@ root {
 }
 
 .scrollbar {
-    height:100% !important;
+    box-sizing:border-box;
     position:absolute;
     right:0;
     top:0;
+    bottom:0;
 }
 </style>

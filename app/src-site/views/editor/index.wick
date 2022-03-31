@@ -66,11 +66,6 @@ export default <app>
         height:100vh;
     }
 
-    .scrollbar {
-        position:absolute;
-        height:60%;
-    }
-
     @media screen and ( max-width: 1110px ){
 
         .sleave {
