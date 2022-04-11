@@ -9,7 +9,7 @@ interface MockNote {
     name: string,
     text: string;
     id: number;
-    path: string;
+    paths: Set<string>;
 }
 
 function getMockNote(index: number): MockNote {
@@ -28,19 +28,27 @@ export function createMockNote(
         while (debug_store.has(index))
             index++;
 
-    const result = parseMarkdownText(base_text);
+    if (base_text) {
 
-    const lines = convertMDASTToEditLines(result, 0);
 
-    let root = new MDNode(NodeType.ROOT);
+        const result = parseMarkdownText(base_text);
 
-    root = setChildren(root, 0, ...lines);
+        const lines = convertMDASTToEditLines(result, 0);
 
-    root = heal(root, 0).node;
+        let root = new MDNode(NodeType.ROOT);
+
+        root = setChildren(root, 0, ...lines);
+
+        root = heal(root, 0).node;
+
+        base_text = toMDString(root);
+    }
 
     const mock_note: MockNote = {
-        text: toMDString(root),
-        id: index
+        text: base_text,
+        id: index,
+        name: "",
+        paths: new Set
     };
 
     debug_store.set(index, mock_note);
@@ -62,13 +70,30 @@ export function getNoteName(note_id: number,): string {
     return getMockNote(note_id).name ?? "";
 }
 
-export function setNotePath(note_id: number, path: string) {
+export function addNotePath(note_id: number, path: string): boolean {
     const note = getMockNote(note_id);
-    note.path = path;
-    console.debug(`Set path of note [${note.id}] to "${path}"`);
+    note.paths.add(path);
+    console.debug(`Added path of note [${note.id}] to "${path}"`);
+    return true;
 }
 
-export function getNotePath(note_id: number,): string {
+/**
+ * Removes the note from the given path.
+ * @param note_id 
+ * @param path 
+ * @returns 
+ */
+export function removeNotePath(note_id: number, path: string): boolean {
+    const note = getMockNote(note_id);
+    const result = note.paths.delete(path);
+    if (result)
+        console.debug(`Removed path of note [${note.id}] to "${path}"`);
+    else
+        console.debug(`Failed to remove path "${path}" from note [${note.id}]. Note does not belong to path.`);
+    return result;
+}
+
+export function getNotePaths(note_id: number,): string[] {
     return getMockNote(note_id).path ?? "/";
 }
 
@@ -172,7 +197,8 @@ Headers: \`##### h1 \`
 \`\`\`
 `];
     const index = Math.min(candidates.length - 1, Math.max(0, Math.floor((Math.random() * (candidates.length)))));
-    console.log({ index, txt: candidates[index] });
+    return "";
     return candidates[index];
+
 }
 

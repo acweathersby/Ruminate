@@ -76,6 +76,7 @@ root {
     outline:none;
     left:0;
     right:0;
+    caret-color: red;
 }
 
 .note-header {
@@ -83,13 +84,17 @@ root {
     font-size:1em;
     margin: 0 10px;
     border-bottom: 0px solid #00000000;
-    transition:font-size 200ms, border 200ms;
+    margin-top:40px;
+    padding-bottom:30px;
+    transition:font-size 200ms, border 200ms, margin 200ms, padding 200ms;
 }
 
 .note-header.minified {
     text-align::center;
     font-size:0.35em;
     border-bottom: 1px solid #F0F0F0;
+    margin-top:0px;
+    padding-bottom:0px;
 }
 
 .note-sleeve {
@@ -131,5 +136,15 @@ root {
     right:0;
     top:0;
     bottom:0;
+}
+
+.stem {
+    border-radius: 5px;
+    background-color: #5252521f;
+}
+
+.active {
+    border-radius: 5px;
+    background-color: #5252521f;
 }
 </style>

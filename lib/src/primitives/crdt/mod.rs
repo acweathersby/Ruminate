@@ -2,7 +2,7 @@ pub mod op_id;
 
 use log::debug;
 use op_id::OPID;
-use std::fmt::Debug;
+use std::{fmt::Debug, fs::File, io::{Write, self, Read}, borrow::Borrow};
 /**
 Store CRDT data in an opaque buffer and provides
 operations to retrieve, modify, and slice data
@@ -22,21 +22,59 @@ pub trait CRDTDelete {
     fn is_delete(candidate: Self) -> bool;
 }
 
+pub trait CrdtIO {
+    
+    fn as_bytes(&self) -> &[u8];
+
+    fn from_file(file:&mut File) -> io::Result<Self> where Self: Sized;
+
+}
+
+pub trait CRDTData = Copy + Clone + Default + Debug + CRDTDelete + CrdtIO;
+
 impl<T> CRDTString<T>
 where
-    T: Copy + Clone + Default + Debug + CRDTDelete,
+    T: CRDTData,
 {
     pub fn new(site: u32) -> CRDTString<T> {
-        let vec: Vec<(OPID, T)> = Vec::new();
-
-        //vec.push((OPID::new(0, 0), T::default()));
+        
         //Do some shit to make sure site value is correct
-        let mut crdt = CRDTString {
-            ops: vec,
+        CRDTString {
+            ops: Vec::new(),
             latest: OPID::new(site, 0),
-        };
+        }
+    }
 
-        crdt
+    pub fn from_file(file:&mut File) -> io::Result<Self>{
+        let mut buf : [u8;8] = [0;8];
+        file.read_exact(&mut buf)?;
+        let ops_len = usize::from_le_bytes(buf);
+        let latest  = OPID::from_file(file)?;
+        let mut ops :Vec<(OPID, T)>= Vec::new();
+
+        for _ in 0..ops_len {
+            let op_id = OPID::from_file(file)?;
+            let op_data : T = T::from_file(file)?;
+            ops.push((op_id, op_data)) 
+        }
+
+        Ok(CRDTString {
+            ops,
+            latest
+        })
+    }
+
+    pub fn write_to_file(&self, file:&mut File) -> io::Result<()>{
+       
+        file.write(&self.ops.len().to_le_bytes())?;
+        file.write(&self.latest.as_bytes())?;
+       
+        for ( op, data) in &self.ops {
+            file.write(op.as_bytes())?;
+            file.write(&data.as_bytes())?;
+        }
+
+        Ok(())
     }
 
     /// Merge one foreign CRDT string with this one, returning
@@ -287,6 +325,22 @@ impl CRDTDelete for u8 {
 
     fn is_delete(candidate: Self) -> bool {
         candidate == 8
+    }
+}
+
+impl CrdtIO for u8 {
+
+    fn as_bytes(& self) -> &[u8] {
+        unsafe { ::std::slice::from_raw_parts(
+            (self as *const Self) as *const u8,
+            ::std::mem::size_of::<Self>(),
+        ) }
+    }
+
+    fn from_file(file:&mut File) -> io::Result<Self> {
+        let mut buf : [u8;1] = [0;1];
+        file.read(&mut buf)?;
+        Ok(buf[0])
     }
 }
 

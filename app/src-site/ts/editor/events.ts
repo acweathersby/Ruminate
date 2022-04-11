@@ -20,6 +20,7 @@ export function attachListeners(edit_host: EditHost) {
             vw.getOffsetsFromSelection(edit_host);
             vw.updatePointerData(edit_host);
             vw.handleMetaViews(edit_host);
+            updateActiveLine(edit_host);
         },
         pointerup(e: PointerEvent) {
             edit_host.host_ele.releasePointerCapture(e.pointerId);
@@ -115,14 +116,35 @@ export function removeListeners(edit_host: EditHost) {
                 edit_host.host_ele.removeEventListener(name, <any>listener);
 }
 
+function updateActiveLine(edit_host: EditHost) {
+    const active_node = vw.getLineAtOffset(edit_host.start_offset, edit_host);
+    if (active_node) {
+
+        if (edit_host.active_line) {
+            edit_host.active_line.classList.remove("active");
+            edit_host.active_line = null;
+        }
+
+        if (active_node.ele) {
+            edit_host.active_line = <HTMLElement>active_node.ele;
+            edit_host.active_line.classList.add("active");
+        }
+    }
+}
+
+async function completeTransaction(edit_host: EditHost) {
+    if (edit_host.debug_data.DEBUGGER_ENABLED)
+        await vw.updatePointerData(edit_host);
+
+    vw.updateHost(edit_host);
+    updateActiveLine(edit_host);
+}
+
 function adaptArrowPress(e: KeyboardEvent, edit_host: EditHost) {
     setTimeout(_ => {
         edit_host.event_handlers.selectionchange();
-        if (resolveStemLine(edit_host)) {
-            if (edit_host.debug_data.DEBUGGER_ENABLED)
-                vw.updatePointerData(edit_host);
-            vw.updateHost(edit_host);
-        }
+        if (resolveStemLine(edit_host))
+            completeTransaction(edit_host);
     }, 1);
     return;
     let { start_offset, end_offset } = edit_host;
@@ -210,9 +232,15 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
             const items = Array.from(cb.items).filter(i => i.kind == "string" && i.type == "text/plain");
 
             if (items[0]) {
-                return new Promise(r => {
-                    items[0].getAsString(data => {
+                await new Promise(r => {
+                    items[0].getAsString(async data => {
+
+                        //TODO: Replace newline with what?
+                        if (data.includes("\n"))
+                            debugger;
+
                         insertText(edit_host, data);
+                        await completeTransaction(edit_host);
                         r(void 1);
                     });
                 });
@@ -283,10 +311,7 @@ async function processInputEvent(e: InputEvent, edit_host: EditHost) {
         case "formatFontName": debugger; break;
     }
 
-    if (edit_host.debug_data.DEBUGGER_ENABLED)
-        await vw.updatePointerData(edit_host);
-
-    vw.updateHost(edit_host);
+    await completeTransaction(edit_host);
 }
 
 function insertText(edit_host: EditHost, text_data: string) {

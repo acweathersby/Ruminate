@@ -1,15 +1,16 @@
 import { items, name } from "@model";
-import {active_folders} from "@store";
+import { active_folders } from "@store";
+import {getFolders, getFoldersById, setFolders} from "../../../ts/store.ts";
 
 let count = 0;
 let SHOW = false;
 
 export default <div class={ active_folders?.has(id) ?? false; "active" }>
-    <span class=drop-down onclick={SHOW=!SHOW}> > </span>
-    <div class=entry onclick={ active_folders = new Set([id])}>
-        <div class=folder-data><span class=icon-Folder></span> {name} </div>
+    <div class=entry onclick={ active_folders = setFolders(id, active_folders) }>
+        <span class="drop-down icon-Folder" onclick={SHOW=!SHOW}>  </span>
+        <div class=folder-data> {name} </div>
+        <div class=item-count>{items.length}</div>
     </div>
-    <div class=item-count>{items.length}</div>
     <container 
         data={items}
         filter={SHOW && m.type=="folder"}
@@ -28,7 +29,7 @@ export default <div class={ active_folders?.has(id) ?? false; "active" }>
         transition: color 200ms, background 200ms;
         border-radius:3px;
         width:100%;
-        color:#939393;
+        color:white;
     }
 
     root.active{
@@ -36,12 +37,15 @@ export default <div class={ active_folders?.has(id) ?? false; "active" }>
     }
 
     .entry {
-        padding: 5px 0 5px 0px;
+        padding: 5px 10px;
         display:inline-block;
+        width:100%;
+        border-radius:8px
     }
 
     .entry:hover {
-        color:#92C4C8;
+
+        background-color:#FF005C;
     }
 
     .folder-data {

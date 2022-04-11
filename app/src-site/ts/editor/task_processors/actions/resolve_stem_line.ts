@@ -40,7 +40,7 @@ export async function resolveStemLine(edit_host: EditHost) {
             if (head <= end && tail >= start && (start - end) == 0) {
 
                 const data = first.meta;
-                if (start < head + first.internal_length + node.pre_length) {
+                if (start <= head + first.internal_length + node.pre_length) {
                     const index = (start - head - node.pre_length - 1);
                     const value = data[index];
 
@@ -89,6 +89,8 @@ export async function resolveStemLine(edit_host: EditHost) {
                             text: children.map(n => view.toMDString(n)).join(""),
                             syntax: header.meta.replace("```", "").trim(),
                         });
+
+                        console.log({ md_head, md_tail, c: node.children[0].meta });
 
                         history.addInsert(md_tail, view.toMDPostText(new_node));
 

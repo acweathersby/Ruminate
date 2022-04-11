@@ -55,6 +55,8 @@ export interface EditHost {
 
     meta_UIs: WickRTComponent[];
 
+    active_line: HTMLElement; 
+
     event_handlers?: {
         selectionchange(): void,
         cut(arg: ClipboardEvent): void;

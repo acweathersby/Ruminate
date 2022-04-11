@@ -30,26 +30,37 @@ export const get_notes_from_container = assert_DB_decorator(
     async function get_notes_from_container(containerPath: string): Promise<number[]> {
         return invoke("get_notes_from_container_path", { containerPath });
     }, mock.getNotesFromContainer);
+
 export const create_note = assert_DB_decorator(
     async function create_note(): Promise<number> {
         return invoke("create_note");
     }, () => mock.createMockNote().id);
+
 export const set_note_name = assert_DB_decorator(
     async function set_note_name(noteLocalId: number, name: String) {
         return invoke("set_note_name", { noteLocalId: noteLocalId, name });
     }, mock.setNoteName);
+
 export const get_note_name = assert_DB_decorator(
     async function get_note_name(noteLocalId: number): Promise<string> {
         return invoke("get_note_name", { noteLocalId });
     }, mock.getNoteName);
-export const set_note_container_path = assert_DB_decorator(
-    async function set_note_container_path(noteLocalId: number, containerPath: String) {
-        return invoke("set_note_container_path", { noteLocalId, containerPath });
-    }, mock.setNotePath);
+
+export const add_note_container_path = assert_DB_decorator(
+    async function add_note_container_path(noteLocalId: number, containerPath: String) {
+        return invoke("add_note_container_path", { noteLocalId, containerPath });
+    }, mock.addNotePath);
+
+export const remove_note_container_path = assert_DB_decorator(
+    async function add_note_container_path(noteLocalId: number, containerPath: String) {
+        return invoke("remove_note_container_path", { noteLocalId, containerPath });
+    }, mock.removeNotePath);
+
 export const get_note_container_path = assert_DB_decorator(
-    async function get_note_container_path(noteLocalId: number): Promise<string> {
-        return invoke("get_note_container_path", { noteLocalId });
-    }, mock.getNotePath);
+    async function get_note_container_paths(noteLocalId: number): Promise<string[]> {
+        return invoke("get_note_container_paths", { noteLocalId });
+    }, mock.getNotePaths);
+
 export const get_local_id_from_uuid = assert_DB_decorator(
     async function get_local_id_from_uuid(uuidString: string): Promise<number> {
         return invoke("get_local_id_from_uuid", { uuidString });
@@ -58,26 +69,32 @@ export const get_note_uuid_string = assert_DB_decorator(
     async function get_note_uuid_string(noteLocalId: number): Promise<string> {
         return invoke("get_note_uuid_string", { noteLocalId });
     });
+
 export const get_tags = assert_DB_decorator(
     async function get_tags(): Promise<[string, number][]> {
         return invoke("get_tags", {});
     });
+
 export const get_notes_from_tag = assert_DB_decorator(
     async function get_notes_from_tag(tagString: string): Promise<number[]> {
         return invoke("get_notes_from_tag", { tagString });
     });
+
 export const add_tag = assert_DB_decorator(
     async function add_tag(noteLocalId: number, tagString: string): Promise<number> {
         return invoke("add_tag", { noteLocalId, tagString });
     });
+
 export const remove_tag = assert_DB_decorator(
     async function remove_tag(noteLocalId: number, tagString: string): Promise<boolean> {
         return invoke("remove_tag", { noteLocalId, tagString });
     });
+
 export const get_tag_string = assert_DB_decorator(
     async function get_tag_string(tagLocalId: number): Promise<string> {
         return invoke("get_tag_string", { tagLocalId });
     });
+
 export const get_tag_ids = assert_DB_decorator(
     async function get_tag_ids(noteLocalId: number): Promise<number[]> {
         return invoke("get_tag_ids", { noteLocalId });

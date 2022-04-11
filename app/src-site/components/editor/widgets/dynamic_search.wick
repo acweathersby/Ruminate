@@ -1,0 +1,78 @@
+import {
+    active_search_component,
+    active_results,
+    active_folders
+} from "@store";
+
+import folder from "./folder.wick";
+import {getFolders, getFoldersById} from "../../../ts/store.ts";
+
+let ACTIVE_SEARCH = false;
+let data = await getFolders();
+
+function $(active_search_component){
+    if(active_search_component){
+        ACTIVE_SEARCH = true;
+
+        const root = "@root";
+        const vh = window.clientHeight;
+        const target_bb = active_search_component
+            .ele
+            .getBoundingClientRect();
+        const host = active_search_component.par;
+
+        root.style.top = target_bb.top + "px";
+        root.style.left = (target_bb.right - 20) + "px";
+    }
+}
+
+function $folderUpdate(active_folders){
+    if(active_search_component){
+        active_results = [...new Set(getFoldersById(...active_folders)
+            .flatMap(f => f.items.filter(i => i.type == "note")))];
+    }
+}
+
+export default <div class={ACTIVE_SEARCH; "active"}>
+    <div class=pop-up >
+        <div class=popup-menu></div>
+    </div>
+    <div class=content-box>
+        <container
+            class=contents
+            data={data}
+            filter={m.type == "folder"}
+        >
+    
+        <folder/>
+    
+        </container>
+        <scroll class=scroll target={contents}/>
+    </div>
+    <div class=field></div>
+</div>;
+
+ <style>
+
+    root {
+        position:fixed;
+        right:0px;
+        width:300px;
+        height:500px;
+        padding: 20px 20px 0 20px;
+        background-color:#3F2727;
+        border-radius: 10px;
+        box-shadow: 2px 2px 5px black;
+        z-index:100;
+        opacity:0;
+        transition: opacity 1000ms, top 200ms;
+    }
+
+    root.active {
+        display:block;
+        opacity:1;
+    }
+
+
+
+ </style>;

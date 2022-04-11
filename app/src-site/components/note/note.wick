@@ -30,8 +30,8 @@ export default <div class=note></div>;
     h1, h2, h3, h4, h5, h6
     {
         color:#666;
-        margin:20px 20px;
-        padding:0;
+        margin:10px 10px;
+        padding:5px;
         border:0;
         line-height:1em;
     }
@@ -40,7 +40,8 @@ export default <div class=note></div>;
         box-sizing:border-box;
         outline:none;
         position:relative;
-        margin:10px 40px;
+        margin: 0 30px;
+        padding:5px;
     }
 
     h3, h4, h5, h6
@@ -148,9 +149,8 @@ export default <div class=note></div>;
         border:none;
     }
 
-    .code-block:focus-within .cm-gutters,
-    .code-block:active .cm-gutters,
-    .code-block:hover .cm-gutters {
+    .editline.active .cm-gutters,
+    .editline:hover .cm-gutters {
         opacity:1
     }
     

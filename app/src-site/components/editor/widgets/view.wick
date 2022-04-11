@@ -1,0 +1,58 @@
+/*
+ * This component handles a single view of notes.
+ *
+ * In the context of Ruminate a view is defined as 
+ *
+ */
+
+ import {
+    active_search_nonce,
+    active_search_component,
+    active_results,
+    active_folders
+} from "@store";
+
+function onclick(e){
+    active_search_component = this;
+}
+
+ import dsf from "./dynamic_search_field.wick";
+ import noteitem from "./note_item.wick";
+
+ let results = [];
+
+ function $(active_results){
+    if(active_search_component == this){
+       results = active_results;
+       console.log({results:results})
+    }
+ }
+
+ function inputSelect(e){
+    active_results = results;
+ }
+
+ export default <div>
+    <dsf class=folder-field onclick={inputSelect} >folder</dsf>
+    <dsf class=search-field onclick={inputSelect} >search</dsf>
+
+    <container
+        class=contents
+        data={results}
+        filter={m.type == "note"}
+    >
+        <noteitem/>
+    </container>
+ </div>;
+
+ <style>
+    root {
+        width:100%;
+        min-height:100px;
+        position:relative;
+        background:#EBEBEB;
+        border-radius:10px;
+        padding:5px;
+    }
+
+ </style>;

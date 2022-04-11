@@ -1,19 +1,45 @@
+/**
+ * This module is responsible for ORM of Notes and Folders to 
+ * their equivalents within the backing store. 
+ */
+
 import { WickLibrary } from '@candlelib/wick';
 import { get_note_name } from "./tauri/bridge.js";
-
+import * as crud from "./crud.js";
+import * as bridge from "./tauri/bridge.js";
+import { store } from '@candlelib/wick/build/client/runtime/db';
 var Note, Folder;
 
 let INITIALIZED = false;
 export const folders = new Map;
 export const notes = new Map;
 
+export async function createNote(name = "test") {
+    const note = getNoteByLocalId(await crud.createNote(name));
+    note.name = await bridge.get_note_name(note.id);
+    return note;
+}
+
+export function setFolders(
+    id: number,
+    existing_set: Set<number> = null
+): Set<number> {
+    if (existing_set) {
+        if (existing_set.has(id)) {
+            const new_set = new Set(existing_set);
+            new_set.delete(id);
+            return new_set;
+        } else {
+            return new Set([id, ...existing_set]);
+        }
+    } else {
+        return new Set([id]);
+    }
+};
 
 export function getNoteByLocalId(id: number) {
-    init(wick);
     if (!notes.has(id)) {
-        notes.set(id, new Note(
-            id, "unnamed"
-        ));
+        notes.set(id, new Note(id,));
     }
 
     return notes.get(id);
@@ -74,25 +100,32 @@ export function getFoldersById(...folder_id: number[]) {
     return f;
 }
 
-export function getFolders(path: string = '/') {
+export async function getFolders(path: string = '/') {
     //@ts-ignore
     init(wick);
 
     root = new Folder("test");
 
+    const note1 = await createNote("test1");
+    const note2 = await createNote("test2");
+    const note3 = await createNote("test3");
+    const note4 = await createNote("test4");
+    const note5 = await createNote("test5");
+
     root.items.push(
-        new Note(1, "test1"),
-        new Note(2, "test2"),
-        new Note(3, "test3"),
+        note1,
+        note2,
+        note3,
         new Folder("marko",
-            new Note(4, "test4"),
-            new Note(5, "test5"),
-            new Note(1, "test1")
-        ));
+            note4,
+            note5,
+            note1
+        )
+    );
 
     return [root];
 }
 
-export async function addNoteToFolder(note: number) {
-    root.items.push(new Note(note, await get_note_name(note)));
+export async function addNoteToFolder(note: any) {
+    root.items.push(note);
 }

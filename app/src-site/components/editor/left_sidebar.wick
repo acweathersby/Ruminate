@@ -1,44 +1,45 @@
 import sidebar from "./sidebar_base.wick";
-import folders from "./folders.wick";
+import views from "./container_views.wick";
 import item_details from "./item_details.wick";
-import widget from "./widgets/sidebar_reveal.wick";
+import sbactivator from "./widgets/sidebar_reveal.wick";
+import  * as store from "../../ts/store.ts";
+import {active_note} from "@store";
+
 
 let SHOW_SIDE_BAR = true;
 const folder_scroll_target = "@#sbfolders";
+
+async function cn(){
+    const note = await store.createNote();
+    store.addNoteToFolder(note);
+    active_note = note.id;
+}
 
 export default <sidebar 
     class="light" 
     {SHOW_SIDE_BAR} 
     >
-    <widget id="revealer" onclick={SHOW_SIDE_BAR = !SHOW_SIDE_BAR}/>
+    <sbactivator id="revealer" onclick={SHOW_SIDE_BAR = !SHOW_SIDE_BAR}/>
 
-    <div class="header">
-        <div class="icon-placeholder"></div>
-        <div class="icon-placeholder icon-Search"></div>
-        <a href="/views/settings" class="icon-placeholder icon-Settings"></a>
+    <div class="content left">
+        <views id="sbfolders"></views>
     </div>
 
-    <div class=content>
-        <folders id="sbfolders" class="sb-folders"></folders>
-        <item_details/>
+    <div class="header">
+        <div class="expander-lz"></div>
+        <div class="icon-placeholder icon-Note" onclick={cn}></div>
+        <a href="/views/settings" class="icon-placeholder icon-Settings"></a>
     </div>
 
 </sidebar>;
 
 <style>
-    root.light {
-        border-right: 1px solid #C4C4C4;
-    }
 
     #revealer {
         position:fixed;
-        top:10px;
-        left:12px;
+        top:6px;
+        left:6px;
         z-index:1;
-    }
-
-    .sb-folders {
-        height:40%;
     }
 
     .content {
@@ -48,10 +49,11 @@ export default <sidebar
     }
     
     .icon-placeholder {
-        font-size: 26px;
-        color:#C7C7C7;
+        font-size: 18px;
+        color:black;
         background:none;
         cursor:pointer;
+        margin:8px 8px;
     }
 
     .icon-placeholder:hover {

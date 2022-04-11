@@ -8,24 +8,36 @@ export default <sidebar
 
     <widget id="revealer" onclick={SHOW_SIDE_BAR = !SHOW_SIDE_BAR}/>
 
-    <div class="header">
+    <div class="content right">
+        <h1>Tacos</h1>
+
     </div>
 
-    <h1>Tacos</h1>
-
-    <div class=content></div>
+    <div class="header">
+        <div class="expander-lz"></div>
+    </div>
 
 </sidebar>;
 
 <style>
-    root.light {
-        border-left: 1px solid #C4C4C4;
-    }
 
     #revealer {
         position:fixed;
-        top:12px;
-        right:12px;
+        top:6px;
+        right:6px;
         z-index:1;
+    }
+
+    .expander-lz {
+        left:unset;
+        position:absolute;
+        right:0;
+        border-radius: 0 0 0 6px;
+    }
+
+       .content {
+        display:flex;
+        flex-direction:column;
+        height:100%;
     }
 </style>

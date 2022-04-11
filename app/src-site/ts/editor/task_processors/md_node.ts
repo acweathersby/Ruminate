@@ -378,9 +378,9 @@ export class MDNode<T extends NodeType = NodeType> {
     get children(): NodeChildren[T] {
 
         if (!this.#children)
-            return [];
+            return <any>[];
 
-        return this.#children;
+        return <any>this.#children;
     }
 
     set children(children: NodeChildren[T]) {

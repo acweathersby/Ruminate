@@ -9,7 +9,7 @@ import { initLength, traverse } from '../traverse/traverse';
 import { registerAction } from './register_action';
 import { insertText } from './insert_text';
 import { resolveStemLine } from './resolve_stem_line';
-async function insertLine(edit_host: EditHost) {
+export async function insertLine(edit_host: EditHost) {
 
     const
         nonce = history.startRecording(edit_host),
@@ -40,6 +40,8 @@ async function insertLine(edit_host: EditHost) {
 
         const { overlap_start, replace, md_head, md_tail, tail, head } = meta;
 
+        console.log({ md_head, md_tail });
+
         if (node.is(NodeType.CODE_BLOCK)) {
 
             let TREAT_AS_CM_INSERT = true;
@@ -67,11 +69,11 @@ async function insertLine(edit_host: EditHost) {
             }
         }
 
-        edit_host.NEW_LINE_MODE = true;
+        history.enableLineEditMode(edit_host);
 
         const new_node = ops.newNode(
             NodeType.STEM_LINE,
-            [ops.newNode(NodeType.STEM_HEADER, [], gen, " "),],
+            [ops.newNode(NodeType.STEM_HEADER, [], gen, " ")],
             gen
         );
 
@@ -80,7 +82,6 @@ async function insertLine(edit_host: EditHost) {
             edit_host.start_offset++;
             replace([node, new_node], gen);
         } else if (overlap_start == 0) {
-            edit_host.NEW_LINE_MODE = true;
             history.addInsert(md_tail, "\n\n ");
             edit_host.start_offset += 3;
             replace([new_node, node], gen);

@@ -18,6 +18,22 @@ pub struct OPID {
 }
 
 impl OPID {
+
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { ::std::slice::from_raw_parts(
+            (self as *const OPID) as *const u8,
+            ::std::mem::size_of::<OPID>(),
+        ) }
+    }
+
+    pub fn from_file(file:&mut File) -> io::Result<Self>{
+        let mut buf: [u8;4] = [0;4];
+        file.read_exact(&mut buf)?;
+        Ok(OPID {
+            data: u32::from_le_bytes(buf)
+        })
+    }   
+
     pub fn get_null_op() -> OPID {
         return OPID { data: 0 };
     }
@@ -61,7 +77,9 @@ impl OPID {
     }
 }
 
-use std::fmt;
+use std::fs::File;
+use std::io::Read;
+use std::{fmt, io};
 impl fmt::Debug for OPID {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("OPID")

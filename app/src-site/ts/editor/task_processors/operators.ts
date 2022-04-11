@@ -1,6 +1,6 @@
 import * as history from './history/history';
-import { MDNode, NodeType, NodeClass as NC, NodeMeta, NodeClass } from "./md_node";
-import { getMDOffsetFromEditOffset, initLength } from './traverse/traverse';
+import { MDNode, NodeClass as NC, NodeClass, NodeMeta, NodeType } from "./md_node";
+import { initLength } from './traverse/traverse';
 import { toMDPostText, toMDPreText } from './view';
 
 const {

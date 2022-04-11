@@ -1,0 +1,19 @@
+
+
+export default <div>
+    <div class=field></div>
+</div>;
+
+ <style>
+
+    root {
+        position:relative;
+        font-size: 0.85em;
+        height:22px;
+        background-color:white;
+        padding:4px;
+        margin:10px 0;
+        border-radius:5px;
+    }
+
+ </style>;

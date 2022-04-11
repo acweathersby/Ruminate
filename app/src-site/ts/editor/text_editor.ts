@@ -4,8 +4,10 @@ import {
     convertMDASTToEditLines,
     parseMarkdownText
 } from './parser/parse_markdown.js';
-import { MDNode, NodeType } from './task_processors/md_node.js';
+import { LineNode, MDNode, NodeType } from './task_processors/md_node.js';
 import { heal, setChildren } from './task_processors/operators.js';
+import * as op from './task_processors/operators.js';
+import * as hs from './task_processors/history/history.js';
 import { initLength, traverse } from './task_processors/traverse/traverse.js';
 import {
     setEditable, updateHost, updateMarkdownDebugger
@@ -89,24 +91,16 @@ export async function constructTestHost(
 }
 export async function constructEditHost(
     note_id: number
-
 ): Promise<EditHost> {
     const
         edit_host: EditHost = createEditHostObj(note_id, false),
 
-        string = await get_text(note_id),
+        string = await get_text(note_id);
 
-        result = parseMarkdownText(string),
-
-        lines = convertMDASTToEditLines(result, 0);
+    let lines: LineNode[] = [];
 
     edit_host.root = new MDNode(NodeType.ROOT);
 
-    edit_host.root = setChildren(edit_host.root, 0, ...lines);
-
-    edit_host.root = heal(edit_host.root, 0).node;
-
-    initLength(edit_host.root);
 
     edit_host.history.push({
         state: edit_host.root,
@@ -117,6 +111,36 @@ export async function constructEditHost(
     });
 
     edit_host.history_pointer = 0;
+
+    if (string.length == 0) {
+
+        const nonce = hs.startRecording(edit_host);
+
+        edit_host.root = setChildren(edit_host.root, 1,
+            op.newNode(
+                NodeType.STEM_LINE,
+                [op.newNode(NodeType.STEM_HEADER, [], 1, "")],
+                1
+            )
+        );
+
+        hs.addInsert(0, "\n\n");
+
+        hs.enableLineEditMode(edit_host);
+
+        hs.endRecording(edit_host, nonce);
+    } else {
+
+        const
+            result = parseMarkdownText(string),
+            lines = convertMDASTToEditLines(result, 0);
+
+        edit_host.root = setChildren(edit_host.root, 0, ...lines);
+
+        edit_host.root = heal(edit_host.root, 0).node;
+    }
+
+    initLength(edit_host.root);
 
     return edit_host;
 }
@@ -171,6 +195,7 @@ function createEditHostObj(
         end_offset: 0,
         start_offset: 0,
         meta_UIs: [],
+        active_line: null,
         NEW_LINE_MODE: false,
         new_line_data: {
             md_offset_start: -1,

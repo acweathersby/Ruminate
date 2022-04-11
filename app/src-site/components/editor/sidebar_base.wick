@@ -7,61 +7,83 @@ export default <div class={SHOW_SIDE_BAR; "open"}></div>;
     root {
         font-size: 12px;
         top:0;
-        width:50px;
+        width:40px;
         position:sticky;
         height:100vh;
         z-index:1;
         background:transparent;
-        transition: width 250ms, padding 250ms;
         margin:0;
-        overflow:hidden;
         flex-grow:0;
         flex-shrink:0;
         user-select:none;
+        display:flex;
+        flex-direction:column;
+        transition: width 250ms, padding 250ms, background 250ms;
     }
 
     .content {
+        visibility:hidden;
         position:relative;
-        padding:0;
-        width:300px;
+        padding-top:50px;
+        width:250px;
         opacity: 0;
-        transition: opacity 250ms, padding 250ms;
+        transition: opacity 250ms, padding 250ms, visibility 250ms, left 250ms;
+        
+    }
+
+    .content.left{
+        left:-250px;
+    }
+
+    .content.right{
+        right:-250px
     }
 
     root.open .content {
-        opacity: 1
+        opacity: 1;
+        left:0px;
+        visibility:visible;
+        background:#fbfbfb;
     }
 
     root.open {
-        width:300px;
-        background:#EFEFEF;
+        width:250px;
+    }
+
+    root.open .header {
+        width:250px;
+        height:40px;
     }
 
     .header {
-        position:relative;
-        height: 50px;
-        border-bottom:1px solid #DADADA;
+        position:absolute;
+        top:0;
+        left:0;
+        height:120px;
+        width:40px;
         display:flex;
         flex-direction:row;
+        flex-wrap: wrap;
         justify-content:space-between;
-        padding:10px 14px;
-        width:300px;
+        border-radius: 0 0 5px 0;
+        transition: width 250ms, height 250ms, flex-wrap 100ms;
     }
 
-    .icon-placeholder {
-        width:27px;
-        height:27px;h1
-        background: #DFDFDF;
-        border-radius:3px;
+    .expander-lz {
+        top:0;
+        width:40px;
+        height:40px;
+        background-color: #FF005C;
+        border-radius: 0 0 5px 0;
     }
 
     h1 {
         color:#939393;
+        text-align:center;
         font-size: 1em;
         line-height:1em;
         margin: 22px 20px 10px;
         padding: 0 0 10px;
-        border-bottom: 1px solid #DADADA; 
     }
 
     .border-bottom {
@@ -72,6 +94,10 @@ export default <div class={SHOW_SIDE_BAR; "open"}></div>;
         border-bottom: 1px solid #DADADA; 
     }
     
-    
+    @media screen and ( max-width: 960px ){
+        root.open {
+            box-shadow: 0px 0px 8px #00000030;
+        }
+    }
 
 </style>

@@ -1,13 +1,18 @@
 export default <div>
+    <span class="icon-Plus"></span>
 </div>;
 
 <style>
 
     root {
+        font-size:30px;
+        line-height:30px;
         width:27px;
         height:27px;
-        background: #DFDFDF;
+        text-align:center;
         border-radius:3px;
+        color:white;
+        
     }
 
     root:hover {

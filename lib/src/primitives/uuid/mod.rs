@@ -40,7 +40,31 @@ pub struct UUID {
 }
 
 impl UUID {
-    pub fn new(site_u32_id: u32) -> UUID {
+    
+    pub const fn byte_size()  -> usize {
+        return ::std::mem::size_of::<Self>()
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { ::std::slice::from_raw_parts(
+            (self as *const Self) as *const u8,
+            ::std::mem::size_of::<Self>(),
+        ) }
+    }
+
+    pub fn from_bytes(bytes : &[u8]) -> Self {
+        if bytes.len() == ::std::mem::size_of::<Self>(){
+            UUID {
+               created_time: u64::from_le_bytes(bytes[0..8].try_into().expect("String")),
+               magic: u32::from_le_bytes(bytes[8..12].try_into().expect("String")),
+               random: u32::from_le_bytes(bytes[12..].try_into().expect("String")), 
+            }
+        } else{
+            UUID::new(0)
+        }
+    }
+
+    pub fn new(site_u32_id: u32) -> Self {
         let rand: u32 = random();
         UUID {
             created_time: get_u64_timestamp(),
@@ -49,7 +73,7 @@ impl UUID {
         }
     }
 
-    pub fn from(string_uuid: &String) -> Result<UUID, ()> {
+    pub fn from(string_uuid: &String) -> Result<Self, ()> {
         let parts: Vec<&str> = string_uuid.split("_").collect();
         let A = u64::from_str_radix(parts[0].as_ref(), 10);
         let B = u32::from_str_radix(parts[1].as_ref(), 10);
@@ -67,8 +91,13 @@ impl UUID {
         };
         return Err(());
     }
+}
 
-    pub fn to_string(&self) -> String {
+
+
+impl ToString for UUID {
+    fn to_string(&self) -> String {
+        
         let mut string: String = "".to_string();
 
         string += &self.created_time.to_string();

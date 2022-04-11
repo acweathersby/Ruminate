@@ -1,3 +1,7 @@
+
+#![feature(path_try_exists)]
+#![feature(trait_alias)]
+
 /**
  * Ruminate Library
  *
@@ -10,12 +14,17 @@
  * If license was not provided with this distribution then refer to
  * github.com/acweathersby/ruminate/LICENSE.md
  */
+
+
+
+
 //Query System
 pub mod query;
 
 //---
 pub mod primitives;
 pub mod store;
+pub mod store_fs;
 
 use std::{collections::HashSet, iter::FromIterator, result::Result, str::FromStr};
 
@@ -189,9 +198,10 @@ pub fn note_insert_text(
     debug!(target:"note actions", "Inserting text [{:?}] at index {:?} into Note [{:?}]", text, index, note_local_id);
     if let Some(note_data) = note_get_crdt(store, note_local_id) {
         note_data.insert(index, text.as_bytes());
-        return Ok(());
+        Ok(())
+    } else { 
+        Err("Failed to write to CRDT") 
     }
-    return Err("Failed to write to CRDT");
 }
 
 pub fn note_delete_text(

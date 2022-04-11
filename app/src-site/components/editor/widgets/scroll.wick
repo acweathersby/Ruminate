@@ -168,7 +168,7 @@ export default <div class={scroll_amount > 0; 'show'}>
         border-radius:1.5px;
         left:4px;
         position:absolute;
-        background:#DFDFDF;
+        background:#ff005c;
     }
 
     .scroll-begin {
@@ -190,7 +190,7 @@ export default <div class={scroll_amount > 0; 'show'}>
         width:1px;
         height:14px;
         border-radius:7px;
-        background:#DFDFDF;
+        background:#ff005c;
         transition: left 200ms, width 200ms;
     }
 

@@ -31,8 +31,7 @@ type ViewPack = {
 };
 
 /**
- * Returns offset and selection node information
- * from the primary selection range.
+ * Updates offset information from the user-agent primary selection range.
  */
 export function getOffsetsFromSelection(edit_host: EditHost) {
 
@@ -163,10 +162,11 @@ function toHTMLNaive(
 
     if (node.containsClass(NodeClass.LINE)) {
         vp.offset++;
-        let tag = "";
+        let tag = "", classes = ["editline"];
 
         if (node.is(STEM_LINE)) {
             tag = getStemTag(node.children[0]);
+            classes.push("stem");
         } else if (node.is(PARAGRAPH)) {
             tag = "p";
         } else if (node.is(HEADER)) {
@@ -179,7 +179,7 @@ function toHTMLNaive(
             tag = "li";
         } else if (node.is(CODE_BLOCK)) {
             const div = cE("div");
-            div.classList.add("code-block");
+            div.classList.add("code-block", "editline");
             vp.offset = tail;
             code.createView(node, div);
             node.ele = div;
@@ -200,6 +200,10 @@ function toHTMLNaive(
 
         OffsetMap.set(ele, node.length);
         node.ele = ele;
+
+        for (const cls of classes)
+            ele.classList.add(cls);
+
         return ele;
 
 
@@ -254,7 +258,7 @@ export function getStemTag(node: MDNode<NodeType.STEM_HEADER>) {
 
     let tag = "div";
 
-    const text = node.meta.slice(0, -1).trim();
+    const text = node.meta.slice(0).trim();
 
     if (/\d\./g.test(text)) {
         tag = "li";
@@ -605,6 +609,23 @@ function getSelectionParts(
     }
 
     return range;
+}
+
+export function getLineAtOffset(
+    start_offset: number,
+    edit_host: EditHost
+): MDNode | null {
+    for (const { node, meta: { prev, head } } of
+        traverse(edit_host.root)
+            .classFilter(NodeClass.LINE)
+            .rangeFilter(start_offset, start_offset)
+    ) {
+        if (head == start_offset && prev)
+            return prev;
+        return node;
+    }
+
+    return edit_host.root.children.slice(-1)[0] || null;
 }
 
 function getElementOffset(
