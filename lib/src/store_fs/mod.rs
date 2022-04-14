@@ -39,7 +39,10 @@ pub fn recognize_file_name(candidate_path: &Path) -> bool {
     true
 }
 
-//Save
+/// Saves a single note's data to a directory path. The note name is automatically generated. 
+/// 
+/// Returns a void Result or forwards IO errors if encountered.
+/// 
 pub fn save(directory_path: &String, note_local_id: NoteLocalID, store: &mut Store) -> io::Result<()> {
     if let Ok((file_name, uuid)) = create_file_name(note_local_id, store){ 
 
@@ -54,7 +57,9 @@ pub fn save(directory_path: &String, note_local_id: NoteLocalID, store: &mut Sto
             file.write( uuid.as_bytes())?;
 
             if let Some(content) = note_get_crdt(store, note_local_id){
+                
                 content.write_to_file(&mut file)?;
+
                 Ok(())   
             }else {
                 Err(std::io::Error::new(
@@ -78,7 +83,7 @@ pub fn save(directory_path: &String, note_local_id: NoteLocalID, store: &mut Sto
     }
  }
  
- //Load
+/// Load a single note from a filepath
 pub fn load<T: CRDTData>(candidate_path: &Path) -> io::Result<(UUID,CRDTString<T>)>  {
 
     if candidate_path.is_file() {
