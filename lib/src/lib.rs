@@ -105,6 +105,36 @@ pub fn note_create(store: &mut Store) -> NoteLocalID {
     return new_note_local_id;
 }
 
+pub fn note_create_from_parts(
+    store: &mut Store,
+    new_note_uuid: NoteUUID, 
+    new_note_data: NoteInternalCRDT
+) -> NoteLocalID {
+    //Create the CRDT Base structure and note UUID
+
+    debug!(target:"note actions", "Creating new Note from parts");
+
+    let new_note_local_id: u32 = (store.note_uuid_to_local_id.len() + 1) as u32;
+
+    let new_note_data = Box::new(new_note_data);
+
+    debug!(target:"note actions", "Note created with {:?} and local id [{:?}]",new_note_uuid, new_note_local_id);
+
+    store
+        .note_uuid_to_local_id
+        .insert(new_note_uuid, new_note_local_id);
+
+    store
+        .note_local_id_to_uuid
+        .insert(new_note_local_id, new_note_uuid);
+
+    store
+        .note_id_to_note_content
+        .insert(new_note_local_id, new_note_data);
+
+    return new_note_local_id;
+}
+
 //Returns a notes UUID from its local id
 pub fn note_get_uuid_from_local_id(
     store: &mut Store,
