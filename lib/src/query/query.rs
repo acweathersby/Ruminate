@@ -1,6 +1,5 @@
+use crate::primitives::NoteLocalID;
 use crate::store::container::Container;
-use crate::store::store::NoteLocalID;
-
 use super::super::store::store::Store;
 use super::super::UUID;
 use super::ast::*;
@@ -14,7 +13,7 @@ use std::thread;
 /// ```
 /// println!("Hello World");
 /// ```
-pub fn execute_query(root_store: &Store, query_input: &str) -> Vec<NoteLocalID> {
+pub fn execute_query<T>(root_store: &Store<T>, query_input: &str) -> Vec<NoteLocalID> {
     if let Ok(query) = parse(query_input) {
         // Reduce inputs to containers found within container portion. If this is
         // an infinite result then the entire store MUST be made available for
@@ -44,7 +43,7 @@ pub fn execute_query(root_store: &Store, query_input: &str) -> Vec<NoteLocalID> 
 
             let mut HAS_NOTE_SPECIFIER = false;
 
-            loop {
+            loop {/* 
                 if let Some((ctr_id, path_ref)) = container_queue.pop_front() {
                     if path_ref >= ctr_ref.path.len() {
                         container_result.push(ctr_id);
@@ -84,12 +83,12 @@ pub fn execute_query(root_store: &Store, query_input: &str) -> Vec<NoteLocalID> 
                     }
                 } else {
                     break;
-                }
+                } */
             }
 
             let mut IDs: Vec<NoteLocalID> = Vec::new();
 
-            for ctr_id in container_result {
+            /* for ctr_id in container_result {
                 if let Some(ctr) = ctr_store.containers.get(ctr_id) {
                     for &uuid in (&ctr.uuids).into_iter() {
                         if HAS_NOTE_SPECIFIER {
@@ -98,7 +97,7 @@ pub fn execute_query(root_store: &Store, query_input: &str) -> Vec<NoteLocalID> 
                         }
                     }
                 }
-            }
+            } */
 
             // Run filter on uuids
 
@@ -115,7 +114,7 @@ pub fn execute_query(root_store: &Store, query_input: &str) -> Vec<NoteLocalID> 
     vec![]
 }
 
-#[test]
+/* #[test]
 fn test_basic_container_query() {
     let mut root_store = Store::new();
 
@@ -134,4 +133,4 @@ fn test_basic_container_query() {
     root_store.containers.containers[3].uuids.insert(1);
 
     execute_query(&root_store, "[testA/testC/]");
-}
+} */

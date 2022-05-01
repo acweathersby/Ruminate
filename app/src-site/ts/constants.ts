@@ -1,0 +1,1 @@
+export const DEFAULT_CONTAINER_NAME = "Uncategorized Notes";

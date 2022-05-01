@@ -4,10 +4,8 @@
  */
 
 import { WickLibrary } from '@candlelib/wick';
-import { get_note_name } from "./tauri/bridge.js";
 import * as crud from "./crud.js";
 import * as bridge from "./tauri/bridge.js";
-import { store } from '@candlelib/wick/build/client/runtime/db';
 var Note, Folder;
 
 let INITIALIZED = false;

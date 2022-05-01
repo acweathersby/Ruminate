@@ -3,6 +3,9 @@ pub mod op_id;
 use log::debug;
 use op_id::OPID;
 use std::{fmt::Debug, fs::File, io::{Write, self, Read}, borrow::Borrow};
+
+use super::binary::BinaryStream;
+
 /**
 Store CRDT data in an opaque buffer and provides
 operations to retrieve, modify, and slice data
@@ -26,6 +29,8 @@ pub trait CrdtIO {
     
     fn as_bytes(&self) -> &[u8];
 
+    fn to_utf8(&self, output:&mut Vec<u8>);
+
     fn from_file(file:&mut File) -> io::Result<Self> where Self: Sized;
 
 }
@@ -43,38 +48,6 @@ where
             ops: Vec::new(),
             latest: OPID::new(site, 0),
         }
-    }
-
-    pub fn from_file(file:&mut File) -> io::Result<Self>{
-        let mut buf : [u8;8] = [0;8];
-        file.read_exact(&mut buf)?;
-        let ops_len = usize::from_le_bytes(buf);
-        let latest  = OPID::from_file(file)?;
-        let mut ops :Vec<(OPID, T)>= Vec::new();
-
-        for _ in 0..ops_len {
-            let op_id = OPID::from_file(file)?;
-            let op_data : T = T::from_file(file)?;
-            ops.push((op_id, op_data)) 
-        }
-
-        Ok(CRDTString {
-            ops,
-            latest
-        })
-    }
-
-    pub fn write_to_file(&self, file:&mut File) -> io::Result<()>{
-       
-        file.write(&self.ops.len().to_le_bytes())?;
-        file.write(&self.latest.as_bytes())?;
-       
-        for ( op, data) in &self.ops {
-            file.write(op.as_bytes())?;
-            file.write(&data.as_bytes())?;
-        }
-
-        Ok(())
     }
 
     /// Merge one foreign CRDT string with this one, returning
@@ -267,6 +240,30 @@ where
         vec
     }
 
+    pub fn utf8(&self) -> Vec<u8> {
+        let mut vec: Vec<u8> = Vec::with_capacity(self.ops.len());
+
+        let mut i: usize = 0;
+
+        let len = self.ops.len();
+
+        while i < len {
+            let (_, operation) = self.ops[i];
+
+            if T::is_delete(operation) {
+                //Skip the next operation since
+                //it has been deleted.
+                i += 1
+            } else {
+                operation.to_utf8(&mut vec);
+            }
+
+            i += 1
+        }
+
+        vec
+    }
+
     pub fn get_local_clock(&self) -> OPID {
         return self.latest;
     }
@@ -318,6 +315,43 @@ where
     }
 }
 
+
+
+impl<T> BinaryStream for CRDTString<T> where T : CRDTData  {
+    
+    fn read_from_file(file:&mut File) -> io::Result<Self>{
+        let mut buf : [u8;8] = [0;8];
+        file.read_exact(&mut buf)?;
+        let ops_len = usize::from_le_bytes(buf);
+        let latest  = OPID::from_file(file)?;
+        let mut ops :Vec<(OPID, T)>= Vec::new();
+
+        for _ in 0..ops_len {
+            let op_id = OPID::from_file(file)?;
+            let op_data : T = T::from_file(file)?;
+            ops.push((op_id, op_data)) 
+        }
+
+        Ok(CRDTString {
+            ops,
+            latest
+        })
+    }
+
+    fn write_to_file(&self, file:&mut File) -> io::Result<()>{
+       
+        file.write(&self.ops.len().to_le_bytes())?;
+        file.write(&self.latest.as_bytes())?;
+       
+        for ( op, data) in &self.ops {
+            file.write(op.as_bytes())?;
+            file.write(&data.as_bytes())?;
+        }
+
+        Ok(())
+    }
+}
+
 impl CRDTDelete for u8 {
     fn delete_command() -> Self {
         8 // ASCII Backspace
@@ -335,6 +369,10 @@ impl CrdtIO for u8 {
             (self as *const Self) as *const u8,
             ::std::mem::size_of::<Self>(),
         ) }
+    }
+
+    fn to_utf8(&self, output:&mut Vec<u8>) {
+        output.push(*self);
     }
 
     fn from_file(file:&mut File) -> io::Result<Self> {

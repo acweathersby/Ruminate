@@ -1,17 +1,28 @@
 import {
     active_search_component,
     active_results,
-    active_folders
+    active_folders,
+    active_search
 } from "@store";
+import {cache} from '../../../ts/cache.ts'
+import {
+    query_child_paths_from_parent_container,
+    query_note_ids_from_container
+} from "../../../ts/tauri/bridge.ts"
 
 import folder from "./folder.wick";
+
 import {getFolders, getFoldersById} from "../../../ts/store.ts";
 
 let ACTIVE_SEARCH = false;
-let data = await getFolders();
+let data = [];
+let resolved_path = '';
 
-function $(active_search_component){
+function $(active_results){
     if(active_search_component){
+
+        //Displays search modal
+
         ACTIVE_SEARCH = true;
 
         const root = "@root";
@@ -26,7 +37,57 @@ function $(active_search_component){
     }
 }
 
-function $folderUpdate(active_folders){
+function string_is_query(string){
+    return /^\s*\[|^\s*filter|^\s*sort/.test(string);
+}
+
+function $search_update(active_search) {
+    if(ACTIVE_SEARCH){
+
+        if(string_is_query(active_search)){
+        
+            resolved_path = "[QUERY]";
+            data = [];
+        
+        }else {
+
+            if(active_search_component)
+                active_results = await query_note_ids_from_container(active_search);
+
+            const paths = await query_child_paths_from_parent_container(active_search);
+
+            if(paths[0] == "empty"){
+                resolved_path = active_search;
+                data = [];
+            } else if(paths[0] == "invalid"){
+
+                //If the current path is not valid then try to resolve the parent
+                //path and show its contents instend.
+                const parent_path = active_search.split("/").slice(0,-1).join("/");
+
+                const paths = 
+                    await query_child_paths_from_parent_container(parent_path);
+
+                if(paths[0] == "empty"){
+                    resolved_path = parent_path;
+                    data = []
+                }else if (paths[0] == "invalid") {
+                    resolved_path = active_search;
+                    data = []
+                }else{
+                    resolved_path = parent_path;
+                    data = paths.map((p)=> cache({ name: p.split("/").pop(), path:p }))
+                }
+
+            }else {
+                resolved_path = active_search;
+                data = paths.map((p)=> cache({ name: p.split("/").pop(), path:p }))
+            }       
+        }
+    }
+}
+
+function $folder_update(active_folders){
     if(active_search_component){
         active_results = [...new Set(getFoldersById(...active_folders)
             .flatMap(f => f.items.filter(i => i.type == "note")))];
@@ -38,10 +99,13 @@ export default <div class={ACTIVE_SEARCH; "active"}>
         <div class=popup-menu></div>
     </div>
     <div class=content-box>
+        
+        <span class="up" onclick={ active_search = resolved_path.split("/").slice(0,-1).join("/")} >..</span>
+
+        {resolved_path}
         <container
             class=contents
             data={data}
-            filter={m.type == "folder"}
         >
     
         <folder/>
@@ -65,12 +129,18 @@ export default <div class={ACTIVE_SEARCH; "active"}>
         box-shadow: 2px 2px 5px black;
         z-index:100;
         opacity:0;
+        color:white;
         transition: opacity 1000ms, top 200ms;
     }
 
     root.active {
         display:block;
         opacity:1;
+    }
+
+    .up {
+        font-size:18px;
+        cursor:pointer
     }
 
 

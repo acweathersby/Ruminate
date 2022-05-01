@@ -1,4 +1,4 @@
-use super::{super::primitives::uuid::UUID, store::NoteLocalID};
+use crate::primitives::NoteLocalID;
 use std::collections::HashSet;
 
 ///

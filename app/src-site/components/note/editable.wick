@@ -1,4 +1,5 @@
 import {id, name} from "@model";
+import {DEFAULT_CONTAINER_NAME} from "../../ts/constants.ts";
 import * as editor from "../../ts/editor/text_editor.ts";
 import * as bridge from "../../ts/tauri/bridge.ts";
 import scroll from "../editor/widgets/scroll.wick";
@@ -14,14 +15,31 @@ let r = 0;
 let c = 0;
 let display_name = name;
 let scrolled = false;
+let paths = []
+let new_path = ""
 
 async function onload(){
-    console.log(id)
     host = await editor.constructEditHost(id);
     //editor.addMarkdownPreviewTarget(host, "@.note-md-preview");
     editor.setReadOnly(false);
     //bridge.get_note_name(id).then(n=>name=n);
-    bridge.get_note_container_path(id).then(p=>path=p);
+    //bridge.get_note_container_path(id).then(p=>path=p);
+    getPaths();
+}
+
+function getPaths(){
+    paths = (await bridge.query_note_container_paths(id)).map(p=> ({pathd:p}));
+    console.log(paths)
+}
+
+function submitNewPath(path){
+    new_path = "";
+
+    if(paths.some(p=>p.pathd == DEFAULT_CONTAINER_NAME)){
+        await bridge.remove_note_from_container_path(id, DEFAULT_CONTAINER_NAME);
+    }
+    await bridge.add_note_to_container_path(id,  path);
+    getPaths();
 }
 
 function onDisconnecting(){
@@ -46,22 +64,29 @@ function ontransitionout(row, col, trs, anim) {
         ] 
     })
 } 
-let gaurd = false;
+
+let guard = false;
 function updateDisplayName(e){
-    gaurd = true;
+    guard = true;
     name=e.target.innerText
 }
 
 function $(name) {
-    if(!gaurd)
+    if(!guard)
     display_name = name;
-    gaurd = false;
+    guard = false;
 }
 
 export default <div class=note>
     <div class=note-sleeve>
         <div class=note-header class={scrolled; "minified"}>
             <h1 type=text class=note-title contenteditable=true oninput={updateDisplayName }>{display_name}</h1>
+        </div>
+        <div> 
+            <input type="text" value={new_path} onkeydown={e => {console.log(e); if (e.code == "Enter") submitNewPath(new_path);} }>
+            <container data={paths}>
+                <div>{pathd}</div>
+            </container>
         </div>
         <div class=body-container>
             <note {host}/>

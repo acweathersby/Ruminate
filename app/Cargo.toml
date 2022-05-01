@@ -20,8 +20,8 @@ difference = "2.0"
 similar = "2.1.0"
 log = "0.4.14"
 lib_ruminate = { path = "../lib" }
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.79"
+serde = { version = "1.0.136", features = ["derive"] }
 tauri = { version = "1.0.0-rc.3", features = ["api-all"] }
 
 [features]

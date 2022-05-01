@@ -2,6 +2,7 @@ import { convertMDASTToEditLines, parseMarkdownText } from '../editor/parser/par
 import { MDNode, NodeType } from '../editor/task_processors/md_node';
 import { heal, setChildren } from '../editor/task_processors/operators';
 import { toMDString } from '../editor/text_editor';
+import * as mock_fs from "./mock_fs";
 
 const debug_store: Map<number, MockNote> = new Map();
 let index_nonce = 0;
@@ -18,6 +19,22 @@ function getMockNote(index: number): MockNote {
     return createMockNote(index, undefined, true);
 }
 
+export function init() {
+    //Load mock data
+    let id = createMockNote().id;
+    mock_fs.add_note_to_container_path(id, "/test");
+    setNoteName(id, "test1");
+
+    id = createMockNote().id;
+    mock_fs.add_note_to_container_path(id, "/tes2");
+    setNoteName(id, "test2");
+
+    id = createMockNote().id;
+    mock_fs.add_note_to_container_path(id, "/tes2/test");
+    setNoteName(id, "test3");
+
+}
+
 export function createMockNote(
     index: number = index_nonce,
     base_text: string = getPlaceHolderText(),
@@ -29,7 +46,6 @@ export function createMockNote(
             index++;
 
     if (base_text) {
-
 
         const result = parseMarkdownText(base_text);
 

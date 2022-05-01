@@ -1,5 +1,5 @@
 import "@radiate";
-import {notes, getNoteByLocalId} from "../../ts/store.ts";
+import {note_id_to_proxy_note} from "../../ts/primitives/note.ts";
 import editable_note from "../../components/note/editable.wick";
 import readonly_note from "../../components/note/readonly.wick";
 import meta_editor from "../../components/editor/meta_editor.wick";
@@ -15,7 +15,7 @@ let notefield = "@.note-view"
 
 function onload(){ 
     "@root".classList.add("display"); 
-    note = [getNoteByLocalId(1)];
+    note = [await note_id_to_proxy_note(1)];
 }
 
 export default <app>

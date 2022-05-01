@@ -2,17 +2,19 @@ import sidebar from "./sidebar_base.wick";
 import views from "./container_views.wick";
 import item_details from "./item_details.wick";
 import sbactivator from "./widgets/sidebar_reveal.wick";
-import  * as store from "../../ts/store.ts";
+import {DEFAULT_CONTAINER_NAME} from "../../ts/constants.ts";
+import  * as bridge from "../../ts/tauri/bridge";
 import {active_note} from "@store";
 
 
 let SHOW_SIDE_BAR = true;
 const folder_scroll_target = "@#sbfolders";
 
-async function cn(){
-    const note = await store.createNote();
-    store.addNoteToFolder(note);
-    active_note = note.id;
+async function create_note(){
+    let id = await bridge.create_note();
+    await bridge.set_note_name(id, "New Note");
+    bridge.add_note_to_container_path(id, DEFAULT_CONTAINER_NAME);
+    active_note = id;
 }
 
 export default <sidebar 
@@ -27,7 +29,7 @@ export default <sidebar
 
     <div class="header">
         <div class="expander-lz"></div>
-        <div class="icon-placeholder icon-Note" onclick={cn}></div>
+        <div class="icon-placeholder icon-Note" onclick={create_note}></div>
         <a href="/views/settings" class="icon-placeholder icon-Settings"></a>
     </div>
 

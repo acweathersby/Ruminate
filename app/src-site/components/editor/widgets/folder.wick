@@ -1,12 +1,12 @@
-import { items, name } from "@model";
-import { active_folders } from "@store";
+import { items, name, path } from "@model";
+import { active_search } from "@store";
 import {getFolders, getFoldersById, setFolders} from "../../../ts/store.ts";
 
 let count = 0;
 let SHOW = false;
 
-export default <div class={ active_folders?.has(id) ?? false; "active" }>
-    <div class=entry onclick={ active_folders = setFolders(id, active_folders) }>
+export default <div class={ active_search == path ?? false; "active" }>
+    <div class=entry onclick={ active_search = path }>
         <span class="drop-down icon-Folder" onclick={SHOW=!SHOW}>  </span>
         <div class=folder-data> {name} </div>
         <div class=item-count>{items.length}</div>

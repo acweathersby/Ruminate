@@ -4,9 +4,10 @@ use crate::{
         GLOBAL_STORE, 
         init_store
     }, 
-    integrate::{
+    bridge::{
         insert_text, 
-        create_note, get_text
+        create_note, 
+        get_text
     }, 
     store::{load_notes, get_main_path}
 };

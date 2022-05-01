@@ -9,8 +9,14 @@
     active_search_nonce,
     active_search_component,
     active_results,
-    active_folders
+    active_folder,
+    active_search,
+    active_search_path
 } from "@store";
+
+import {
+    note_id_to_proxy_note
+} from "../../../ts/primitives/note.ts"
 
 function onclick(e){
     active_search_component = this;
@@ -32,13 +38,20 @@ function onclick(e){
     active_results = results;
  }
 
+ let d = "a";
+
+ function $1(d){
+   active_search= d;
+ }
+
+
  export default <div>
-    <dsf class=folder-field onclick={inputSelect} >folder</dsf>
-    <dsf class=search-field onclick={inputSelect} >search</dsf>
+
+    <input type=text class=folder-field onclick={inputSelect} value={active_search_component == this ? active_search : d;d}>
 
     <container
         class=contents
-        data={results}
+        data={await Promise.all(results.map(note_id_to_proxy_note))}
         filter={m.type == "note"}
     >
         <noteitem/>

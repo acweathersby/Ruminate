@@ -10,22 +10,23 @@ use std::{str::FromStr, fs::{File, self}, path::{Path, PathBuf}, io::{Write, sel
 use log::debug;
 
 use crate::{
-    store::store::{Store, NoteLocalID}, 
+    store::store::{Store}, 
     store_create, 
-    note_create, 
+    note_create_binary, 
+    note_create_text, 
     note_insert_text, 
     note_get_text, 
     note_get_uuid_from_local_id, 
     primitives::{
         uuid::UUID, 
-        crdt::{ CRDTString, CRDTData}
+        crdt::{ CRDTString, CRDTData}, NoteData, NoteLocalID, binary::BinaryStream
     }, 
-    note_get_crdt
+    note_get_data
 };
 
 // CreateFileName - A function for creating a standard note file name
 // from note data. 
-pub fn create_file_name(note_local_id: NoteLocalID, store: &mut Store)-> Result<(String, UUID), &'static str> { 
+pub fn create_file_name<T: CRDTData>(note_local_id: NoteLocalID, store: &mut Store<T>)-> Result<(String, UUID), &'static str> { 
     if let Some(uuid) = note_get_uuid_from_local_id(store, note_local_id){ 
         debug!("Saving note [{:?}]", uuid);
         Ok((uuid.to_string() + ".rnote", uuid))
@@ -43,7 +44,7 @@ pub fn recognize_file_name(candidate_path: &Path) -> bool {
 /// 
 /// Returns a void Result or forwards IO errors if encountered.
 /// 
-pub fn save(directory_path: &String, note_local_id: NoteLocalID, store: &mut Store) -> io::Result<()> {
+pub fn save<T: CRDTData>(directory_path: &String, note_local_id: NoteLocalID, store: &mut Store<T>) -> io::Result<()> {
     if let Ok((file_name, uuid)) = create_file_name(note_local_id, store){ 
 
         let path_str = directory_path.to_owned() + "/" + &file_name;
@@ -56,9 +57,18 @@ pub fn save(directory_path: &String, note_local_id: NoteLocalID, store: &mut Sto
             
             file.write( uuid.as_bytes())?;
 
-            if let Some(content) = note_get_crdt(store, note_local_id){
-                
-                content.write_to_file(&mut file)?;
+            if let Some(content) = note_get_data(store, note_local_id){
+
+                match content {
+                    NoteData::<T>::BINARY(data) => {
+                        file.write(&[1 as u8]);
+                        data.write_to_file(&mut file)?
+                    },
+                    NoteData::<T>::CRDT(data) => {
+                        file.write(&[2 as u8]);
+                        data.write_to_file(&mut file)?
+                    }
+                };
 
                 Ok(())   
             }else {
@@ -84,7 +94,7 @@ pub fn save(directory_path: &String, note_local_id: NoteLocalID, store: &mut Sto
  }
  
 /// Load a single note from a filepath
-pub fn load<T: CRDTData>(candidate_path: &Path) -> io::Result<(UUID,CRDTString<T>)>  {
+pub fn load<T: CRDTData>(candidate_path: &Path) -> io::Result<(UUID,NoteData<T>)>  {
 
     if candidate_path.is_file() {
 
@@ -108,9 +118,26 @@ pub fn load<T: CRDTData>(candidate_path: &Path) -> io::Result<(UUID,CRDTString<T
 
             println!("{:?}", &uuid);
 
-            let data: CRDTString<T> = CRDTString::from_file(&mut file)?;
+            let mut type_buf = [0 as u8;1];
+            
+            file.read_exact(&mut type_buf);
 
-            return Ok((uuid, data))
+            if type_buf [0] == 1 {
+
+                let data= NoteData::<T>::BINARY(
+                    Vec::<u8>::read_from_file(&mut file)?
+                );
+
+                return Ok((uuid, data))
+            } else {
+
+                let data= NoteData::<T>::CRDT(
+                    CRDTString::<T>::read_from_file(&mut file)?
+                );
+                
+                return Ok((uuid, data))
+            }
+ 
         }else {
             return Err(std::io::Error::new(
                 io::ErrorKind::InvalidData, 
@@ -159,16 +186,16 @@ fn test_note_save() {
         panic!("Failed to create tmp directory [{:?}]", &tmp_directory);
     }
 
-    //Create a new note and prepare it for saving
-    let mut store = store_create();
+    //Create a new zxxxxxxxnote and prepare it for saving
+    let mut store = store_create::<u8>();
 
-    let note_local_id = note_create(&mut store);
+    let note_local_id = note_create_text::<u8>(&mut store);
 
     if let Some(note_uuid) = note_get_uuid_from_local_id(&mut store, note_local_id){
 
         assert!(note_local_id > 0);
 
-        if let Ok(()) = note_insert_text(&mut store, note_local_id, 0, TEST_STRING) {
+        if let Ok(()) = note_insert_text(&mut store, note_local_id, 0, TEST_STRING.as_bytes()) {
 
             if let Ok(()) =  save(&tmp_directory, note_local_id, &mut store){
 
@@ -183,13 +210,22 @@ fn test_note_save() {
                     if let Some(note_path) = found_notes.get(0){   
                         match load::<u8>(note_path) {
                             Ok((uuid, data)) => {
+
                                 have_note = true;
+                                
                                 assert_eq!(note_uuid, uuid);
 
-                                if let Ok(strA) = String::from_utf8(data.vector()) {
-                                    assert_eq!(strA, TEST_STRING);
-                                }else {
-                                    panic!("Unable to read note data")    
+                                match data {
+                                    NoteData::<u8>::BINARY(data) =>{
+                                        panic!("Note data incorrectly interpreted as binary")    
+                                    },
+                                    NoteData::<u8>::CRDT(data) =>{
+                                        if let Ok(strA) = String::from_utf8(data.vector()) {
+                                            assert_eq!(strA, TEST_STRING);
+                                        }else {
+                                            panic!("Unable to read note data")    
+                                        }
+                                    },
                                 }
                             },
                             Err(e) => {
@@ -210,5 +246,6 @@ fn test_note_save() {
     }else {
         panic!("Could not acquire UUID")
     }
+
     
 }

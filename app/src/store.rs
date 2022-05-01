@@ -1,4 +1,5 @@
 use super::globals::{GLOBAL_STORE, DEFAULT_PATH, CRDTDataType};
+use lib_ruminate::primitives::NoteLocalID;
 use log::{debug, info, LevelFilter, Metadata, Record};
 use lib_ruminate::store_fs::{ load, save, scan };
 use lib_ruminate::primitives::uuid::UUID;

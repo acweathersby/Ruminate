@@ -1,7 +1,7 @@
-use crate::primitives::note::Note;
+use crate::primitives::{NoteLocalID, TagLocalID, SiteLocalID, SiteUUID, SiteName, NoteData, NoteUUID};
+use crate::primitives::{container::Container};
 
-use super::container::ContainerStore;
-use super::{container::Container, tag::TagStore};
+use super::{tag::TagStore};
 
 // #[allow(non_camel_case_types)]
 use super::super::primitives::crdt::ASCII_CRDT;
@@ -10,36 +10,19 @@ use super::super::primitives::uuid::UUID;
 use std::cell::RefMut;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-pub type NoteLocalID = u32;
 
-pub type NoteUUID = UUID;
-
-pub type NoteLinkID = u32;
-
-pub type NoteLinkMeta = NoteMeta;
-
-pub type NoteInternalCRDT = ASCII_CRDT;
-
-pub type TagLocalID = u32;
-
-pub type TagString = &'static str;
-
-pub type SiteLocalID = u32;
-
-pub type SiteUUID = UUID;
-
-pub type SiteName = String;
 
 // Normally these objects would be replaced with a table
 // mechanism, but that process will be deferred until a
 // later point.
-pub struct Store {
-    pub containers: ContainerStore,
-    pub notes: BTreeMap<UUID, Box<Note>>,
+pub struct Store<T> {
+
+    pub containers: Container<NoteLocalID>,
+    pub notes: BTreeMap<UUID, Box<NoteData<T>>>,
 
     pub note_uuid_to_local_id: HashMap<NoteUUID, NoteLocalID>,
     pub note_local_id_to_uuid: HashMap<NoteLocalID, NoteUUID>,
-    pub note_id_to_note_content: HashMap<NoteLocalID, Box<NoteInternalCRDT>>,
+    pub note_id_to_note_content: HashMap<NoteLocalID, Box<NoteData<T>>>,
 
     // Tags can have implied hierarchy by using some
     // kind of tag name delimiter, such as '/', within
@@ -58,10 +41,10 @@ pub struct Store {
     pub site_uuid_to_name: HashMap<SiteLocalID, SiteName>,
 }
 
-impl Store {
+impl<T> Store<T> {
     pub fn new() -> Self {
-        Store {
-            containers: ContainerStore::new(),
+        Store::<T> {
+            containers: Container::<NoteLocalID>::new_threaded(),
             notes: BTreeMap::new(),
 
             // Note Components ////////////////////
@@ -84,5 +67,3 @@ impl Store {
     }
 }
 
-static mut global_store: Option<Store> = None;
-pub struct NoteMeta {}

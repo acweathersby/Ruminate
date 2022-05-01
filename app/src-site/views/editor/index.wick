@@ -1,6 +1,6 @@
 import "@radiate";
 import {load_note, init} from "../../ts/app.ts";
-import {notes} from "../../ts/store.ts";
+import {note_id_to_proxy_note} from "../../ts/primitives/note.ts";
 import editable_note from "../../components/note/editable.wick";
 import readonly_note from "../../components/note/readonly.wick";
 import meta_editor from "../../components/editor/meta_editor.wick";
@@ -20,7 +20,7 @@ function onload(){
 }
 
 function $(active_note){
-    note = [notes.get(active_note)];
+    note = [await note_id_to_proxy_note(active_note)];
 }
 
 export default <app>
